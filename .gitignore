@@ -2,3 +2,7 @@ server.log
 tunnel.log
 *.pyc
 __pycache__/
+data_backup.json
+import_data.py
+batch_import.py
+quick_import.py
