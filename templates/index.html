@@ -804,7 +804,8 @@
             
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = pageData.map((item, idx) => {
-                const index = start + idx;
+                // 关键修复：找到该数据在 allData 中的真实索引
+                const realIndex = allData.indexOf(item);
                 const detail = item['商品详情'] || '';
                 const isDay = item['班次'] === '白班';
                 const isPaid = item['回款情况'] === '√';
@@ -823,10 +824,10 @@
                     <td>${item['处理人'] || '-'}</td>
                     <td><span class="badge ${isPaid ? 'badge-paid' : 'badge-unpaid'}">${isPaid ? '√' : '-'}</span></td>
                     <td>
-                        <button class="btn btn-sm btn-outline-primary" onclick="editData(${index})" title="编辑">
+                        <button class="btn btn-sm btn-outline-primary" onclick="editData(${realIndex})" title="编辑">
                             <i class="bi bi-pencil"></i>
                         </button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="deleteData(${index})" title="删除">
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteData(${realIndex})" title="删除">
                             <i class="bi bi-trash"></i>
                         </button>
                     </td>
