@@ -15,22 +15,13 @@ app = Flask(__name__)
 # Render.com环境变量或本地文件
 EXCEL_FILE = os.environ.get('EXCEL_FILE', os.path.expanduser('~/Desktop/26年NC台账勿删.xlsx'))
 DATA_FILE = '/tmp/nc_account_data.json'
-EMBEDDED_DATA_FILE = os.path.join(os.path.dirname(__file__), 'embedded_data.json')
 
 def load_data():
     """加载数据"""
-    # 优先从临时文件加载（运行时数据）
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, 'r', encoding='utf-8') as f:
             return json.load(f)
-    # 其次从嵌入的数据文件加载（部署时自带）
-    if os.path.exists(EMBEDDED_DATA_FILE):
-        with open(EMBEDDED_DATA_FILE, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-            save_data(data)
-            return data
-    # 最后尝试从Excel加载
-    if os.path.exists(EXCEL_FILE):
+    elif os.path.exists(EXCEL_FILE):
         try:
             df = pd.read_excel(EXCEL_FILE)
             df['日期'] = pd.to_datetime(df['日期']).dt.strftime('%Y-%m-%d')
@@ -110,17 +101,6 @@ def export_excel():
     df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
     df.to_excel(excel_path, index=False)
     return send_file(excel_path, as_attachment=True)
-
-@app.route('/api/data/batch', methods=['POST'])
-def batch_import():
-    """批量导入数据"""
-    try:
-        new_data = request.json.get('data', [])
-        save_data(new_data)
-        save_to_excel(new_data)
-        return jsonify({'success': True, 'count': len(new_data)})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
 
 # Render.com 需要
 if __name__ == '__main__':
