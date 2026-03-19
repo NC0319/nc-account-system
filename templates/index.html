@@ -449,12 +449,13 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">责任方</label>
-                                <select class="form-select" name="责任方">
-                                    <option value="NC">NC</option>
-                                    <option value="验货">验货</option>
-                                    <option value="卸车/NC共责">卸车/NC共责</option>
-                                    <option value="其他">其他</option>
-                                </select>
+                                <input type="text" class="form-control" name="责任方" list="responsibilityList" placeholder="选择或输入自定义责任方">
+                                <datalist id="responsibilityList">
+                                    <option value="NC">
+                                    <option value="验货">
+                                    <option value="卸车/NC共责">
+                                    <option value="其他">
+                                </datalist>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">处理方式</label>
@@ -794,12 +795,13 @@
                             <option value="处理中" ${item[field] === '处理中' ? 'selected' : ''}>处理中</option>
                         </select>
                     ` : field === '责任方' ? `
-                        <select class="form-select" name="${field}">
-                            <option value="NC" ${item[field] === 'NC' ? 'selected' : ''}>NC</option>
-                            <option value="验货" ${item[field] === '验货' ? 'selected' : ''}>验货</option>
-                            <option value="卸车/NC共责" ${item[field] === '卸车/NC共责' ? 'selected' : ''}>卸车/NC共责</option>
-                            <option value="其他" ${item[field] === '其他' ? 'selected' : ''}>其他</option>
-                        </select>
+                        <input type="text" class="form-control" name="${field}" list="editResponsibilityList" value="${item[field] || ''}" placeholder="选择或输入自定义责任方">
+                        <datalist id="editResponsibilityList">
+                            <option value="NC">
+                            <option value="验货">
+                            <option value="卸车/NC共责">
+                            <option value="其他">
+                        </datalist>
                     ` : field === '回款情况' ? `
                         <select class="form-select" name="${field}">
                             <option value="" ${!item[field] ? 'selected' : ''}>--</option>
