@@ -102,6 +102,17 @@ def export_excel():
     df.to_excel(excel_path, index=False)
     return send_file(excel_path, as_attachment=True)
 
+@app.route('/api/data/batch', methods=['POST'])
+def batch_import():
+    """批量导入数据"""
+    try:
+        new_data = request.json.get('data', [])
+        save_data(new_data)
+        save_to_excel(new_data)
+        return jsonify({'success': True, 'count': len(new_data)})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 # Render.com 需要
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
