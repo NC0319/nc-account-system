@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>26年NC台账管理系统</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+        }
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+        }
+        .card {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transition: transform 0.3s;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        .stat-label {
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+        .table-container {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .table thead th {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 15px;
+        }
+        .table tbody tr:hover {
+            background: #f3f4f6;
+        }
+        .btn-primary {
+            background: var(--primary-color);
+            border: none;
+            padding: 10px 25px;
+            border-radius: 8px;
+        }
+        .modal-content {
+            border-radius: 16px;
+        }
+        .search-box {
+            border-radius: 8px;
+            border: 2px solid #e5e7eb;
+            padding: 10px 15px;
+        }
+        .search-box:focus {
+            border-color: var(--primary-color);
+            outline: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 标题 -->
+        <div class="text-center mb-4">
+            <h1 style="color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.2);">
+                <i class="bi bi-database"></i> 26年NC台账管理系统
+            </h1>
+            <p style="color: rgba(255,255,255,0.9);">数据总览 · 统计分析 · 数据管理</p>
+        </div>
+
+        <!-- 统计卡片 -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalCount">0</div>
+                    <div class="stat-label"><i class="bi bi-list-ol"></i> 总记录数</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalAmount" style="color: var(--danger-color);">0</div>
+                    <div class="stat-label"><i class="bi bi-currency-yen"></i> 累计金额(元)</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-number" id="unpaidCount" style="color: var(--warning-color);">0</div>
+                    <div class="stat-label"><i class="bi bi-exclamation-circle"></i> 未回款</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-number" id="paidCount" style="color: var(--success-color);">0</div>
+                    <div class="stat-label"><i class="bi bi-check-circle"></i> 已回款</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 图表区域 -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card p-3">
+                    <h5><i class="bi bi-pie-chart"></i> 异常情况分布</h5>
+                    <canvas id="exceptionChart"></canvas>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card p-3">
+                    <h5><i class="bi bi-bar-chart"></i> 责任方分布</h5>
+                    <canvas id="responsibilityChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 数据操作区 -->
+        <div class="card p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <h4><i class="bi bi-table"></i> 数据列表</h4>
+                <div class="d-flex gap-2">
+                    <input type="text" class="search-box" id="searchInput" placeholder="搜索包裹号/商品详情...">
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">
+                        <i class="bi bi-plus-circle"></i> 添加新数据
+                    </button>
+                    <button class="btn btn-success" onclick="exportData()">
+                        <i class="bi bi-download"></i> 导出Excel
+                    </button>
+                </div>
+            </div>
+            
+            <div class="table-container">
+                <div style="overflow-x: auto;">
+                    <table class="table table-hover" id="dataTable">
+                        <thead>
+                            <tr>
+                                <th>日期</th>
+                                <th>班次</th>
+                                <th>包裹号</th>
+                                <th>商品详情</th>
+                                <th>异常情况</th>
+                                <th>金额</th>
+                                <th>责任方</th>
+                                <th>处理方式</th>
+                                <th>路由</th>
+                                <th>处理人</th>
+                                <th>回款情况</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- 分页 -->
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div>
+                    共 <span id="pageTotal">0</span> 条记录，每页
+                    <select id="pageSize" onchange="renderTable()" style="border: 1px solid #ddd; border-radius: 4px; padding: 5px;">
+                        <option value="10">10</option>
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                    条
+                </div>
+                <nav>
+                    <ul class="pagination mb-0" id="pagination"></ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加数据模态框 -->
+    <div class="modal fade" id="addModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header" style="background: var(--primary-color); color: white;">
+                    <h5 class="modal-title"><i class="bi bi-plus-circle"></i> 添加新数据</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">日期</label>
+                                <input type="date" class="form-control" name="日期" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">班次</label>
+                                <select class="form-select" name="班次" required>
+                                    <option value="白班">白班</option>
+                                    <option value="夜班">夜班</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">包裹号</label>
+                                <input type="text" class="form-control" name="包裹号" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">商品详情</label>
+                                <input type="text" class="form-control" name="商品详情">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">异常情况</label>
+                                <input type="text" class="form-control" name="异常情况" placeholder="如：破损1、丢失等">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">金额(元)</label>
+                                <input type="number" step="0.01" class="form-control" name="金额">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">责任方</label>
+                                <select class="form-select" name="责任方">
+                                    <option value="NC">NC</option>
+                                    <option value="验货">验货</option>
+                                    <option value="卸车/NC共责">卸车/NC共责</option>
+                                    <option value="其他">其他</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">处理方式</label>
+                                <input type="text" class="form-control" name="处理方式" placeholder="如：修复下发、线下转账等">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">路由</label>
+                                <select class="form-select" name="路由">
+                                    <option value="已妥投">已妥投</option>
+                                    <option value="已下发">已下发</option>
+                                    <option value="处理中">处理中</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">处理人</label>
+                                <input type="text" class="form-control" name="处理人">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">回款情况</label>
+                                <select class="form-select" name="回款情况">
+                                    <option value=""></option>
+                                    <option value="√">√ 已回款</option>
+                                    <option value="未回款">未回款</option>
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="saveData()">保存数据</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑数据模态框 -->
+    <div class="modal fade" id="editModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header" style="background: var(--success-color); color: white;">
+                    <h5 class="modal-title"><i class="bi bi-pencil"></i> 编辑数据</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editForm"></form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-success" onclick="updateData()">更新数据</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let allData = [];
+        let filteredData = [];
+        let currentPage = 1;
+        let editingIndex = null;
+        let exceptionChart = null;
+        let responsibilityChart = null;
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadData();
+            
+            // 搜索功能
+            document.getElementById('searchInput').addEventListener('input', function() {
+                currentPage = 1;
+                renderTable();
+            });
+        });
+
+        // 加载数据
+        async function loadData() {
+            try {
+                const response = await fetch('/api/data');
+                const data = await response.json();
+                allData = data;
+                filteredData = [...allData];
+                updateStats();
+                renderTable();
+                renderCharts();
+            } catch (error) {
+                console.error('加载数据失败:', error);
+            }
+        }
+
+        // 更新统计
+        function updateStats() {
+            document.getElementById('totalCount').textContent = allData.length;
+            
+            const totalAmount = allData.reduce((sum, item) => sum + (parseFloat(item['金额']) || 0), 0);
+            document.getElementById('totalAmount').textContent = totalAmount.toFixed(2);
+            
+            const unpaidCount = allData.filter(item => !item['回款情况'] || item['回款情况'] !== '√').length;
+            document.getElementById('unpaidCount').textContent = unpaidCount;
+            
+            const paidCount = allData.filter(item => item['回款情况'] === '√').length;
+            document.getElementById('paidCount').textContent = paidCount;
+        }
+
+        // 渲染表格
+        function renderTable() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const pageSize = parseInt(document.getElementById('pageSize').value);
+            
+            filteredData = allData.filter(item => {
+                const searchFields = ['包裹号', '商品详情', '处理人', '责任方', '异常情况'];
+                return searchFields.some(field => 
+                    String(item[field] || '').toLowerCase().includes(searchTerm)
+                );
+            });
+            
+            const start = (currentPage - 1) * pageSize;
+            const end = start + pageSize;
+            const pageData = filteredData.slice(start, end);
+            
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = pageData.map((item, index) => `
+                <tr>
+                    <td>${item['日期'] || ''}</td>
+                    <td><span class="badge ${item['班次'] === '白班' ? 'bg-warning' : 'bg-info'}">${item['班次'] || ''}</span></td>
+                    <td><small>${item['包裹号'] || ''}</small></td>
+                    <td><small title="${item['商品详情'] || ''}">${(item['商品详情'] || '').substring(0, 20)}${(item['商品详情'] || '').length > 20 ? '...' : ''}</small></td>
+                    <td>${item['异常情况'] || ''}</td>
+                    <td><strong>${item['金额'] || '0'}</strong></td>
+                    <td>${item['责任方'] || ''}</td>
+                    <td><small>${item['处理方式'] || ''}</small></td>
+                    <td>${item['路由'] || ''}</td>
+                    <td>${item['处理人'] || ''}</td>
+                    <td>${item['回款情况'] === '√' ? '<span class="badge bg-success">√</span>' : '<span class="badge bg-secondary">-</span>'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="editData(${start + index})" title="编辑">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteData(${start + index})" title="删除">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+            
+            // 更新分页
+            document.getElementById('pageTotal').textContent = filteredData.length;
+            renderPagination(filteredData.length, pageSize);
+        }
+
+        // 渲染分页
+        function renderPagination(total, pageSize) {
+            const totalPages = Math.ceil(total / pageSize);
+            const pagination = document.getElementById('pagination');
+            let html = '';
+            
+            html += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="goPage(${currentPage - 1})">上一页</a>
+            </li>`;
+            
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+                    html += `<li class="page-item ${i === currentPage ? 'active' : ''}">
+                        <a class="page-link" href="#" onclick="goPage(${i})">${i}</a>
+                    </li>`;
+                } else if (i === currentPage - 3 || i === currentPage + 3) {
+                    html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                }
+            }
+            
+            html += `<li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="goPage(${currentPage + 1})">下一页</a>
+            </li>`;
+            
+            pagination.innerHTML = html;
+        }
+
+        function goPage(page) {
+            const totalPages = Math.ceil(filteredData.length / parseInt(document.getElementById('pageSize').value));
+            if (page >= 1 && page <= totalPages) {
+                currentPage = page;
+                renderTable();
+            }
+        }
+
+        // 渲染图表
+        function renderCharts() {
+            // 异常情况统计
+            const exceptionCounts = {};
+            allData.forEach(item => {
+                const exp = item['异常情况'] || '未记录';
+                exceptionCounts[exp] = (exceptionCounts[exp] || 0) + 1;
+            });
+            
+            const colors = ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899'];
+            
+            if (exceptionChart) exceptionChart.destroy();
+            exceptionChart = new Chart(document.getElementById('exceptionChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(exceptionCounts),
+                    datasets: [{
+                        data: Object.values(exceptionCounts),
+                        backgroundColor: colors
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+            
+            // 责任方统计
+            const respCounts = {};
+            allData.forEach(item => {
+                const resp = item['责任方'] || '未记录';
+                respCounts[resp] = (respCounts[resp] || 0) + 1;
+            });
+            
+            if (responsibilityChart) responsibilityChart.destroy();
+            responsibilityChart = new Chart(document.getElementById('responsibilityChart'), {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(respCounts),
+                    datasets: [{
+                        label: '数量',
+                        data: Object.values(respCounts),
+                        backgroundColor: '#2563eb'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        // 保存新数据
+        async function saveData() {
+            const form = document.getElementById('addForm');
+            const formData = new FormData(form);
+            const newData = {};
+            
+            formData.forEach((value, key) => {
+                newData[key] = value;
+            });
+            
+            try {
+                const response = await fetch('/api/data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newData)
+                });
+                
+                if (response.ok) {
+                    alert('数据保存成功！');
+                    bootstrap.Modal.getInstance(document.getElementById('addModal')).hide();
+                    form.reset();
+                    loadData();
+                } else {
+                    alert('保存失败，请重试');
+                }
+            } catch (error) {
+                console.error('保存失败:', error);
+                alert('保存失败: ' + error.message);
+            }
+        }
+
+        // 编辑数据
+        function editData(index) {
+            const item = filteredData[index];
+            editingIndex = allData.indexOf(item);
+            
+            const form = document.getElementById('editForm');
+            const fields = ['日期', '班次', '包裹号', '商品详情', '异常情况', '金额', '责任方', '处理方式', '路由', '处理人', '回款情况'];
+            
+            form.innerHTML = `
+                <div class="row">
+                    ${fields.map(field => `
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">${field}</label>
+                            ${field === '班次' ? `
+                                <select class="form-select" name="${field}">
+                                    <option value="白班" ${item[field] === '白班' ? 'selected' : ''}>白班</option>
+                                    <option value="夜班" ${item[field] === '夜班' ? 'selected' : ''}>夜班</option>
+                                </select>
+                            ` : field === '路由' ? `
+                                <select class="form-select" name="${field}">
+                                    <option value="已妥投" ${item[field] === '已妥投' ? 'selected' : ''}>已妥投</option>
+                                    <option value="已下发" ${item[field] === '已下发' ? 'selected' : ''}>已下发</option>
+                                    <option value="处理中" ${item[field] === '处理中' ? 'selected' : ''}>处理中</option>
+                                </select>
+                            ` : field === '责任方' ? `
+                                <select class="form-select" name="${field}">
+                                    <option value="NC" ${item[field] === 'NC' ? 'selected' : ''}>NC</option>
+                                    <option value="验货" ${item[field] === '验货' ? 'selected' : ''}>验货</option>
+                                    <option value="卸车/NC共责" ${item[field] === '卸车/NC共责' ? 'selected' : ''}>卸车/NC共责</option>
+                                    <option value="其他" ${item[field] === '其他' ? 'selected' : ''}>其他</option>
+                                </select>
+                            ` : field === '回款情况' ? `
+                                <select class="form-select" name="${field}">
+                                    <option value="" ${!item[field] ? 'selected' : ''}>--</option>
+                                    <option value="√" ${item[field] === '√' ? 'selected' : ''}>√ 已回款</option>
+                                    <option value="未回款" ${item[field] === '未回款' ? 'selected' : ''}>未回款</option>
+                                </select>
+                            ` : `
+                                <input type="${field === '日期' ? 'date' : field === '金额' ? 'number' : 'text'}" 
+                                    class="form-control" name="${field}" 
+                                    value="${item[field] || ''}"
+                                    ${field === '包裹号' ? 'required' : ''}
+                                    ${field === '金额' ? 'step="0.01"' : ''}>
+                            `}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            
+            new bootstrap.Modal(document.getElementById('editModal')).show();
+        }
+
+        // 更新数据
+        async function updateData() {
+            const form = document.getElementById('editForm');
+            const formData = new FormData(form);
+            const updatedData = {};
+            
+            formData.forEach((value, key) => {
+                updatedData[key] = value;
+            });
+            
+            try {
+                const response = await fetch(`/api/data/${editingIndex}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatedData)
+                });
+                
+                if (response.ok) {
+                    alert('数据更新成功！');
+                    bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
+                    loadData();
+                } else {
+                    alert('更新失败，请重试');
+                }
+            } catch (error) {
+                console.error('更新失败:', error);
+                alert('更新失败: ' + error.message);
+            }
+        }
+
+        // 删除数据
+        async function deleteData(index) {
+            if (!confirm('确定要删除这条记录吗？')) return;
+            
+            const item = filteredData[index];
+            const deleteIndex = allData.indexOf(item);
+            
+            try {
+                const response = await fetch(`/api/data/${deleteIndex}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    alert('删除成功！');
+                    loadData();
+                } else {
+                    alert('删除失败，请重试');
+                }
+            } catch (error) {
+                console.error('删除失败:', error);
+                alert('删除失败: ' + error.message);
+            }
+        }
+
+        // 导出Excel
+        function exportData() {
+            window.location.href = '/api/export';
+        }
+    </script>
+</body>
+</html>
