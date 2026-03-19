@@ -524,6 +524,28 @@
                 <i class="bi bi-search"></i>
                 <input type="text" id="searchInput" placeholder="搜索包裹号/商品详情/处理人...">
             </div>
+            <select class="form-select" id="filterMonth" onchange="applyFilters()" style="width: auto; min-width: 120px;">
+                <option value="">全部月份</option>
+                <option value="2026-01">2026年1月</option>
+                <option value="2026-02">2026年2月</option>
+                <option value="2026-03">2026年3月</option>
+                <option value="2025-11">2025年11月</option>
+            </select>
+            <select class="form-select" id="filterShift" onchange="applyFilters()" style="width: auto; min-width: 100px;">
+                <option value="">全部班次</option>
+                <option value="白班">白班</option>
+                <option value="夜班">夜班</option>
+            </select>
+            <select class="form-select" id="filterResponsibility" onchange="applyFilters()" style="width: auto; min-width: 120px;">
+                <option value="">全部责任方</option>
+                <option value="NC">NC</option>
+                <option value="验货">验货</option>
+                <option value="卸车/NC共责">卸车/NC共责</option>
+                <option value="其他">其他</option>
+            </select>
+            <button class="btn btn-outline" onclick="clearFilters()" title="清除筛选">
+                <i class="bi bi-x-lg"></i> 清除
+            </button>
             <button class="btn btn-primary" onclick="openAddModal()">
                 <i class="bi bi-plus-lg"></i> 添加数据
             </button>
@@ -722,8 +744,7 @@
             document.getElementById('searchInput').addEventListener('input', () => {
                 clearTimeout(searchTimer);
                 searchTimer = setTimeout(() => {
-                    currentPage = 1;
-                    renderTable();
+                    applyFilters();
                 }, 300);
             });
         });
@@ -755,6 +776,14 @@
             try {
                 const response = await fetch('/api/data');
                 allData = await response.json();
+                
+                // 按日期排序（最新的在前）
+                allData.sort((a, b) => {
+                    const dateA = a['日期'] || '';
+                    const dateB = b['日期'] || '';
+                    return dateB.localeCompare(dateA); // 降序，最新的在前
+                });
+                
                 filteredData = [...allData];
                 updateStats();
                 renderTable();
@@ -765,6 +794,58 @@
             } finally {
                 hideLoading();
             }
+        }
+
+        // 筛选功能
+        function applyFilters() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+            const monthFilter = document.getElementById('filterMonth').value;
+            const shiftFilter = document.getElementById('filterShift').value;
+            const respFilter = document.getElementById('filterResponsibility').value;
+            
+            currentPage = 1;
+            
+            filteredData = allData.filter(item => {
+                // 搜索筛选
+                if (searchTerm) {
+                    const searchFields = ['包裹号', '商品详情', '处理人', '责任方', '异常情况', '处理方式'];
+                    const matchSearch = searchFields.some(field => 
+                        String(item[field] || '').toLowerCase().includes(searchTerm)
+                    );
+                    if (!matchSearch) return false;
+                }
+                
+                // 月份筛选
+                if (monthFilter) {
+                    const date = item['日期'] || '';
+                    if (!date.startsWith(monthFilter)) return false;
+                }
+                
+                // 班次筛选
+                if (shiftFilter) {
+                    if (item['班次'] !== shiftFilter) return false;
+                }
+                
+                // 责任方筛选
+                if (respFilter) {
+                    if (item['责任方'] !== respFilter) return false;
+                }
+                
+                return true;
+            });
+            
+            renderTable();
+        }
+
+        // 清除筛选
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('filterMonth').value = '';
+            document.getElementById('filterShift').value = '';
+            document.getElementById('filterResponsibility').value = '';
+            currentPage = 1;
+            filteredData = [...allData];
+            renderTable();
         }
 
         // 更新统计
@@ -783,20 +864,7 @@
 
         // 渲染表格
         function renderTable() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
             const pageSize = parseInt(document.getElementById('pageSize').value);
-            
-            // 过滤数据
-            if (searchTerm) {
-                filteredData = allData.filter(item => {
-                    const searchFields = ['包裹号', '商品详情', '处理人', '责任方', '异常情况', '处理方式'];
-                    return searchFields.some(field => 
-                        String(item[field] || '').toLowerCase().includes(searchTerm)
-                    );
-                });
-            } else {
-                filteredData = [...allData];
-            }
             
             const start = (currentPage - 1) * pageSize;
             const end = start + pageSize;
