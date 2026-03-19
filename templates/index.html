@@ -2,114 +2,284 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>26年NC台账管理系统</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
         :root {
-            --primary-color: #2563eb;
+            --primary-color: #3b82f6;
+            --primary-dark: #2563eb;
             --success-color: #10b981;
             --warning-color: #f59e0b;
             --danger-color: #ef4444;
+            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
+        
+        * { box-sizing: border-box; }
+        
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--bg-gradient);
             min-height: 100vh;
-            padding: 15px;
+            padding: 10px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         }
-        .container {
-            max-width: 1400px;
+        
+        .container { max-width: 1600px; padding: 0; }
+        
+        /* 标题区 */
+        .header {
+            text-align: center;
+            padding: 15px 10px;
+            margin-bottom: 15px;
         }
-        .card {
-            border: none;
-            border-radius: 16px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        .header h1 {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 600;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            margin: 0;
+        }
+        .header p {
+            color: rgba(255,255,255,0.85);
+            font-size: 0.85rem;
+            margin: 5px 0 0;
+        }
+        
+        /* 统计卡片 */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
         }
         .stat-card {
             background: white;
             border-radius: 12px;
-            padding: 15px;
+            padding: 12px 8px;
             text-align: center;
-            transition: transform 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.2s ease;
         }
-        .stat-card:hover {
-            transform: translateY(-5px);
-        }
+        .stat-card:hover { transform: translateY(-3px); }
         .stat-number {
-            font-size: 2rem;
-            font-weight: bold;
+            font-size: 1.4rem;
+            font-weight: 700;
             color: var(--primary-color);
+            line-height: 1.2;
         }
         .stat-label {
             color: #6b7280;
-            font-size: 0.85rem;
+            font-size: 0.75rem;
+            margin-top: 4px;
         }
-        .table-container {
+        .stat-card.danger .stat-number { color: var(--danger-color); }
+        .stat-card.warning .stat-number { color: var(--warning-color); }
+        .stat-card.success .stat-number { color: var(--success-color); }
+        
+        /* 图表区 */
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .chart-card {
             background: white;
             border-radius: 12px;
-            overflow: hidden;
+            padding: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
-        .table thead th {
-            background: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 12px 8px;
-            font-size: 0.85rem;
-            white-space: nowrap;
+        .chart-card h5 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #374151;
+            margin: 0 0 10px;
         }
-        .table tbody td {
-            padding: 10px 8px;
-            font-size: 0.85rem;
-            vertical-align: middle;
+        .chart-card canvas { max-height: 180px; }
+        
+        /* 操作区 */
+        .action-bar {
+            background: white;
+            border-radius: 12px;
+            padding: 12px 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
         }
-        .table tbody tr:hover {
-            background: #f3f4f6;
-        }
-        .btn-primary {
-            background: var(--primary-color);
-            border: none;
-            padding: 8px 20px;
-            border-radius: 8px;
-        }
-        .modal-content {
-            border-radius: 16px;
+        .search-wrapper {
+            flex: 1;
+            min-width: 200px;
+            position: relative;
         }
         .search-box {
-            border-radius: 8px;
+            width: 100%;
             border: 2px solid #e5e7eb;
-            padding: 8px 12px;
-            min-width: 200px;
+            border-radius: 8px;
+            padding: 8px 12px 8px 36px;
+            font-size: 0.9rem;
+            transition: border-color 0.2s;
         }
         .search-box:focus {
             border-color: var(--primary-color);
             outline: none;
         }
-        /* 加载动画 */
-        .loading {
-            text-align: center;
-            padding: 40px;
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+        }
+        .btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .btn-primary {
+            background: var(--primary-color);
+            border: none;
+            color: white;
+        }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-success { background: var(--success-color); border: none; color: white; }
+        .btn-outline-primary { border: 1px solid var(--primary-color); color: var(--primary-color); background: transparent; }
+        .btn-outline-danger { border: 1px solid var(--danger-color); color: var(--danger-color); background: transparent; }
+        .btn-sm { padding: 4px 8px; font-size: 0.75rem; }
+        
+        /* 表格 */
+        .table-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .table-wrapper {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .data-table {
+            width: 100%;
+            min-width: 900px;
+            border-collapse: collapse;
+        }
+        .data-table th {
+            background: var(--primary-color);
+            color: white;
+            padding: 10px 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-align: left;
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+        }
+        .data-table td {
+            padding: 8px;
+            font-size: 0.8rem;
+            border-bottom: 1px solid #f3f4f6;
+            vertical-align: middle;
+        }
+        .data-table tbody tr:hover { background: #f9fafb; }
+        .data-table .text-truncate {
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            display: inline-block;
+        }
+        .badge {
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+        .bg-warning { background: #fef3c7 !important; color: #92400e; }
+        .bg-info { background: #dbeafe !important; color: #1e40af; }
+        .bg-success { background: #d1fae5 !important; color: #065f46; }
+        .bg-secondary { background: #f3f4f6 !important; color: #6b7280; }
+        
+        /* 分页 */
+        .pagination-wrapper {
+            padding: 12px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            border-top: 1px solid #f3f4f6;
+        }
+        .page-info { font-size: 0.85rem; color: #6b7280; }
+        .page-size-select {
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 0.85rem;
+        }
+        .pagination { margin: 0; }
+        .page-link {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            border-radius: 6px;
+            margin: 0 2px;
+        }
+        
+        /* 模态框 */
+        .modal-content { border-radius: 16px; border: none; }
+        .modal-header {
+            background: var(--primary-color);
+            color: white;
+            border-radius: 16px 16px 0 0;
+            padding: 15px 20px;
+        }
+        .modal-header .btn-close { filter: brightness(0) invert(1); }
+        .modal-body { padding: 20px; }
+        .modal-footer { padding: 15px 20px; border-top: 1px solid #f3f4f6; }
+        .form-label { font-size: 0.85rem; font-weight: 500; color: #374151; }
+        .form-control, .form-select {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 0.9rem;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        /* 加载状态 */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255,255,255,0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
         }
         .spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid var(--primary-color);
+            width: 40px;
+            height: 40px;
+            border: 3px solid #f3f4f6;
+            border-top-color: var(--primary-color);
             border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 15px;
+            animation: spin 0.8s linear infinite;
         }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        /* 搜索高亮 */
-        .highlight {
-            background: #fef08a;
-            padding: 1px 2px;
-            border-radius: 2px;
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
         /* Toast 提示 */
         .toast-container {
             position: fixed;
@@ -118,178 +288,140 @@
             z-index: 9999;
         }
         .toast {
-            min-width: 250px;
+            background: white;
+            border-radius: 8px;
+            padding: 12px 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
-        /* 移动端优化 */
+        .toast.success { border-left: 4px solid var(--success-color); }
+        .toast.error { border-left: 4px solid var(--danger-color); }
+        
+        /* 响应式 */
         @media (max-width: 768px) {
-            .stat-card {
-                margin-bottom: 10px;
-            }
-            .stat-number {
-                font-size: 1.5rem;
-            }
-            .btn-group-mobile {
-                flex-direction: column;
-            }
-            .search-box {
-                width: 100%;
-                margin-bottom: 10px;
-            }
-        }
-        /* 虚拟滚动优化 */
-        .table-wrapper {
-            max-height: 60vh;
-            overflow-y: auto;
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
+            .charts-row { grid-template-columns: 1fr; }
+            .stat-number { font-size: 1.2rem; }
+            .header h1 { font-size: 1.2rem; }
+            .action-bar { flex-direction: column; }
+            .search-wrapper { width: 100%; }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- 标题 -->
-        <div class="text-center mb-3">
-            <h2 style="color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.2);">
-                <i class="bi bi-database"></i> 26年NC台账管理系统
-            </h2>
-            <p style="color: rgba(255,255,255,0.9); font-size: 0.9rem;">数据总览 · 统计分析 · 数据管理</p>
+        <!-- 加载状态 -->
+        <div class="loading-overlay" id="loadingOverlay">
+            <div class="spinner"></div>
         </div>
-
-        <!-- Toast 提示 -->
-        <div class="toast-container">
-            <div class="toast" id="toast">
-                <div class="toast-header">
-                    <strong class="me-auto" id="toastTitle">提示</strong>
-                    <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
-                </div>
-                <div class="toast-body" id="toastBody"></div>
-            </div>
+        
+        <!-- 标题 -->
+        <div class="header">
+            <h1><i class="bi bi-database-fill"></i> 26年NC台账管理系统</h1>
+            <p>数据总览 · 统计分析 · 快速检索</p>
         </div>
 
         <!-- 统计卡片 -->
-        <div class="row mb-3">
-            <div class="col-6 col-md-3">
-                <div class="stat-card">
-                    <div class="stat-number" id="totalCount">-</div>
-                    <div class="stat-label"><i class="bi bi-list-ol"></i> 总记录数</div>
-                </div>
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-number" id="totalCount">0</div>
+                <div class="stat-label"><i class="bi bi-list-ol"></i> 总记录数</div>
             </div>
-            <div class="col-6 col-md-3">
-                <div class="stat-card">
-                    <div class="stat-number" id="totalAmount" style="color: var(--danger-color);">-</div>
-                    <div class="stat-label"><i class="bi bi-currency-yen"></i> 累计金额</div>
-                </div>
+            <div class="stat-card danger">
+                <div class="stat-number" id="totalAmount">0</div>
+                <div class="stat-label"><i class="bi bi-currency-yen"></i> 累计金额</div>
             </div>
-            <div class="col-6 col-md-3">
-                <div class="stat-card">
-                    <div class="stat-number" id="unpaidCount" style="color: var(--warning-color);">-</div>
-                    <div class="stat-label"><i class="bi bi-exclamation-circle"></i> 未回款</div>
-                </div>
+            <div class="stat-card warning">
+                <div class="stat-number" id="unpaidCount">0</div>
+                <div class="stat-label"><i class="bi bi-exclamation-circle"></i> 未回款</div>
             </div>
-            <div class="col-6 col-md-3">
-                <div class="stat-card">
-                    <div class="stat-number" id="paidCount" style="color: var(--success-color);">-</div>
-                    <div class="stat-label"><i class="bi bi-check-circle"></i> 已回款</div>
-                </div>
+            <div class="stat-card success">
+                <div class="stat-number" id="paidCount">0</div>
+                <div class="stat-label"><i class="bi bi-check-circle"></i> 已回款</div>
             </div>
         </div>
 
         <!-- 图表区域 -->
-        <div class="row mb-3">
-            <div class="col-md-6">
-                <div class="card p-3">
-                    <h6><i class="bi bi-pie-chart"></i> 异常情况分布</h6>
-                    <canvas id="exceptionChart" height="200"></canvas>
-                </div>
+        <div class="charts-row">
+            <div class="chart-card">
+                <h5><i class="bi bi-pie-chart"></i> 异常情况分布</h5>
+                <canvas id="exceptionChart"></canvas>
             </div>
-            <div class="col-md-6">
-                <div class="card p-3">
-                    <h6><i class="bi bi-bar-chart"></i> 责任方分布</h6>
-                    <canvas id="responsibilityChart" height="200"></canvas>
-                </div>
+            <div class="chart-card">
+                <h5><i class="bi bi-bar-chart"></i> 责任方分布</h5>
+                <canvas id="responsibilityChart"></canvas>
             </div>
         </div>
 
-        <!-- 数据操作区 -->
-        <div class="card p-3">
-            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                <h5><i class="bi bi-table"></i> 数据列表</h5>
-                <div class="d-flex gap-2 flex-wrap btn-group-mobile">
-                    <input type="text" class="search-box" id="searchInput" placeholder="搜索单号/商品/处理人...">
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">
-                        <i class="bi bi-plus-circle"></i> 添加
-                    </button>
-                    <button class="btn btn-success" onclick="exportData()">
-                        <i class="bi bi-download"></i> 导出
-                    </button>
-                </div>
+        <!-- 操作区 -->
+        <div class="action-bar">
+            <div class="search-wrapper">
+                <i class="bi bi-search search-icon"></i>
+                <input type="text" class="search-box" id="searchInput" placeholder="搜索包裹号/商品详情/处理人...">
             </div>
-            
-            <div class="table-container">
-                <!-- 加载状态 -->
-                <div class="loading" id="loadingState">
-                    <div class="spinner"></div>
-                    <p>加载数据中，请稍候...</p>
-                    <small class="text-muted">首次访问可能需要等待 10-30 秒</small>
+            <button class="btn btn-primary" onclick="openAddModal()">
+                <i class="bi bi-plus-circle"></i> 添加
+            </button>
+            <button class="btn btn-success" onclick="exportData()">
+                <i class="bi bi-download"></i> 导出
+            </button>
+        </div>
+
+        <!-- 数据表格 -->
+        <div class="table-card">
+            <div class="table-wrapper">
+                <table class="data-table" id="dataTable">
+                    <thead>
+                        <tr>
+                            <th>日期</th>
+                            <th>班次</th>
+                            <th>包裹号</th>
+                            <th>商品详情</th>
+                            <th>异常</th>
+                            <th>金额</th>
+                            <th>责任方</th>
+                            <th>处理方式</th>
+                            <th>路由</th>
+                            <th>处理人</th>
+                            <th>回款</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+            <div class="pagination-wrapper">
+                <div class="page-info">
+                    共 <strong id="pageTotal">0</strong> 条，每页
+                    <select class="page-size-select" id="pageSize" onchange="renderTable()">
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                    条
                 </div>
-                
-                <!-- 表格内容 -->
-                <div id="tableContent" style="display: none;">
-                    <div style="overflow-x: auto;">
-                        <table class="table table-hover mb-0">
-                            <thead>
-                                <tr>
-                                    <th>日期</th>
-                                    <th>班次</th>
-                                    <th>包裹号</th>
-                                    <th>商品详情</th>
-                                    <th>异常</th>
-                                    <th>金额</th>
-                                    <th>责任方</th>
-                                    <th>处理方式</th>
-                                    <th>路由</th>
-                                    <th>处理人</th>
-                                    <th>回款</th>
-                                    <th>操作</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tableBody">
-                            </tbody>
-                        </table>
-                    </div>
-                    
-                    <!-- 分页 -->
-                    <div class="d-flex justify-content-between align-items-center p-3 border-top">
-                        <div class="small">
-                            共 <span id="pageTotal">0</span> 条，每页
-                            <select id="pageSize" onchange="changePageSize()" class="form-select form-select-sm d-inline-block" style="width: auto;">
-                                <option value="20">20</option>
-                                <option value="50">50</option>
-                                <option value="100">100</option>
-                            </select>
-                            条
-                            <span id="searchResult" class="ms-2 text-muted"></span>
-                        </div>
-                        <nav>
-                            <ul class="pagination pagination-sm mb-0" id="pagination"></ul>
-                        </nav>
-                    </div>
-                </div>
+                <nav>
+                    <ul class="pagination" id="pagination"></ul>
+                </nav>
             </div>
         </div>
     </div>
 
-    <!-- 添加数据模态框 -->
+    <!-- 添加模态框 -->
     <div class="modal fade" id="addModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <div class="modal-header" style="background: var(--primary-color); color: white;">
+                <div class="modal-header">
                     <h5 class="modal-title"><i class="bi bi-plus-circle"></i> 添加新数据</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <form id="addForm">
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label">日期 <span class="text-danger">*</span></label>
+                                <label class="form-label">日期 *</label>
                                 <input type="date" class="form-control" name="日期" required>
                             </div>
                             <div class="col-md-6 mb-3">
@@ -300,25 +432,16 @@
                                 </select>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label">包裹号 <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" name="包裹号" required placeholder="请输入完整包裹号">
+                                <label class="form-label">包裹号 *</label>
+                                <input type="text" class="form-control" name="包裹号" required placeholder="输入包裹单号">
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">商品详情</label>
-                                <input type="text" class="form-control" name="商品详情" placeholder="商品名称、规格等">
+                                <input type="text" class="form-control" name="商品详情" placeholder="商品名称/描述">
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">异常情况</label>
-                                <select class="form-select" name="异常情况">
-                                    <option value="">请选择</option>
-                                    <option value="破损">破损</option>
-                                    <option value="破损1">破损1</option>
-                                    <option value="破损2">破损2</option>
-                                    <option value="丢失">丢失</option>
-                                    <option value="少件">少件</option>
-                                    <option value="错发">错发</option>
-                                    <option value="其他">其他</option>
-                                </select>
+                                <input type="text" class="form-control" name="异常情况" placeholder="如：破损1、丢失等">
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">金额(元)</label>
@@ -335,7 +458,7 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">处理方式</label>
-                                <input type="text" class="form-control" name="处理方式" placeholder="如：修复下发、转账等">
+                                <input type="text" class="form-control" name="处理方式" placeholder="处理方式">
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">路由</label>
@@ -347,119 +470,110 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">处理人</label>
-                                <input type="text" class="form-control" name="处理人" placeholder="负责人姓名">
+                                <input type="text" class="form-control" name="处理人" placeholder="处理人姓名">
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">回款情况</label>
                                 <select class="form-select" name="回款情况">
-                                    <option value="">未回款</option>
+                                    <option value="">--</option>
                                     <option value="√">√ 已回款</option>
+                                    <option value="未回款">未回款</option>
                                 </select>
                             </div>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                    <button type="button" class="btn btn-primary" onclick="saveData()" id="saveBtn">
-                        <span class="spinner-border spinner-border-sm d-none" id="saveSpinner"></span>
-                        保存数据
+                    <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="saveData()">
+                        <i class="bi bi-check-lg"></i> 保存
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- 编辑数据模态框 -->
+    <!-- 编辑模态框 -->
     <div class="modal fade" id="editModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <div class="modal-header" style="background: var(--success-color); color: white;">
+                <div class="modal-header" style="background: var(--success-color);">
                     <h5 class="modal-title"><i class="bi bi-pencil"></i> 编辑数据</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <form id="editForm"></form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                    <button type="button" class="btn btn-success" onclick="updateData()" id="updateBtn">
-                        <span class="spinner-border spinner-border-sm d-none" id="updateSpinner"></span>
-                        更新数据
+                    <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-success" onclick="updateData()">
+                        <i class="bi bi-check-lg"></i> 更新
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Toast 容器 -->
+    <div class="toast-container" id="toastContainer"></div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // 全局变量
         let allData = [];
         let filteredData = [];
         let currentPage = 1;
         let editingIndex = null;
         let exceptionChart = null;
         let responsibilityChart = null;
-        let searchTimeout = null;
 
         // 初始化
-        document.addEventListener('DOMContentLoaded', function() {
-            // 设置今天日期为默认值
-            const today = new Date().toISOString().split('T')[0];
-            document.querySelector('#addForm input[name="日期"]').value = today;
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
             
-            // 防抖搜索
-            document.getElementById('searchInput').addEventListener('input', function() {
-                clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(() => {
+            // 搜索防抖
+            let searchTimer;
+            document.getElementById('searchInput').addEventListener('input', () => {
+                clearTimeout(searchTimer);
+                searchTimer = setTimeout(() => {
                     currentPage = 1;
                     renderTable();
                 }, 300);
             });
-            
-            // 加载数据
-            loadData();
         });
 
-        // 显示提示
-        function showToast(title, message, type = 'success') {
-            const toast = document.getElementById('toast');
-            const toastTitle = document.getElementById('toastTitle');
-            const toastBody = document.getElementById('toastBody');
-            
-            toastTitle.textContent = title;
-            toastBody.textContent = message;
-            toast.className = `toast ${type === 'error' ? 'text-bg-danger' : 'text-bg-success'}`;
-            
-            new bootstrap.Toast(toast).show();
+        // 显示/隐藏加载
+        function showLoading() { document.getElementById('loadingOverlay').style.display = 'flex'; }
+        function hideLoading() { document.getElementById('loadingOverlay').style.display = 'none'; }
+
+        // Toast 提示
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                <i class="bi bi-${type === 'success' ? 'check-circle text-success' : 'exclamation-circle text-danger'}"></i>
+                <span>${message}</span>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
         }
 
         // 加载数据
         async function loadData() {
+            showLoading();
             try {
                 const response = await fetch('/api/data');
-                if (!response.ok) throw new Error('网络错误');
-                
-                const data = await response.json();
-                allData = data;
+                allData = await response.json();
                 filteredData = [...allData];
-                
-                // 隐藏加载，显示表格
-                document.getElementById('loadingState').style.display = 'none';
-                document.getElementById('tableContent').style.display = 'block';
-                
                 updateStats();
                 renderTable();
                 renderCharts();
             } catch (error) {
-                console.error('加载数据失败:', error);
-                document.getElementById('loadingState').innerHTML = `
-                    <div class="text-danger">
-                        <i class="bi bi-exclamation-triangle" style="font-size: 2rem;"></i>
-                        <p class="mt-2">加载失败: ${error.message}</p>
-                        <button class="btn btn-primary btn-sm" onclick="loadData()">重试</button>
-                    </div>
-                `;
+                console.error('加载失败:', error);
+                showToast('数据加载失败，请刷新重试', 'error');
+            } finally {
+                hideLoading();
             }
         }
 
@@ -468,7 +582,7 @@
             document.getElementById('totalCount').textContent = allData.length;
             
             const totalAmount = allData.reduce((sum, item) => sum + (parseFloat(item['金额']) || 0), 0);
-            document.getElementById('totalAmount').textContent = '¥' + totalAmount.toFixed(0);
+            document.getElementById('totalAmount').textContent = totalAmount.toLocaleString('zh-CN', {maximumFractionDigits: 2});
             
             const unpaidCount = allData.filter(item => !item['回款情况'] || item['回款情况'] !== '√').length;
             document.getElementById('unpaidCount').textContent = unpaidCount;
@@ -479,20 +593,19 @@
 
         // 渲染表格
         function renderTable() {
-            const searchTerm = document.getElementById('searchInput').value.trim().toLowerCase();
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
             const pageSize = parseInt(document.getElementById('pageSize').value);
             
+            // 过滤数据
             if (searchTerm) {
                 filteredData = allData.filter(item => {
-                    const searchFields = ['包裹号', '商品详情', '处理人', '责任方', '异常情况'];
+                    const searchFields = ['包裹号', '商品详情', '处理人', '责任方', '异常情况', '处理方式'];
                     return searchFields.some(field => 
                         String(item[field] || '').toLowerCase().includes(searchTerm)
                     );
                 });
-                document.getElementById('searchResult').textContent = `找到 ${filteredData.length} 条匹配`;
             } else {
                 filteredData = [...allData];
-                document.getElementById('searchResult').textContent = '';
             }
             
             const start = (currentPage - 1) * pageSize;
@@ -500,85 +613,60 @@
             const pageData = filteredData.slice(start, end);
             
             const tbody = document.getElementById('tableBody');
-            tbody.innerHTML = pageData.map((item, index) => `
+            tbody.innerHTML = pageData.map((item, idx) => {
+                const index = start + idx;
+                const detail = item['商品详情'] || '';
+                return `
                 <tr>
-                    <td><small>${item['日期'] || ''}</small></td>
-                    <td><span class="badge ${item['班次'] === '白班' ? 'bg-warning text-dark' : 'bg-info'}">${item['班次'] || '-'}</span></td>
-                    <td><code style="font-size:0.8em;">${item['包裹号'] || ''}</code></td>
-                    <td><small title="${item['商品详情'] || ''}">${truncate(item['商品详情'], 15)}</small></td>
-                    <td><span class="badge bg-danger">${item['异常情况'] || '-'}</span></td>
-                    <td><strong class="text-danger">¥${item['金额'] || '0'}</strong></td>
-                    <td>${item['责任方'] || '-'}</td>
-                    <td><small>${truncate(item['处理方式'], 8)}</small></td>
-                    <td><span class="badge ${getRouteBadgeClass(item['路由'])}">${item['路由'] || '-'}</span></td>
-                    <td>${item['处理人'] || '-'}</td>
-                    <td>${item['回款情况'] === '√' ? '<span class="badge bg-success">✓</span>' : '<span class="badge bg-secondary">-</span>'}</td>
+                    <td>${item['日期'] || ''}</td>
+                    <td><span class="badge ${item['班次'] === '白班' ? 'bg-warning' : 'bg-info'}">${item['班次'] || ''}</span></td>
+                    <td><small class="text-truncate" title="${item['包裹号'] || ''}">${item['包裹号'] || ''}</small></td>
+                    <td><small class="text-truncate" title="${detail}">${detail.substring(0, 25)}${detail.length > 25 ? '...' : ''}</small></td>
+                    <td><small>${item['异常情况'] || ''}</small></td>
+                    <td><strong style="color: var(--danger-color)">${item['金额'] || '-'}</strong></td>
+                    <td>${item['责任方'] || ''}</td>
+                    <td><small>${item['处理方式'] || ''}</small></td>
+                    <td>${item['路由'] || ''}</td>
+                    <td>${item['处理人'] || ''}</td>
+                    <td>${item['回款情况'] === '√' ? '<span class="badge bg-success">√</span>' : '<span class="badge bg-secondary">-</span>'}</td>
                     <td>
-                        <button class="btn btn-sm btn-outline-primary me-1" onclick="editData(${start + index})" title="编辑">
+                        <button class="btn btn-sm btn-outline-primary" onclick="editData(${index})" title="编辑">
                             <i class="bi bi-pencil"></i>
                         </button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="deleteData(${start + index})" title="删除">
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteData(${index})" title="删除">
                             <i class="bi bi-trash"></i>
                         </button>
                     </td>
                 </tr>
-            `).join('');
+            `}).join('');
             
             document.getElementById('pageTotal').textContent = filteredData.length;
             renderPagination(filteredData.length, pageSize);
         }
 
-        function truncate(str, len) {
-            if (!str) return '-';
-            return str.length > len ? str.substring(0, len) + '...' : str;
-        }
-
-        function getRouteBadgeClass(route) {
-            switch(route) {
-                case '已妥投': return 'bg-success';
-                case '已下发': return 'bg-primary';
-                case '处理中': return 'bg-warning text-dark';
-                default: return 'bg-secondary';
-            }
-        }
-
-        function changePageSize() {
-            currentPage = 1;
-            renderTable();
-        }
-
-        // 渲染分页
+        // 分页
         function renderPagination(total, pageSize) {
-            const totalPages = Math.ceil(total / pageSize);
+            const totalPages = Math.ceil(total / pageSize) || 1;
+            const pagination = document.getElementById('pagination');
+            
             if (totalPages <= 1) {
-                document.getElementById('pagination').innerHTML = '';
+                pagination.innerHTML = '';
                 return;
             }
             
-            const pagination = document.getElementById('pagination');
             let html = '';
-            
             html += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
                 <a class="page-link" href="#" onclick="goPage(${currentPage - 1});return false;">‹</a>
             </li>`;
             
-            const start = Math.max(1, currentPage - 2);
-            const end = Math.min(totalPages, currentPage + 2);
-            
-            if (start > 1) {
-                html += `<li class="page-item"><a class="page-link" href="#" onclick="goPage(1);return false;">1</a></li>`;
-                if (start > 2) html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
-            }
-            
-            for (let i = start; i <= end; i++) {
-                html += `<li class="page-item ${i === currentPage ? 'active' : ''}">
-                    <a class="page-link" href="#" onclick="goPage(${i});return false;">${i}</a>
-                </li>`;
-            }
-            
-            if (end < totalPages) {
-                if (end < totalPages - 1) html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
-                html += `<li class="page-item"><a class="page-link" href="#" onclick="goPage(${totalPages});return false;">${totalPages}</a></li>`;
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+                    html += `<li class="page-item ${i === currentPage ? 'active' : ''}">
+                        <a class="page-link" href="#" onclick="goPage(${i});return false;">${i}</a>
+                    </li>`;
+                } else if (i === currentPage - 2 || i === currentPage + 2) {
+                    html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                }
             }
             
             html += `<li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
@@ -598,91 +686,71 @@
 
         // 渲染图表
         function renderCharts() {
-            const colors = ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#6366f1', '#14b8a6'];
+            const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#6366f1', '#14b8a6'];
             
-            // 异常情况统计
+            // 异常情况
             const exceptionCounts = {};
             allData.forEach(item => {
                 const exp = item['异常情况'] || '未记录';
                 exceptionCounts[exp] = (exceptionCounts[exp] || 0) + 1;
             });
             
-            // 排序取前6
-            const sortedExceptions = Object.entries(exceptionCounts)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 6);
-            
             if (exceptionChart) exceptionChart.destroy();
             exceptionChart = new Chart(document.getElementById('exceptionChart'), {
                 type: 'doughnut',
                 data: {
-                    labels: sortedExceptions.map(e => e[0]),
-                    datasets: [{
-                        data: sortedExceptions.map(e => e[1]),
-                        backgroundColor: colors
-                    }]
+                    labels: Object.keys(exceptionCounts),
+                    datasets: [{ data: Object.values(exceptionCounts), backgroundColor: colors }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: true,
-                    plugins: {
-                        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
-                    }
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } }
                 }
             });
             
-            // 责任方统计
+            // 责任方
             const respCounts = {};
             allData.forEach(item => {
                 const resp = item['责任方'] || '未记录';
                 respCounts[resp] = (respCounts[resp] || 0) + 1;
             });
             
-            const sortedResp = Object.entries(respCounts)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 6);
-            
             if (responsibilityChart) responsibilityChart.destroy();
             responsibilityChart = new Chart(document.getElementById('responsibilityChart'), {
                 type: 'bar',
                 data: {
-                    labels: sortedResp.map(r => r[0]),
-                    datasets: [{
-                        label: '数量',
-                        data: sortedResp.map(r => r[1]),
-                        backgroundColor: '#2563eb'
-                    }]
+                    labels: Object.keys(respCounts),
+                    datasets: [{ label: '数量', data: Object.values(respCounts), backgroundColor: '#3b82f6' }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: true,
                     plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true, ticks: { font: { size: 10 } } } }
+                    scales: { y: { beginAtZero: true, ticks: { font: { size: 10 } } }, x: { ticks: { font: { size: 10 } } } }
                 }
             });
         }
 
-        // 保存新数据
+        // 打开添加模态框
+        function openAddModal() {
+            document.getElementById('addForm').reset();
+            const today = new Date().toISOString().split('T')[0];
+            document.querySelector('#addForm input[name="日期"]').value = today;
+            new bootstrap.Modal(document.getElementById('addModal')).show();
+        }
+
+        // 保存数据
         async function saveData() {
             const form = document.getElementById('addForm');
-            const formData = new FormData(form);
-            const newData = {};
-            
-            formData.forEach((value, key) => {
-                newData[key] = value;
-            });
-            
-            // 验证必填
-            if (!newData['包裹号']) {
-                showToast('错误', '请填写包裹号', 'error');
+            if (!form.checkValidity()) {
+                form.reportValidity();
                 return;
             }
             
-            // 显示加载
-            const saveBtn = document.getElementById('saveBtn');
-            const saveSpinner = document.getElementById('saveSpinner');
-            saveBtn.disabled = true;
-            saveSpinner.classList.remove('d-none');
+            const formData = new FormData(form);
+            const newData = {};
+            formData.forEach((value, key) => newData[key] = value);
             
             try {
                 const response = await fetch('/api/data', {
@@ -692,81 +760,60 @@
                 });
                 
                 if (response.ok) {
-                    showToast('成功', '数据已保存');
                     bootstrap.Modal.getInstance(document.getElementById('addModal')).hide();
-                    form.reset();
-                    // 重置日期为今天
-                    document.querySelector('#addForm input[name="日期"]').value = new Date().toISOString().split('T')[0];
+                    showToast('数据添加成功！');
                     loadData();
                 } else {
-                    showToast('错误', '保存失败，请重试', 'error');
+                    showToast('保存失败，请重试', 'error');
                 }
             } catch (error) {
-                showToast('错误', '网络错误: ' + error.message, 'error');
-            } finally {
-                saveBtn.disabled = false;
-                saveSpinner.classList.add('d-none');
+                showToast('保存失败: ' + error.message, 'error');
             }
         }
 
         // 编辑数据
         function editData(index) {
-            const item = filteredData[index];
-            editingIndex = allData.indexOf(item);
+            const item = allData[index];
+            editingIndex = index;
             
-            const form = document.getElementById('editForm');
             const fields = ['日期', '班次', '包裹号', '商品详情', '异常情况', '金额', '责任方', '处理方式', '路由', '处理人', '回款情况'];
+            const form = document.getElementById('editForm');
             
-            form.innerHTML = `
-                <div class="row">
-                    ${fields.map(field => `
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">${field}</label>
-                            ${field === '班次' ? `
-                                <select class="form-select" name="${field}">
-                                    <option value="白班" ${item[field] === '白班' ? 'selected' : ''}>白班</option>
-                                    <option value="夜班" ${item[field] === '夜班' ? 'selected' : ''}>夜班</option>
-                                </select>
-                            ` : field === '路由' ? `
-                                <select class="form-select" name="${field}">
-                                    <option value="已妥投" ${item[field] === '已妥投' ? 'selected' : ''}>已妥投</option>
-                                    <option value="已下发" ${item[field] === '已下发' ? 'selected' : ''}>已下发</option>
-                                    <option value="处理中" ${item[field] === '处理中' ? 'selected' : ''}>处理中</option>
-                                </select>
-                            ` : field === '责任方' ? `
-                                <select class="form-select" name="${field}">
-                                    <option value="NC" ${item[field] === 'NC' ? 'selected' : ''}>NC</option>
-                                    <option value="验货" ${item[field] === '验货' ? 'selected' : ''}>验货</option>
-                                    <option value="卸车/NC共责" ${item[field] === '卸车/NC共责' ? 'selected' : ''}>卸车/NC共责</option>
-                                    <option value="其他" ${item[field] === '其他' ? 'selected' : ''}>其他</option>
-                                </select>
-                            ` : field === '回款情况' ? `
-                                <select class="form-select" name="${field}">
-                                    <option value="" ${!item[field] ? 'selected' : ''}>未回款</option>
-                                    <option value="√" ${item[field] === '√' ? 'selected' : ''}>√ 已回款</option>
-                                </select>
-                            ` : field === '异常情况' ? `
-                                <select class="form-select" name="${field}">
-                                    <option value="">请选择</option>
-                                    <option value="破损" ${item[field] === '破损' ? 'selected' : ''}>破损</option>
-                                    <option value="破损1" ${item[field] === '破损1' ? 'selected' : ''}>破损1</option>
-                                    <option value="破损2" ${item[field] === '破损2' ? 'selected' : ''}>破损2</option>
-                                    <option value="丢失" ${item[field] === '丢失' ? 'selected' : ''}>丢失</option>
-                                    <option value="少件" ${item[field] === '少件' ? 'selected' : ''}>少件</option>
-                                    <option value="错发" ${item[field] === '错发' ? 'selected' : ''}>错发</option>
-                                    <option value="其他" ${item[field] === '其他' ? 'selected' : ''}>其他</option>
-                                </select>
-                            ` : `
-                                <input type="${field === '日期' ? 'date' : field === '金额' ? 'number' : 'text'}" 
-                                    class="form-control" name="${field}" 
-                                    value="${item[field] || ''}"
-                                    ${field === '包裹号' ? 'required' : ''}
-                                    ${field === '金额' ? 'step="0.01"' : ''}>
-                            `}
-                        </div>
-                    `).join('')}
+            form.innerHTML = `<div class="row">${fields.map(field => `
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">${field}</label>
+                    ${field === '班次' ? `
+                        <select class="form-select" name="${field}">
+                            <option value="白班" ${item[field] === '白班' ? 'selected' : ''}>白班</option>
+                            <option value="夜班" ${item[field] === '夜班' ? 'selected' : ''}>夜班</option>
+                        </select>
+                    ` : field === '路由' ? `
+                        <select class="form-select" name="${field}">
+                            <option value="已妥投" ${item[field] === '已妥投' ? 'selected' : ''}>已妥投</option>
+                            <option value="已下发" ${item[field] === '已下发' ? 'selected' : ''}>已下发</option>
+                            <option value="处理中" ${item[field] === '处理中' ? 'selected' : ''}>处理中</option>
+                        </select>
+                    ` : field === '责任方' ? `
+                        <select class="form-select" name="${field}">
+                            <option value="NC" ${item[field] === 'NC' ? 'selected' : ''}>NC</option>
+                            <option value="验货" ${item[field] === '验货' ? 'selected' : ''}>验货</option>
+                            <option value="卸车/NC共责" ${item[field] === '卸车/NC共责' ? 'selected' : ''}>卸车/NC共责</option>
+                            <option value="其他" ${item[field] === '其他' ? 'selected' : ''}>其他</option>
+                        </select>
+                    ` : field === '回款情况' ? `
+                        <select class="form-select" name="${field}">
+                            <option value="" ${!item[field] ? 'selected' : ''}>--</option>
+                            <option value="√" ${item[field] === '√' ? 'selected' : ''}>√ 已回款</option>
+                            <option value="未回款" ${item[field] === '未回款' ? 'selected' : ''}>未回款</option>
+                        </select>
+                    ` : `
+                        <input type="${field === '日期' ? 'date' : field === '金额' ? 'number' : 'text'}" 
+                            class="form-control" name="${field}" 
+                            value="${item[field] || ''}"
+                            ${field === '金额' ? 'step="0.01"' : ''}>
+                    `}
                 </div>
-            `;
+            `).join('')}</div>`;
             
             new bootstrap.Modal(document.getElementById('editModal')).show();
         }
@@ -776,15 +823,7 @@
             const form = document.getElementById('editForm');
             const formData = new FormData(form);
             const updatedData = {};
-            
-            formData.forEach((value, key) => {
-                updatedData[key] = value;
-            });
-            
-            const updateBtn = document.getElementById('updateBtn');
-            const updateSpinner = document.getElementById('updateSpinner');
-            updateBtn.disabled = true;
-            updateSpinner.classList.remove('d-none');
+            formData.forEach((value, key) => updatedData[key] = value);
             
             try {
                 const response = await fetch(`/api/data/${editingIndex}`, {
@@ -794,46 +833,38 @@
                 });
                 
                 if (response.ok) {
-                    showToast('成功', '数据已更新');
                     bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
+                    showToast('数据更新成功！');
                     loadData();
                 } else {
-                    showToast('错误', '更新失败，请重试', 'error');
+                    showToast('更新失败，请重试', 'error');
                 }
             } catch (error) {
-                showToast('错误', '网络错误: ' + error.message, 'error');
-            } finally {
-                updateBtn.disabled = false;
-                updateSpinner.classList.add('d-none');
+                showToast('更新失败: ' + error.message, 'error');
             }
         }
 
         // 删除数据
         async function deleteData(index) {
-            if (!confirm('确定要删除这条记录吗？此操作不可恢复。')) return;
-            
-            const item = filteredData[index];
-            const deleteIndex = allData.indexOf(item);
+            if (!confirm('确定要删除这条记录吗？')) return;
             
             try {
-                const response = await fetch(`/api/data/${deleteIndex}`, {
-                    method: 'DELETE'
-                });
+                const response = await fetch(`/api/data/${index}`, { method: 'DELETE' });
                 
                 if (response.ok) {
-                    showToast('成功', '数据已删除');
+                    showToast('删除成功！');
                     loadData();
                 } else {
-                    showToast('错误', '删除失败，请重试', 'error');
+                    showToast('删除失败，请重试', 'error');
                 }
             } catch (error) {
-                showToast('错误', '网络错误: ' + error.message, 'error');
+                showToast('删除失败: ' + error.message, 'error');
             }
         }
 
         // 导出Excel
         function exportData() {
-            showToast('提示', '正在生成Excel文件...');
+            showToast('正在导出...');
             window.location.href = '/api/export';
         }
     </script>
