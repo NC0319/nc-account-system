@@ -161,8 +161,16 @@
         }
         .chart-container {
             position: relative;
-            height: 220px;
+            height: 250px;
             width: 100%;
+            min-height: 250px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .chart-container canvas {
+            max-width: 100%;
+            max-height: 100%;
         }
         
         /* 操作栏 */
@@ -948,6 +956,17 @@
 
         // 渲染图表
         function renderCharts() {
+            // 延迟执行确保 DOM 元素已准备好
+            setTimeout(function() {
+                try {
+                    renderChartsInternal();
+                } catch(e) {
+                    console.error('图表渲染失败:', e);
+                }
+            }, 100);
+        }
+        
+        function renderChartsInternal() {
             const colors = ['#4f46e5', '#dc2626', '#059669', '#d97706', '#8b5cf6', '#ec4899', '#0891b2', '#65a30d'];
             
             // 异常情况统计
@@ -962,35 +981,50 @@
                 exceptionChart.destroy();
                 exceptionChart = null;
             }
+            if (responsibilityChart) {
+                responsibilityChart.destroy();
+                responsibilityChart = null;
+            }
+            
+            // 检查 canvas 元素
+            const exceptionCanvas = document.getElementById('exceptionChart');
+            const responsibilityCanvas = document.getElementById('responsibilityChart');
+            if (!exceptionCanvas || !responsibilityCanvas) {
+                console.log('等待 canvas 元素...');
+                return;
+            }
             
             // 创建饼图
-            const exceptionCtx = document.getElementById('exceptionChart').getContext('2d');
-            exceptionChart = new Chart(exceptionCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(exceptionCounts),
-                    datasets: [{
-                        data: Object.values(exceptionCounts),
-                        backgroundColor: colors,
-                        borderWidth: 2,
-                        borderColor: '#ffffff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                boxWidth: 12,
-                                padding: 15,
-                                font: { size: 12 }
+            const exceptionCtx = exceptionCanvas.getContext('2d');
+            if (exceptionCtx) {
+                exceptionChart = new Chart(exceptionCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(exceptionCounts),
+                        datasets: [{
+                            data: Object.values(exceptionCounts),
+                            backgroundColor: colors,
+                            borderWidth: 2,
+                            borderColor: '#ffffff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: { duration: 300 },
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    boxWidth: 12,
+                                    padding: 15,
+                                    font: { size: 12 }
+                                }
                             }
                         }
                     }
-                }
-            });
+                });
+            }
             
             // 责任方统计
             const respCounts = {};
