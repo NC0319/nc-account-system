@@ -180,6 +180,23 @@ def import_excel():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/batch-paid', methods=['POST'])
+def batch_mark_paid():
+    """批量标记回款"""
+    try:
+        indices = json.loads(request.form.get('indices', '[]'))
+        data = load_data()
+        count = 0
+        for idx in indices:
+            if 0 <= idx < len(data):
+                data[idx]['回款情况'] = '√'
+                count += 1
+        save_data(data)
+        save_to_excel(data)
+        return jsonify({'success': True, 'count': count})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 # Render.com 需要
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
