@@ -8,40 +8,16 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
-        :root {
-            --liquid-blur: 60px;
-            --card-radius: 28px;
-        }
-        * {
-            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Noto Sans SC', sans-serif;
-            -webkit-font-smoothing: antialiased;
-            box-sizing: border-box;
-        }
-        body {
-            background: linear-gradient(160deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%);
-            background-size: 400% 400%;
-            animation: gradientShift 15s ease infinite;
-            min-height: 100vh;
-            padding: 20px;
-        }
-        @keyframes gradientShift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        .liquid-glass {
-            background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 100%);
-            backdrop-filter: blur(var(--liquid-blur)) saturate(180%);
-            -webkit-backdrop-filter: blur(var(--liquid-blur)) saturate(180%);
-            border: 1px solid rgba(255,255,255,0.3);
-            border-radius: var(--card-radius);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.4);
-        }
+        :root { --liquid-blur: 60px; --card-radius: 28px; }
+        * { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Noto Sans SC', sans-serif; -webkit-font-smoothing: antialiased; box-sizing: border-box; }
+        body { background: linear-gradient(160deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%); background-size: 400% 400%; animation: gradientShift 15s ease infinite; min-height: 100vh; padding: 20px; padding-bottom: 100px; }
+        @keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        .liquid-glass { background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 100%); backdrop-filter: blur(var(--liquid-blur)) saturate(180%); -webkit-backdrop-filter: blur(var(--liquid-blur)) saturate(180%); border: 1px solid rgba(255,255,255,0.3); border-radius: var(--card-radius); box-shadow: 0 8px 32px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.4); transition: all 0.3s; }
         .ios-header { padding: 12px 0 24px; text-align: center; }
         .ios-header h1 { font-size: 36px; font-weight: 800; color: white; margin: 0; text-shadow: 0 2px 20px rgba(0,0,0,0.2); }
         .ios-header .subtitle { font-size: 16px; color: rgba(255,255,255,0.85); margin-top: 8px; }
         .stat-card { padding: 24px; border-radius: 28px; transition: all 0.4s; cursor: pointer; }
-        .stat-card:hover { transform: translateY(-4px) scale(1.02); }
+        .stat-card:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 20px 40px rgba(0,0,0,0.15); }
         .stat-card .icon { width: 52px; height: 52px; border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 16px; background: rgba(255,255,255,0.25); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.3); }
         .stat-card .number { font-size: 36px; font-weight: 800; color: white; }
         .stat-card .label { font-size: 14px; color: rgba(255,255,255,0.85); margin-top: 8px; }
@@ -51,81 +27,125 @@
         .gradient-pink { background: linear-gradient(135deg, rgba(255,45,85,0.8), rgba(175,82,222,0.8)); }
         .chart-card { padding: 24px; border-radius: 28px; margin-bottom: 20px; }
         .chart-card h5 { font-size: 18px; font-weight: 700; color: white; margin-bottom: 20px; }
-        .chart-card canvas { max-height: 200px; }
+        .chart-card canvas { max-height: 180px; }
         .ios-btn { padding: 14px 24px; border-radius: 16px; font-size: 16px; font-weight: 600; border: none; transition: all 0.3s; }
-        .ios-btn:hover { transform: translateY(-2px); }
+        .ios-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
         .ios-btn-primary { background: linear-gradient(135deg, rgba(0,122,255,0.9), rgba(88,86,214,0.9)); color: white; border: 1px solid rgba(255,255,255,0.3); }
-        .data-table { width: 100%; min-width: 1000px; }
-        .data-table th { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.9); padding: 16px 12px; }
-        .data-table td { padding: 16px 12px; color: rgba(255,255,255,0.95); border-bottom: 1px solid rgba(255,255,255,0.05); }
-        
-        /* 液体玻璃弹窗效果 */
-        .modal-backdrop {
-            background: rgba(0,0,0,0.4) !important;
-            backdrop-filter: blur(20px) !important;
-            -webkit-backdrop-filter: blur(20px) !important;
-        }
-        .modal-content {
-            background: linear-gradient(135deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.7) 100%) !important;
-            backdrop-filter: blur(60px) saturate(180%) !important;
-            -webkit-backdrop-filter: blur(60px) saturate(180%) !important;
-            border: 1px solid rgba(255,255,255,0.4) !important;
-            border-radius: 28px !important;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.5) !important;
-            animation: modalSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        @keyframes modalSlideIn {
-            from {
-                opacity: 0;
-                transform: translateY(30px) scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-        .modal-header {
-            background: linear-gradient(135deg, rgba(0,122,255,0.9), rgba(88,86,214,0.9)) !important;
-            color: white !important;
-            border-radius: 28px 28px 0 0 !important;
-            padding: 24px !important;
-        }
+        .ios-btn-success { background: linear-gradient(135deg, rgba(52,199,89,0.9), rgba(48,209,88,0.9)); color: white; border: 1px solid rgba(255,255,255,0.3); }
+        .ios-btn-outline { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); }
+        .search-box { position: relative; flex: 1; min-width: 200px; }
+        .search-box input { width: 100%; padding: 14px 20px 14px 48px; border: none; border-radius: 16px; font-size: 16px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; }
+        .search-box input::placeholder { color: rgba(255,255,255,0.6); }
+        .search-box input:focus { outline: none; background: rgba(255,255,255,0.3); }
+        .search-box i { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.7); }
+        .filter-select { padding: 12px 16px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.15); color: white; font-size: 14px; font-weight: 500; }
+        .filter-select option { background: #333; color: white; }
+        .table-card { border-radius: 28px; overflow: hidden; }
+        .table-wrapper { overflow-x: auto; }
+        .data-table { width: 100%; min-width: 1000px; border-collapse: collapse; }
+        .data-table th { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.9); font-weight: 600; font-size: 13px; padding: 16px 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .data-table td { padding: 14px 12px; color: rgba(255,255,255,0.95); border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .data-table tbody tr:hover { background: rgba(255,255,255,0.08); }
+        .text-truncate { max-width: 150px; display: inline-block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .amount { font-weight: 700; color: #FF9500; }
+        .badge { display: inline-block; padding: 6px 12px; border-radius: 10px; font-size: 12px; font-weight: 600; backdrop-filter: blur(10px); }
+        .badge-day { background: rgba(255,214,10,0.3); color: #FFD60A; border: 1px solid rgba(255,214,10,0.4); }
+        .badge-night { background: rgba(0,122,255,0.3); color: #007AFF; border: 1px solid rgba(0,122,255,0.4); }
+        .badge-paid { background: rgba(52,199,89,0.3); color: #34C759; border: 1px solid rgba(52,199,89,0.4); }
+        .badge-unpaid { background: rgba(142,142,147,0.3); color: #8E8E93; border: 1px solid rgba(142,142,147,0.4); }
+        .table-footer { padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+        .page-info { color: rgba(255,255,255,0.7); font-size: 14px; }
+        .page-size-select { padding: 8px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; font-size: 14px; }
+        .pagination { display: flex; gap: 6px; }
+        .page-link { padding: 10px 16px; border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.1); transition: all 0.2s; }
+        .page-link:hover { background: rgba(255,255,255,0.2); color: white; }
+        .page-item.active .page-link { background: rgba(0,122,255,0.8); color: white; }
+        .modal-backdrop { background: rgba(0,0,0,0.4) !important; backdrop-filter: blur(20px) !important; }
+        .modal-content { background: linear-gradient(135deg, rgba(255,255,255,0.85), rgba(255,255,255,0.7)) !important; backdrop-filter: blur(60px) saturate(180%) !important; border: 1px solid rgba(255,255,255,0.4) !important; border-radius: 28px !important; box-shadow: 0 25px 50px rgba(0,0,0,0.25) !important; animation: modalSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        @keyframes modalSlideIn { from { opacity: 0; transform: translateY(30px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .modal-header { background: linear-gradient(135deg, rgba(0,122,255,0.9), rgba(88,86,214,0.9)) !important; color: white !important; border-radius: 28px 28px 0 0 !important; padding: 24px !important; }
         .modal-title { font-size: 20px; font-weight: 700; }
         .modal-body { padding: 24px !important; }
         .modal-footer { padding: 20px 24px !important; border-top: 1px solid rgba(0,0,0,0.1) !important; }
-        
         .form-label { font-size: 14px; font-weight: 600; color: #333; margin-bottom: 8px; }
-        .form-control, .form-select {
-            padding: 14px 18px;
-            border: 1px solid rgba(0,0,0,0.1);
-            border-radius: 14px;
-            font-size: 15px;
-            background: rgba(255,255,255,0.7);
-            backdrop-filter: blur(10px);
-            transition: all 0.3s;
-        }
-        .form-control:focus, .form-select:focus {
-            outline: none;
-            border-color: #007AFF;
-            box-shadow: 0 0 0 4px rgba(0,122,255,0.15);
-            transform: translateY(-1px);
-        }
+        .form-control, .form-select { padding: 14px 18px; border: 1px solid rgba(0,0,0,0.1); border-radius: 14px; font-size: 15px; background: rgba(255,255,255,0.7); transition: all 0.3s; }
+        .form-control:focus, .form-select:focus { outline: none; border-color: #007AFF; box-shadow: 0 0 0 4px rgba(0,122,255,0.15); }
+        .loading-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(20px); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; gap: 20px; }
+        .spinner { width: 56px; height: 56px; border: 4px solid rgba(255,255,255,0.2); border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text { color: white; font-size: 17px; font-weight: 600; }
+        .toast-container { position: fixed; top: 24px; right: 24px; z-index: 10000; display: flex; flex-direction: column; gap: 12px; }
+        .toast { background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,0.9)); padding: 16px 24px; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 12px; animation: slideIn 0.3s ease; backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.5); }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .toast.success { border-left: 4px solid #34C759; }
+        .toast.error { border-left: 4px solid #FF3B30; }
+        @media (max-width: 768px) { body { padding: 16px; } .ios-header h1 { font-size: 28px; } .stat-card .number { font-size: 28px; } }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="ios-header">
-            <h1><i class="bi bi-database-fill"></i> NC台账管理系统</h1>
-            <div class="subtitle">液体玻璃风格 · 数据可视化</div>
+        <div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div><div class="loading-text">加载中...</div></div>
+        <div class="ios-header"><h1><i class="bi bi-database-fill"></i> NC台账管理系统</h1><div class="subtitle">液体玻璃风格 · 数据可视化</div></div>
+        <div class="row g-3 mb-4">
+            <div class="col-md-3 col-6"><div class="stat-card liquid-glass gradient-blue"><div class="icon"><i class="bi bi-list-ol"></i></div><div class="number" id="totalCount">0</div><div class="label">总记录数</div></div></div>
+            <div class="col-md-3 col-6"><div class="stat-card liquid-glass gradient-pink"><div class="icon"><i class="bi bi-currency-yen"></i></div><div class="number" id="totalAmount">0</div><div class="label">累计金额</div></div></div>
+            <div class="col-md-3 col-6"><div class="stat-card liquid-glass gradient-orange"><div class="icon"><i class="bi bi-exclamation-circle"></i></div><div class="number" id="unpaidCount">0</div><div class="label">未回款</div></div></div>
+            <div class="col-md-3 col-6"><div class="stat-card liquid-glass gradient-green"><div class="icon"><i class="bi bi-check-circle"></i></div><div class="number" id="paidCount">0</div><div class="label">已回款</div></div></div>
         </div>
-        
-        <div class="text-center text-white mt-5">
-            <h3>液体玻璃弹窗效果已更新</h3>
-            <p>标题已改为 NC台账管理系统</p>
-            <p>弹窗增加高斯模糊背景 + 过渡动画</p>
-            <p>责任方可自定义输入，路由增加处理中</p>
-            <a href="/" class="btn ios-btn ios-btn-primary mt-3">刷新页面</a>
+        <div class="row g-3 mb-4">
+            <div class="col-md-6"><div class="chart-card liquid-glass"><h5><i class="bi bi-pie-chart"></i> 异常情况分布</h5><canvas id="exceptionChart"></canvas></div></div>
+            <div class="col-md-6"><div class="chart-card liquid-glass"><h5><i class="bi bi-bar-chart"></i> 责任方分布</h5><canvas id="responsibilityChart"></canvas></div></div>
+        </div>
+        <div class="liquid-glass p-4 mb-4">
+            <div class="d-flex flex-wrap gap-3 align-items-center">
+                <div class="search-box"><i class="bi bi-search"></i><input type="text" id="searchInput" placeholder="搜索包裹号/商品详情/处理人..."></div>
+                <select class="filter-select" id="filterMonth" onchange="applyFilters()"><option value="">全部月份</option><option value="2026-01">2026年1月</option><option value="2026-02">2026年2月</option><option value="2026-03">2026年3月</option></select>
+                <select class="filter-select" id="filterShift" onchange="applyFilters()"><option value="">全部班次</option><option value="白班">白班</option><option value="夜班">夜班</option></select>
+                <select class="filter-select" id="filterResponsibility" onchange="applyFilters()"><option value="">全部责任方</option><option value="NC">NC</option><option value="验货">验货</option><option value="卸车/NC共责">卸车/NC共责</option><option value="其他">其他</option></select>
+                <button class="ios-btn ios-btn-outline" onclick="clearFilters()"><i class="bi bi-x-lg"></i> 清除</button>
+                <button class="ios-btn ios-btn-primary" onclick="openAddModal()"><i class="bi bi-plus-lg"></i> 添加</button>
+                <button class="ios-btn ios-btn-success" onclick="exportData()"><i class="bi bi-download"></i> 导出</button>
+            </div>
+        </div>
+        <div class="table-card liquid-glass">
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead><tr><th>日期</th><th>班次</th><th>包裹号</th><th>商品详情</th><th>异常</th><th>金额</th><th>责任方</th><th>处理方式</th><th>路由</th><th>处理人</th><th>回款</th><th>操作</th></tr></thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+            <div class="table-footer">
+                <div class="page-info">共 <strong id="pageTotal">0</strong> 条记录，每页<select class="page-size-select" id="pageSize" onchange="renderTable()"><option value="20">20</option><option value="50">50</option><option value="100">100</option></select>条</div>
+                <nav><ul class="pagination" id="pagination"></ul></nav>
+            </div>
         </div>
     </div>
+    <div class="modal fade" id="addModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h5 class="modal-title"><i class="bi bi-plus-circle"></i> 添加新数据</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><form id="addForm"><div class="row g-3"><div class="col-md-6"><label class="form-label">日期 *</label><input type="date" class="form-control" name="日期" required></div><div class="col-md-6"><label class="form-label">班次</label><select class="form-select" name="班次"><option value="白班">白班</option><option value="夜班">夜班</option></select></div><div class="col-md-6"><label class="form-label">包裹号 *</label><input type="text" class="form-control" name="包裹号" required placeholder="输入包裹单号"></div><div class="col-md-6"><label class="form-label">商品详情</label><input type="text" class="form-control" name="商品详情" placeholder="商品名称/描述"></div><div class="col-md-6"><label class="form-label">异常情况</label><input type="text" class="form-control" name="异常情况" placeholder="如：破损1、丢失等"></div><div class="col-md-6"><label class="form-label">金额(元)</label><input type="number" step="0.01" class="form-control" name="金额" placeholder="0.00"></div><div class="col-md-6"><label class="form-label">责任方</label><input type="text" class="form-control" name="责任方" list="respList" placeholder="选择或输入自定义"><datalist id="respList"><option value="NC"><option value="验货"><option value="卸车/NC共责"><option value="其他"></datalist></div><div class="col-md-6"><label class="form-label">处理方式</label><input type="text" class="form-control" name="处理方式" placeholder="处理方式"></div><div class="col-md-6"><label class="form-label">路由</label><select class="form-select" name="路由"><option value="已妥投">已妥投</option><option value="已下发">已下发</option><option value="处理中">处理中</option></select></div><div class="col-md-6"><label class="form-label">处理人</label><input type="text" class="form-control" name="处理人" placeholder="处理人姓名"></div><div class="col-md-6"><label class="form-label">回款情况</label><select class="form-select" name="回款情况"><option value="">--</option><option value="√">√ 已回款</option><option value="未回款">未回款</option></select></div></div></form></div><div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">取消</button><button type="button" class="btn btn-primary" onclick="saveData()"><i class="bi bi-check-lg"></i> 保存</button></div></div></div></div>
+    <div class="modal fade" id="editModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header" style="background: linear-gradient(135deg, #34C759, #30D158) !important;"><h5 class="modal-title"><i class="bi bi-pencil"></i> 编辑数据</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><form id="editForm"></form></div><div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">取消</button><button type="button" class="btn btn-success" onclick="updateData()"><i class="bi bi-check-lg"></i> 更新</button></div></div></div></div>
+    <div class="toast-container" id="toastContainer"></div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let allData=[], filteredData=[], currentPage=1, editingIndex=null, exceptionChart=null, responsibilityChart=null;
+        document.addEventListener('DOMContentLoaded', () => { loadData(); let searchTimer; document.getElementById('searchInput').addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(() => applyFilters(), 300); }); });
+        function showLoading() { document.getElementById('loadingOverlay').style.display = 'flex'; }
+        function hideLoading() { document.getElementById('loadingOverlay').style.display = 'none'; }
+        function showToast(message, type='success') { const t = document.createElement('div'); t.className = 'toast ' + type; t.innerHTML = '<i class="bi bi-' + (type==='success'?'check-circle-fill':'exclamation-circle-fill') + '" style="color:' + (type==='success'?'#34C759':'#FF3B30') + '"></i><span>' + message + '</span>'; document.getElementById('toastContainer').appendChild(t); setTimeout(() => t.remove(), 3000); }
+        async function loadData() { showLoading(); try { const r = await fetch('/api/data'); allData = await r.json(); allData.sort((a,b) => (b['日期']||'').localeCompare(a['日期']||'')); filteredData = [...allData]; updateStats(); renderTable(); renderCharts(); } catch(e) { showToast('数据加载失败', 'error'); } finally { hideLoading(); } }
+        function updateStats() { document.getElementById('totalCount').textContent = allData.length; const amt = allData.reduce((s,i) => s+(parseFloat(i['金额'])||0), 0); document.getElementById('totalAmount').textContent = amt.toLocaleString('zh-CN', {maximumFractionDigits:2}); document.getElementById('unpaidCount').textContent = allData.filter(i => !i['回款情况']||i['回款情况']!=='√').length; document.getElementById('paidCount').textContent = allData.filter(i => i['回款情况']==='√').length; }
+        function applyFilters() { currentPage = 1; const st = document.getElementById('searchInput').value.toLowerCase().trim(); const mf = document.getElementById('filterMonth').value; const sf = document.getElementById('filterShift').value; const rf = document.getElementById('filterResponsibility').value; filteredData = allData.filter(item => { if(st && !['包裹号','商品详情','处理人','责任方','异常情况','处理方式'].some(f => String(item[f]||'').toLowerCase().includes(st))) return false; if(mf && !(item['日期']||'').startsWith(mf)) return false; if(sf && item['班次'] !== sf) return false; if(rf && item['责任方'] !== rf) return false; return true; }); renderTable(); }
+        function clearFilters() { document.getElementById('searchInput').value = ''; document.getElementById('filterMonth').value = ''; document.getElementById('filterShift').value = ''; document.getElementById('filterResponsibility').value = ''; currentPage = 1; filteredData = [...allData]; renderTable(); }
+        function renderTable() { const ps = parseInt(document.getElementById('pageSize').value); const s = (currentPage-1)*ps; const e = s+ps; const pd = filteredData.slice(s, e); const tb = document.getElementById('tableBody'); tb.innerHTML = pd.map((item, idx) => { const ri = allData.indexOf(item); const d = item['商品详情']||''; return '<tr><td>' + (item['日期']||'-') + '</td><td><span class="badge ' + (item['班次']==='白班'?'badge-day':'badge-night') + '">' + (item['班次']||'-') + '</span></td><td><span class="text-truncate" title="' + (item['包裹号']||'') + '">' + (item['包裹号']||'-') + '</span></td><td><span class="text-truncate" title="' + d + '">' + (d.substring?d.substring(0,25):d.substr(0,25)) + (d.length>25?'...':'') + '</span></td><td>' + (item['异常情况']||'-') + '</td><td class="amount">' + (item['金额']||'-') + '</td><td>' + (item['责任方']||'-') + '</td><td><span class="text-truncate">' + (item['处理方式']||'-') + '</span></td><td>' + (item['路由']||'-') + '</td><td>' + (item['处理人']||'-') + '</td><td><span class="badge ' + (item['回款情况']==='√'?'badge-paid':'badge-unpaid') + '">' + (item['回款情况']==='√'?'√':'-') + '</span></td><td><button class="btn btn-sm btn-outline-primary" onclick="editData(' + ri + ')"><i class="bi bi-pencil"></i></button> <button class="btn btn-sm btn-outline-danger" onclick="deleteData(' + ri + ')"><i class="bi bi-trash"></i></button></td></tr>'; }).join(''); document.getElementById('pageTotal').textContent = filteredData.length; renderPagination(filteredData.length, ps); }
+        function renderPagination(total, ps) { const tp = Math.ceil(total/ps)||1; const p = document.getElementById('pagination'); if(tp<=1) { p.innerHTML=''; return; } let h = ''; h += '<li class="page-item ' + (currentPage===1?'disabled':'') + '"><a class="page-link" href="#" onclick="goPage(' + (currentPage-1) + ');return false;">‹</a></li>'; for(let i=1; i<=tp; i++) { if(i===1||i===tp||(i>=currentPage-1&&i<=currentPage+1)) h += '<li class="page-item ' + (i===currentPage?'active':'') + '"><a class="page-link" href="#" onclick="goPage(' + i + ');return false;">' + i + '</a></li>'; else if(i===currentPage-2||i===currentPage+2) h += '<li class="page-item disabled"><span class="page-link">...</span></li>'; } h += '<li class="page-item ' + (currentPage===tp?'disabled':'') + '"><a class="page-link" href="#" onclick="goPage(' + (currentPage+1) + ');return false;">›</a></li>'; p.innerHTML = h; }
+        function goPage(page) { const tp = Math.ceil(filteredData.length/parseInt(document.getElementById('pageSize').value)); if(page>=1&&page<=tp) { currentPage=page; renderTable(); } }
+        function renderCharts() { const colors=['#4f46e5','#dc2626','#059669','#d97706','#8b5cf6','#ec4899','#0891b2','#65a30d']; const ec={}; allData.forEach(i => { const k=i['异常情况']||'未记录'; ec[k]=(ec[k]||0)+1; }); if(exceptionChart) { exceptionChart.destroy(); exceptionChart=null; } const ecCanvas=document.getElementById('exceptionChart'); if(ecCanvas) { exceptionChart=new Chart(ecCanvas.getContext('2d'), {type:'doughnut', data:{labels:Object.keys(ec), datasets:[{data:Object.values(ec), backgroundColor:colors, borderWidth:2, borderColor:'#fff'}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom', labels:{boxWidth:12, padding:15}}}}}); } const rc={}; allData.forEach(i => { const k=i['责任方']||'未记录'; rc[k]=(rc[k]||0)+1; }); if(responsibilityChart) { responsibilityChart.destroy(); responsibilityChart=null; } const rcCanvas=document.getElementById('responsibilityChart'); if(rcCanvas) { responsibilityChart=new Chart(rcCanvas.getContext('2d'), {type:'bar', data:{labels:Object.keys(rc), datasets:[{label:'数量', data:Object.values(rc), backgroundColor:'#4f46e5', borderRadius:6}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}, x:{grid:{display:false}}}}}); } }
+        function openAddModal() { document.getElementById('addForm').reset(); const today = new Date().toISOString().split('T')[0]; document.querySelector('#addForm input[name="日期"]').value = today; new bootstrap.Modal(document.getElementById('addModal')).show(); }
+        async function saveData() { const form=document.getElementById('addForm'); if(!form.checkValidity()) { form.reportValidity(); return; } const fd=new FormData(form), d={}; fd.forEach((v,k) => d[k]=v); try { const r=await fetch('/api/data', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(d)}); if(r.ok) { bootstrap.Modal.getInstance(document.getElementById('addModal')).hide(); showToast('数据添加成功！'); loadData(); } else showToast('保存失败', 'error'); } catch(e) { showToast('保存失败: '+e.message, 'error'); } }
+        function editData(index) { const item=allData[index]; editingIndex=index; const fs=['日期','班次','包裹号','商品详情','异常情况','金额','责任方','处理方式','路由','处理人','回款情况']; const f=document.getElementById('editForm'); let h='<div class="row g-3">'; fs.forEach(field => { const v=item[field]||''; if(field==='班次') { h+='<div class="col-md-6"><label class="form-label">'+field+'</label><select class="form-select" name="'+field+'"><option value="白班" '+(v==='白班'?'selected':'')+'>白班</option><option value="夜班" '+(v==='夜班'?'selected':'')+'>夜班</option></select></div>'; } else if(field==='路由') { h+='<div class="col-md-6"><label class="form-label">'+field+'</label><select class="form-select" name="'+field+'"><option value="已妥投" '+(v==='已妥投'?'selected':'')+'>已妥投</option><option value="已下发" '+(v==='已下发'?'selected':'')+'>已下发</option><option value="处理中" '+(v==='处理中'?'selected':'')+'>处理中</option></select></div>'; } else if(field==='回款情况') { h+='<div class="col-md-6"><label class="form-label">'+field+'</label><select class="form-select" name="'+field+'"><option value="" '+(v===''?'selected':'')+'>--</option><option value="√" '+(v==='√'?'selected':'')+'>√ 已回款</option><option value="未回款" '+(v==='未回款'?'selected':'')+'>未回款+'>未回款</option></select></div>';
+ } else if(field==='责任方') { h+='<div class="col-md-6"><label class="form-label">'+field+'</label><input type="text" class="form-control" name="'+field+'" list="editRespList" value="'+v+'" placeholder="选择或输入"><datalist id="editRespList"><option value="NC"><option value="验货"><option value="卸车/NC共责"><option value="其他"></datalist></div>';
+ } else { h+='<div class="col-md-6"><label class="form-label">'+field+'</label><input type="'+(field==='金额'?'number':'text')+'" class="form-control" name="'+field+'" value="'+v+'" '+(field==='金额'?'step="0.01"':'')+'></div>'; } }); h+='</div>'; f.innerHTML=h; new bootstrap.Modal(document.getElementById('editModal')).show(); }
+        async function updateData() { const form=document.getElementById('editForm'); const fd=new FormData(form), d={}; fd.forEach((v,k) => d[k]=v); try { const r=await fetch('/api/data/'+editingIndex, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(d)}); if(r.ok) { bootstrap.Modal.getInstance(document.getElementById('editModal')).hide(); showToast('数据更新成功！'); loadData(); } else showToast('更新失败', 'error'); } catch(e) { showToast('更新失败: '+e.message, 'error'); } }
+        async function deleteData(index) { if(!confirm('确定删除这条记录？')) return; try { const r=await fetch('/api/data/'+index, {method:'DELETE'}); if(r.ok) { showToast('删除成功！'); loadData(); } else showToast('删除失败', 'error'); } catch(e) { showToast('删除失败: '+e.message, 'error'); } }
+        function exportData() { showToast('正在导出...'); window.location.href='/api/export'; }
+    </script>
 </body>
 </html>
