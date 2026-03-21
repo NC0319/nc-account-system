@@ -33,6 +33,92 @@
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
         }
+        
+        /* 浮动光斑动画 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(255,255,255,0.3) 0%, transparent 30%),
+                radial-gradient(circle at 80% 70%, rgba(255,255,255,0.25) 0%, transparent 25%),
+                radial-gradient(circle at 50% 50%, rgba(255,255,255,0.15) 0%, transparent 40%);
+            animation: lightFloat 12s ease-in-out infinite, lightPulse 8s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        @keyframes lightFloat {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(3%, -3%) rotate(1deg); }
+            50% { transform: translate(-2%, 2%) rotate(-1deg); }
+            75% { transform: translate(2%, 1%) rotate(0.5deg); }
+        }
+        
+        @keyframes lightPulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+        
+        /* 卡片悬浮动画 */
+        .card {
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+        }
+        .card:hover { 
+            transform: translateY(-4px) scale(1.01); 
+            box-shadow: 0 12px 40px rgba(120,86,254,0.15);
+        }
+        
+        /* 按钮点击涟漪效果 */
+        .action-btn, .row-btn, .header-btn {
+            position: relative;
+            overflow: hidden;
+        }
+        .action-btn:active, .row-btn:active, .header-btn:active {
+            transform: scale(0.96);
+        }
+        
+        /* 数字滚动动画 */
+        .stat-num {
+            transition: transform 0.3s ease;
+        }
+        .stat-num:hover {
+            transform: scale(1.05);
+        }
+        
+        /* 表格行悬浮动效 */
+        .data-table tr {
+            transition: all 0.2s ease;
+        }
+        .data-table tr:hover td {
+            background: rgba(120,86,254,0.05);
+            transform: scale(1.005);
+        }
+        
+        /* 分页按钮动画 */
+        .page-btn {
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .page-btn:hover:not(:disabled) {
+            transform: scale(1.1);
+            background: rgba(0,122,255,0.15);
+        }
+        .page-btn:active {
+            transform: scale(0.9);
+        }
+        
+        /* 标签悬浮效果 */
+        .tag {
+            transition: all 0.2s ease;
+        }
+        .tag:hover {
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
         .blur-bg { filter: blur(var(--blur)); transition: filter 0.3s ease; }
         .container { max-width: 1400px; margin: 0 auto; }
         
@@ -99,24 +185,51 @@
             backdrop-filter: blur(20px);
             border-radius: var(--radius);
             border: 1px solid rgba(255,255,255,0.4);
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            animation: cardAppear 0.6s ease backwards;
         }
+        .stat-card:nth-child(1) { animation-delay: 0.1s; }
+        .stat-card:nth-child(2) { animation-delay: 0.2s; }
+        .stat-card:nth-child(3) { animation-delay: 0.3s; }
+        .stat-card:nth-child(4) { animation-delay: 0.4s; }
+        
+        @keyframes cardAppear {
+            from { opacity: 0; transform: translateY(20px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-6px) scale(1.02);
+            box-shadow: 0 15px 35px rgba(120,86,254,0.2);
+        }
+        
         .stat-icon {
             width: 36px; height: 36px;
             border-radius: 10px;
             display: flex; align-items: center; justify-content: center;
             font-size: 18px; margin-bottom: 12px;
+            transition: transform 0.3s ease;
+        }
+        .stat-card:hover .stat-icon {
+            transform: rotate(10deg) scale(1.1);
         }
         .stat-icon.blue { background: rgba(0,122,255,0.15); color: #007aff; }
         .stat-icon.purple { background: rgba(120,86,254,0.15); color: #7854f4; }
         .stat-icon.orange { background: rgba(255,149,0,0.15); color: #ff9500; }
         .stat-icon.green { background: rgba(52,199,89,0.15); color: #34c759; }
-        .stat-num { font-size: 28px; font-weight: 700; color: #1c1c1e; line-height: 1; }
+        .stat-num { font-size: 28px; font-weight: 700; color: #1c1c1e; line-height: 1; transition: all 0.3s ease; }
+        .stat-card:hover .stat-num { transform: scale(1.08); }
         .stat-label { font-size: 13px; color: #8e8e93; margin-top: 6px; }
         
         /* Chart Cards */
         .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
         @media (max-width: 768px) { .charts-row { grid-template-columns: 1fr; } }
-        .chart-card { padding: 20px; }
+        .chart-card { 
+            padding: 20px;
+            animation: cardAppear 0.6s ease backwards;
+            animation-delay: 0.3s;
+        }
+        .chart-card:nth-child(2) { animation-delay: 0.4s; }
         .chart-title { font-size: 17px; font-weight: 600; color: #1c1c1e; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
         .chart-canvas { max-height: 160px; }
         
@@ -229,27 +342,54 @@
             position: fixed; inset: 0; z-index: 1000;
             background: rgba(0,0,0,0.4);
             backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
             display: none; align-items: center; justify-content: center;
             padding: 20px;
-            animation: fadeIn 0.2s ease;
+            animation: modalFadeIn 0.25s ease;
         }
-        .modal-overlay.show { display: flex; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .modal-overlay.show { display: flex; animation: modalFadeIn 0.25s ease; }
+        
+        @keyframes modalFadeIn {
+            from { opacity: 0; backdrop-filter: blur(0px); }
+            to { opacity: 1; backdrop-filter: blur(4px); }
+        }
         
         .modal-box {
             width: 100%; max-width: 600px; max-height: 90vh;
-            background: rgba(255,255,255,0.85);
+            background: rgba(255,255,255,0.88);
             backdrop-filter: blur(40px);
             -webkit-backdrop-filter: blur(40px);
             border-radius: 24px;
             border: 1px solid rgba(255,255,255,0.5);
-            box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.25), 0 0 100px rgba(120,86,254,0.1);
             overflow: hidden;
-            animation: slideUp 0.3s ease;
+            animation: modalSlideUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(30px) scale(0.95); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
+        
+        @keyframes modalSlideUp {
+            from { opacity: 0; transform: translateY(40px) scale(0.9) rotateX(10deg); }
+            to { opacity: 1; transform: translateY(0) scale(1) rotateX(0deg); }
+        }
+        
+        /* Toast 动画 */
+        .toast {
+            animation: toastSlide 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        
+        @keyframes toastSlide {
+            from { opacity: 0; transform: translateX(100px) scale(0.8); }
+            to { opacity: 1; transform: translateX(0) scale(1); }
+        }
+        
+        /* Loading 动画 */
+        .spinner {
+            animation: spinBounce 1s ease-in-out infinite;
+        }
+        
+        @keyframes spinBounce {
+            0% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(180deg) scale(1.1); }
+            100% { transform: rotate(360deg) scale(1); }
         }
         
         .modal-header {
