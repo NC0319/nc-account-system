@@ -18,8 +18,18 @@ DATA_FILE = '/tmp/nc_account_data.json'
 EMBEDDED_DATA_FILE = os.path.join(os.path.dirname(__file__), 'embedded_data.json')
 
 def load_data():
-    """加载数据 - 优先运行时临时文件，其次嵌入文件，最后Excel"""
-    # 1. 优先从临时文件加载（运行时修改的数据）
+    """加载数据 - 优先嵌入文件，其次临时文件"""
+    # 1. 从嵌入的数据文件加载（持久化数据）
+    if os.path.exists(EMBEDDED_DATA_FILE):
+        try:
+            with open(EMBEDDED_DATA_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                if data and len(data) > 0:
+                    return data
+        except:
+            pass
+    
+    # 2. 其次从临时文件加载
     if os.path.exists(DATA_FILE):
         try:
             with open(DATA_FILE, 'r', encoding='utf-8') as f:
@@ -29,37 +39,59 @@ def load_data():
         except:
             pass
     
-    # 2. 其次从嵌入的数据文件加载（部署时自带）
-    if os.path.exists(EMBEDDED_DATA_FILE):
-        try:
-            with open(EMBEDDED_DATA_FILE, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                if data and len(data) > 0:
-                    save_data(data)  # 复制到临时文件
-                    return data
-        except:
-            pass
-    
-    # 3. 最后尝试从Excel加载
-    if os.path.exists(EXCEL_FILE):
-        try:
-            df = pd.read_excel(EXCEL_FILE)
-            df['日期'] = pd.to_datetime(df['日期']).dt.strftime('%Y-%m-%d')
-            df = df.fillna('')
-            data = df.to_dict('records')
-            save_data(data)
-            return data
-        except:
-            return []
     return []
 
 def save_data(data):
-    """保存数据"""
+    """保存数据到临时文件"""
     try:
         with open(DATA_FILE, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
     except:
         pass
+
+def sync_to_github(data):
+    """同步数据到GitHub（需要配置GITHUB_TOKEN环境变量）"""
+    import base64
+    import hashlib
+    
+    token = os.environ.get('GITHUB_TOKEN')
+    if not token:
+        return False
+    
+    try:
+        import requests
+        
+        # GitHub API 配置
+        owner = 'NC0319'
+        repo = 'nc-account-system'
+        path = 'embedded_data.json'
+        
+        # 获取当前文件的 SHA
+        api_url = f'https://api.github.com/repos/{owner}/{repo}/contents/{path}'
+        headers = {
+            'Authorization': f'token {token}',
+            'Accept': 'application/vnd.github.v3+json'
+        }
+        
+        r = requests.get(api_url, headers=headers)
+        sha = r.json().get('sha', '') if r.status_code == 200 else ''
+        
+        # 准备新内容
+        content = json.dumps(data, ensure_ascii=False, indent=2)
+        content_b64 = base64.b64encode(content.encode('utf-8')).decode('utf-8')
+        
+        # 更新文件
+        payload = {
+            'message': '自动同步数据更新',
+            'content': content_b64,
+            'sha': sha
+        }
+        
+        r = requests.put(api_url, headers=headers, json=payload)
+        return r.status_code in [200, 201]
+    except Exception as e:
+        print(f"同步GitHub失败: {e}")
+        return False
 
 def save_to_excel(data):
     """同步保存到Excel"""
@@ -90,7 +122,7 @@ def add_data():
     data = load_data()
     data.append(request.json)
     save_data(data)
-    save_to_excel(data)
+    sync_to_github(data)
     return jsonify({'success': True})
 
 @app.route('/api/data/<int:index>', methods=['PUT'])
@@ -99,7 +131,7 @@ def update_data(index):
     if 0 <= index < len(data):
         data[index] = request.json
         save_data(data)
-        save_to_excel(data)
+        sync_to_github(data)
         return jsonify({'success': True})
     return jsonify({'success': False}), 404
 
@@ -109,7 +141,7 @@ def delete_data(index):
     if 0 <= index < len(data):
         data.pop(index)
         save_data(data)
-        save_to_excel(data)
+        sync_to_github(data)
         return jsonify({'success': True})
     return jsonify({'success': False}), 404
 
@@ -169,7 +201,7 @@ def import_excel():
         
         # 保存
         save_data(final_data)
-        save_to_excel(final_data)
+        sync_to_github(final_data)
         
         return jsonify({
             'success': True,
@@ -192,7 +224,7 @@ def batch_mark_paid():
                 data[idx]['回款情况'] = '√'
                 count += 1
         save_data(data)
-        save_to_excel(data)
+        sync_to_github(data)
         return jsonify({'success': True, 'count': count})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
