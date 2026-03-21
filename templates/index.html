@@ -105,6 +105,8 @@
                 <button class="ios-btn ios-btn-outline" onclick="clearFilters()"><i class="bi bi-x-lg"></i> 清除</button>
                 <button class="ios-btn ios-btn-primary" onclick="openAddModal()"><i class="bi bi-plus-lg"></i> 添加</button>
                 <button class="ios-btn ios-btn-success" onclick="exportData()"><i class="bi bi-download"></i> 导出</button>
+                <button class="ios-btn ios-btn-outline" onclick="document.getElementById('importFile').click()"><i class="bi bi-upload"></i> 导入Excel</button>
+                <input type="file" id="importFile" accept=".xlsx,.xls" style="display:none" onchange="importExcel(this)">
             </div>
         </div>
         <div class="table-card liquid-glass">
@@ -148,6 +150,7 @@ function editData(index) { var item = allData[index]; editingIndex = index; var 
 async function updateData() { var form = document.getElementById('editForm'); if(!form.checkValidity()) { form.reportValidity(); return; } var fd = new FormData(form); var d = {}; fd.forEach(function(v,k) { d[k] = v; }); console.log('更新数据，索引:', editingIndex, '数据:', d); try { var r = await fetch('/api/data/'+editingIndex, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(d)}); console.log('响应状态:', r.status); if(r.ok) { bootstrap.Modal.getInstance(document.getElementById('editModal')).hide(); showToast('数据更新成功！'); loadData(); } else { var err = await r.text(); console.error('更新失败:', err); showToast('更新失败: ' + err, 'error'); } } catch(e) { console.error('更新异常:', e); showToast('更新失败: ' + e.message, 'error'); } }
 async function deleteData(index) { if(!confirm('确定删除这条记录？')) return; try { var r = await fetch('/api/data/'+index, {method:'DELETE'}); if(r.ok) { showToast('删除成功！'); loadData(); } else { showToast('删除失败', 'error'); } } catch(e) { showToast('删除失败: ' + e.message, 'error'); } }
 function exportData() { showToast('正在导出...'); window.location.href='/api/export'; }
+async function importExcel(input) { var file = input.files[0]; if(!file) return; if(!file.name.match(/\.(xlsx|xls)$/)) { showToast('请选择Excel文件(.xlsx或.xls)', 'error'); input.value = ''; return; } showToast('正在导入...'); var formData = new FormData(); formData.append('file', file); try { var r = await fetch('/api/import', {method: 'POST', body: formData}); var result = await r.json(); if(result.success) { showToast('导入成功！新增' + result.added + '条，替换' + result.replaced + '条，共' + result.total + '条'); loadData(); } else { showToast('导入失败: ' + (result.error || '未知错误'), 'error'); } } catch(e) { showToast('导入失败: ' + e.message, 'error'); } input.value = ''; }
     </script>
 </body>
 </html>

@@ -18,24 +18,24 @@ DATA_FILE = '/tmp/nc_account_data.json'
 EMBEDDED_DATA_FILE = os.path.join(os.path.dirname(__file__), 'embedded_data.json')
 
 def load_data():
-    """加载数据 - 优先运行时临时文件，其次嵌入文件，最后Excel"""
-    # 1. 优先从临时文件加载（运行时修改的数据）
-    if os.path.exists(DATA_FILE):
-        try:
-            with open(DATA_FILE, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                if data and len(data) > 0:
-                    return data
-        except:
-            pass
-    
-    # 2. 其次从嵌入的数据文件加载（部署时自带）
+    """加载数据 - 优先嵌入文件，其次临时文件，最后Excel"""
+    # 1. 优先从嵌入的数据文件加载（部署时自带，最可靠）
     if os.path.exists(EMBEDDED_DATA_FILE):
         try:
             with open(EMBEDDED_DATA_FILE, 'r', encoding='utf-8') as f:
                 data = json.load(f)
                 if data and len(data) > 0:
-                    save_data(data)  # 复制到临时文件
+                    save_data(data)  # 备份到临时文件
+                    return data
+        except:
+            pass
+    
+    # 2. 其次从临时文件加载（运行时数据）
+    if os.path.exists(DATA_FILE):
+        try:
+            with open(DATA_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                if data and len(data) > 0:
                     return data
         except:
             pass
@@ -121,64 +121,6 @@ def export_excel():
     df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
     df.to_excel(excel_path, index=False)
     return send_file(excel_path, as_attachment=True)
-
-@app.route('/api/import', methods=['POST'])
-def import_excel():
-    """导入Excel文件，支持重复数据替换"""
-    try:
-        if 'file' not in request.files:
-            return jsonify({'success': False, 'error': '没有上传文件'}), 400
-        
-        file = request.files['file']
-        if file.filename == '':
-            return jsonify({'success': False, 'error': '文件名为空'}), 400
-        
-        # 读取上传的Excel
-        df = pd.read_excel(file)
-        df['日期'] = pd.to_datetime(df['日期']).dt.strftime('%Y-%m-%d')
-        df = df.fillna('')
-        new_data = df.to_dict('records')
-        
-        # 获取现有数据
-        existing_data = load_data()
-        
-        # 根据包裹号+日期判断重复，重复则替换，否则追加
-        merged = {}
-        
-        # 先添加现有数据
-        for item in existing_data:
-            key = (item.get('包裹号', ''), item.get('日期', ''))
-            merged[key] = item
-        
-        # 再用新数据覆盖或添加
-        replaced_count = 0
-        added_count = 0
-        for item in new_data:
-            key = (item.get('包裹号', ''), item.get('日期', ''))
-            if key in merged:
-                replaced_count += 1
-            else:
-                added_count += 1
-            merged[key] = item
-        
-        # 转换回列表
-        final_data = list(merged.values())
-        
-        # 按日期排序
-        final_data.sort(key=lambda x: x.get('日期', ''), reverse=True)
-        
-        # 保存
-        save_data(final_data)
-        save_to_excel(final_data)
-        
-        return jsonify({
-            'success': True,
-            'total': len(final_data),
-            'added': added_count,
-            'replaced': replaced_count
-        })
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
 
 # Render.com 需要
 if __name__ == '__main__':
