@@ -169,6 +169,11 @@ def import_excel():
         df = pd.read_excel(file)
         df['日期'] = pd.to_datetime(df['日期']).dt.strftime('%Y-%m-%d')
         df = df.fillna('')
+        
+        # 清理空行（包裹号为空的不导入）
+        df = df[df['包裹号'].notna() & (df['包裹号'] != '')]
+        df = df.drop_duplicates(subset=['包裹号', '日期'], keep='last')
+        
         new_data = df.to_dict('records')
         
         # 获取现有数据
@@ -177,21 +182,23 @@ def import_excel():
         # 根据包裹号+日期判断重复，重复则替换，否则追加
         merged = {}
         
-        # 先添加现有数据
-        for item in existing_data:
-            key = (item.get('包裹号', ''), item.get('日期', ''))
-            merged[key] = item
+        # 先添加现有数据（用包裹号+日期作为key）
+        for i, item in enumerate(existing_data):
+            key = (str(item.get('包裹号', '')).strip(), str(item.get('日期', '')).strip())
+            if key[0]:  # 只添加有包裹号的数据
+                merged[key] = item
         
         # 再用新数据覆盖或添加
         replaced_count = 0
         added_count = 0
         for item in new_data:
-            key = (item.get('包裹号', ''), item.get('日期', ''))
-            if key in merged:
-                replaced_count += 1
-            else:
-                added_count += 1
-            merged[key] = item
+            key = (str(item.get('包裹号', '')).strip(), str(item.get('日期', '')).strip())
+            if key[0]:  # 只处理有包裹号的数据
+                if key in merged:
+                    replaced_count += 1
+                else:
+                    added_count += 1
+                merged[key] = item
         
         # 转换回列表
         final_data = list(merged.values())
