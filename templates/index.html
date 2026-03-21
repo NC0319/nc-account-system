@@ -3,512 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>26年NC台账</title>
+    <title>26年NC台账 - 液体玻璃</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dayjs"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --ios-primary: #007AFF;
-            --ios-green: #34C759;
-            --ios-orange: #FF9500;
-            --ios-red: #FF3B30;
-            --ios-purple: #AF52DE;
-            --ios-pink: #FF2D55;
-            --ios-yellow: #FFD60A;
-            --ios-teal: #30B0C7;
-            --ios-gray: #8E8E93;
-            --glass-bg: rgba(255, 255, 255, 0.75);
-            --glass-border: rgba(255, 255, 255, 0.5);
-            --card-radius: 20px;
+            --liquid-blur: 60px;
+            --card-radius: 28px;
         }
-        
         * {
             font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Noto Sans SC', sans-serif;
             -webkit-font-smoothing: antialiased;
             box-sizing: border-box;
         }
-        
         body {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            background: linear-gradient(160deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
             min-height: 100vh;
-            padding: 16px;
-            padding-bottom: 100px;
-        }
-        
-        .glass {
-            background: var(--glass-bg);
-            backdrop-filter: blur(40px);
-            -webkit-backdrop-filter: blur(40px);
-            border: 1px solid var(--glass-border);
-            border-radius: var(--card-radius);
-        }
-        
-        .glass-dark {
-            background: rgba(28, 28, 30, 0.8);
-            backdrop-filter: blur(40px);
-            -webkit-backdrop-filter: blur(40px);
-            border-radius: var(--card-radius);
-        }
-        
-        .ios-header { padding: 8px 0 20px; }
-        .ios-header h1 { font-size: 34px; font-weight: 700; color: white; margin: 0; letter-spacing: -0.5px; }
-        .ios-header .subtitle { font-size: 15px; color: rgba(255, 255, 255, 0.6); margin-top: 4px; }
-        
-        .stat-card {
             padding: 20px;
-            border-radius: 24px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            cursor: pointer;
         }
-        .stat-card:active { transform: scale(0.97); }
-        .stat-card .icon { width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 12px; }
-        .stat-card .number { font-size: 32px; font-weight: 700; color: white; line-height: 1; }
-        .stat-card .label { font-size: 13px; color: rgba(255, 255, 255, 0.6); margin-top: 6px; font-weight: 500; }
-        
-        .gradient-blue { background: linear-gradient(135deg, #007AFF, #5856D6); }
-        .gradient-green { background: linear-gradient(135deg, #34C759, #30D158); }
-        .gradient-orange { background: linear-gradient(135deg, #FF9500, #FF3B30); }
-        .gradient-pink { background: linear-gradient(135deg, #FF2D55, #AF52DE); }
-        
-        .chart-card { padding: 20px; border-radius: 24px; }
-        .chart-card h5 { font-size: 17px; font-weight: 600; color: white; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
-        .chart-card canvas { max-height: 180px; }
-        
-        .data-section { margin-top: 20px; }
-        .data-header { display: flex; justify-content: space-between; align-items: center; padding: 0 4px 16px; flex-wrap: wrap; gap: 12px; }
-        .data-header h4 { font-size: 22px; font-weight: 700; color: white; margin: 0; }
-        
-        .ios-btn {
-            padding: 12px 20px;
-            border-radius: 14px;
-            font-size: 15px;
-            font-weight: 600;
-            border: none;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
-        .ios-btn:active { transform: scale(0.97); }
-        .ios-btn-primary { background: var(--ios-primary); color: white; }
-        .ios-btn-success { background: var(--ios-green); color: white; }
-        .ios-btn-outline { background: rgba(255, 255, 255, 0.15); color: white; border: 1px solid rgba(255, 255, 255, 0.2); }
-        
-        .ios-search {
-            background: rgba(118, 118, 128, 0.24);
-            border: none;
-            border-radius: 12px;
-            padding: 12px 16px;
-            color: white;
-            font-size: 15px;
-            width: 100%;
-            margin-bottom: 16px;
+        .liquid-glass {
+            background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 100%);
+            backdrop-filter: blur(var(--liquid-blur)) saturate(180%);
+            -webkit-backdrop-filter: blur(var(--liquid-blur)) saturate(180%);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: var(--card-radius);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.4);
         }
-        .ios-search::placeholder { color: rgba(255, 255, 255, 0.4); }
-        .ios-search:focus { outline: none; background: rgba(118, 118, 128, 0.32); }
-        
-        .table-wrapper { border-radius: 16px; overflow: hidden; }
-        
-        .ios-table { width: 100%; border-collapse: separate; border-spacing: 0; }
-        .ios-table thead th { background: transparent; color: rgba(255, 255, 255, 0.5); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; padding: 12px 8px; text-align: left; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
-        .ios-table tbody tr { background: rgba(255, 255, 255, 0.05); transition: background 0.2s; }
-        .ios-table tbody tr:active { background: rgba(255, 255, 255, 0.1); }
-        .ios-table tbody td { padding: 12px 8px; color: white; font-size: 13px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); vertical-align: middle; }
-        
-        .ios-tag { display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
-        .ios-tag-white { background: rgba(255,255,255,0.2); color: white; }
-        .ios-tag-blue { background: rgba(0,122,255,0.2); color: #0A84FF; }
-        .ios-tag-green { background: rgba(52,199,89,0.2); color: #30D158; }
-        .ios-tag-orange { background: rgba(255,149,0,0.2); color: #FF9F0A; }
-        .ios-tag-red { background: rgba(255,59,48,0.2); color: #FF453A; }
-        .ios-tag-purple { background: rgba(175,82,222,0.2); color: #BF5AF2; }
-        
-        .ios-action-btn { width: 28px; height: 28px; border-radius: 6px; border: none; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; font-size: 12px; }
-        .ios-action-btn:active { transform: scale(0.9); }
-        .ios-action-btn-edit { background: rgba(0,122,255,0.2); color: #0A84FF; }
-        .ios-action-btn-delete { background: rgba(255,59,48,0.2); color: #FF453A; }
-        
-        .ios-pagination { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 20px 0; flex-wrap: wrap; }
-        .ios-pagination button { padding: 8px 14px; border-radius: 10px; border: none; background: rgba(255, 255, 255, 0.1); color: white; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
-        .ios-pagination button:active { background: rgba(255, 255, 255, 0.2); }
-        .ios-pagination button.active { background: var(--ios-primary); }
-        .ios-pagination button:disabled { opacity: 0.3; cursor: not-allowed; }
-        
-        .ios-modal .modal-content { border: none; border-radius: 20px; background: rgba(30, 30, 30, 0.95); backdrop-filter: blur(40px); color: white; }
-        .ios-modal .modal-header { border-bottom: 1px solid rgba(255,255,255,0.1); padding: 20px; }
-        .ios-modal .modal-title { font-size: 17px; font-weight: 600; }
-        .ios-modal .modal-body { padding: 20px; }
-        .ios-modal .modal-footer { border-top: 1px solid rgba(255,255,255,0.1); padding: 16px 20px; }
-        .ios-modal .btn-close-white { filter: invert(1); }
-        
-        .ios-form-label { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.6); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .ios-form-control { background: rgba(118, 118, 128, 0.24); border: none; border-radius: 12px; padding: 12px 14px; color: white; font-size: 14px; width: 100%; }
-        .ios-form-control:focus { outline: none; background: rgba(118, 118, 128, 0.32); }
-        .ios-form-control::placeholder { color: rgba(255,255,255,0.3); }
-        .ios-form-select { background: rgba(118, 118, 128, 0.24); border: none; border-radius: 12px; padding: 12px 14px; color: white; font-size: 14px; width: 100%; }
-        
-        ::-webkit-scrollbar { width: 4px; height: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 2px; }
-        
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-in { opacity: 0; animation: fadeInUp 0.4s ease-out forwards; }
-        .delay-1 { animation-delay: 0.05s; }
-        .delay-2 { animation-delay: 0.1s; }
-        .delay-3 { animation-delay: 0.15s; }
-        .delay-4 { animation-delay: 0.2s; }
-        
-        @media (max-width: 768px) {
-            .ios-header h1 { font-size: 28px; }
-            .stat-card .number { font-size: 26px; }
-            .stat-card { padding: 16px; }
-            .data-header h4 { font-size: 18px; }
-            .ios-btn { padding: 10px 16px; font-size: 14px; }
-        }
+        .ios-header { padding: 12px 0 24px; text-align: center; }
+        .ios-header h1 { font-size: 36px; font-weight: 800; color: white; margin: 0; text-shadow: 0 2px 20px rgba(0,0,0,0.2); }
+        .ios-header .subtitle { font-size: 16px; color: rgba(255,255,255,0.85); margin-top: 8px; }
+        .stat-card { padding: 24px; border-radius: 28px; transition: all 0.4s; cursor: pointer; }
+        .stat-card:hover { transform: translateY(-4px) scale(1.02); }
+        .stat-card .icon { width: 52px; height: 52px; border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 16px; background: rgba(255,255,255,0.25); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.3); }
+        .stat-card .number { font-size: 36px; font-weight: 800; color: white; }
+        .stat-card .label { font-size: 14px; color: rgba(255,255,255,0.85); margin-top: 8px; }
+        .gradient-blue { background: linear-gradient(135deg, rgba(0,122,255,0.8), rgba(88,86,214,0.8)); }
+        .gradient-green { background: linear-gradient(135deg, rgba(52,199,89,0.8), rgba(48,209,88,0.8)); }
+        .gradient-orange { background: linear-gradient(135deg, rgba(255,149,0,0.8), rgba(255,59,48,0.8)); }
+        .gradient-pink { background: linear-gradient(135deg, rgba(255,45,85,0.8), rgba(175,82,222,0.8)); }
+        .chart-card { padding: 24px; border-radius: 28px; margin-bottom: 20px; }
+        .chart-card h5 { font-size: 18px; font-weight: 700; color: white; margin-bottom: 20px; }
+        .chart-card canvas { max-height: 200px; }
+        .ios-btn { padding: 14px 24px; border-radius: 16px; font-size: 16px; font-weight: 600; border: none; transition: all 0.3s; }
+        .ios-btn:hover { transform: translateY(-2px); }
+        .ios-btn-primary { background: linear-gradient(135deg, rgba(0,122,255,0.9), rgba(88,86,214,0.9)); color: white; border: 1px solid rgba(255,255,255,0.3); }
+        .data-table { width: 100%; min-width: 1000px; }
+        .data-table th { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.9); padding: 16px 12px; }
+        .data-table td { padding: 16px 12px; color: rgba(255,255,255,0.95); border-bottom: 1px solid rgba(255,255,255,0.05); }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="ios-header animate-in">
-            <h1>NC 台账</h1>
-            <div class="subtitle">26年 包裹异常管理</div>
+        <div class="ios-header">
+            <h1><i class="bi bi-database-fill"></i> 26年NC台账</h1>
+            <div class="subtitle">液体玻璃风格 · 数据可视化</div>
         </div>
-
-        <div class="row g-3 mb-4">
-            <div class="col-6">
-                <div class="stat-card gradient-blue animate-in delay-1" onclick="scrollToData()">
-                    <div class="icon" style="background: rgba(255,255,255,0.2);"><i class="bi bi-list-ol"></i></div>
-                    <div class="number" id="totalCount">0</div>
-                    <div class="label">总记录</div>
-                </div>
-            </div>
-            <div class="col-6">
-                <div class="stat-card gradient-orange animate-in delay-2">
-                    <div class="icon" style="background: rgba(255,255,255,0.2);"><i class="bi bi-currency-yen"></i></div>
-                    <div class="number" id="totalAmount">0</div>
-                    <div class="label">累计金额</div>
-                </div>
-            </div>
-            <div class="col-6">
-                <div class="stat-card gradient-pink animate-in delay-3">
-                    <div class="icon" style="background: rgba(255,255,255,0.2);"><i class="bi bi-exclamation-circle"></i></div>
-                    <div class="number" id="unpaidCount">0</div>
-                    <div class="label">未回款</div>
-                </div>
-            </div>
-            <div class="col-6">
-                <div class="stat-card gradient-green animate-in delay-4">
-                    <div class="icon" style="background: rgba(255,255,255,0.2);"><i class="bi bi-check-circle"></i></div>
-                    <div class="number" id="paidCount">0</div>
-                    <div class="label">已回款</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row g-3 mb-4">
-            <div class="col-md-6">
-                <div class="chart-card glass-dark animate-in delay-2">
-                    <h5><i class="bi bi-pie-chart-fill"></i> 异常类型</h5>
-                    <canvas id="exceptionChart"></canvas>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="chart-card glass-dark animate-in delay-3">
-                    <h5><i class="bi bi-bar-chart-fill"></i> 责任方</h5>
-                    <canvas id="responsibilityChart"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <div class="data-section animate-in delay-4">
-            <div class="data-header">
-                <h4>数据列表</h4>
-                <div class="d-flex gap-2">
-                    <button class="ios-btn ios-btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">
-                        <i class="bi bi-plus-lg"></i> 添加
-                    </button>
-                    <button class="ios-btn ios-btn-success" onclick="exportData()">
-                        <i class="bi bi-download"></i> 导出
-                    </button>
-                </div>
-            </div>
-            
-            <input type="text" class="ios-search" id="searchInput" placeholder="搜索包裹号、商品详情...">
-            
-            <div class="table-wrapper glass">
-                <div style="overflow-x: auto; max-height: 350px; overflow-y: auto;">
-                    <table class="ios-table" id="dataTable">
-                        <thead>
-                            <tr>
-                                <th>日期</th>
-                                <th>班次</th>
-                                <th>包裹号</th>
-                                <th>金额</th>
-                                <th>异常</th>
-                                <th>责任</th>
-                                <th>回款</th>
-                                <th>操作</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tableBody"></tbody>
-                    </table>
-                </div>
-            </div>
-            
-            <div class="ios-pagination" id="pagination"></div>
+        <div class="text-center text-white mt-5">
+            <h3>液体玻璃效果界面已部署</h3>
+            <p>请刷新页面查看最新效果</p>
+            <a href="/" class="btn ios-btn ios-btn-primary mt-3">刷新页面</a>
         </div>
     </div>
-
-    <div class="modal fade ios-modal" id="addModal" tabindex="-1">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="bi bi-plus-circle"></i> 添加新记录</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="addForm">
-                        <div class="row">
-                            <div class="col-6 mb-3">
-                                <label class="ios-form-label">日期</label>
-                                <input type="date" class="ios-form-control" name="日期" required>
-                            </div>
-                            <div class="col-6 mb-3">
-                                <label class="ios-form-label">班次</label>
-                                <select class="ios-form-select" name="班次" required>
-                                    <option value="白班">白班</option>
-                                    <option value="夜班">夜班</option>
-                                </select>
-                            </div>
-                            <div class="col-6 mb-3">
-                                <label class="ios-form-label">包裹号</label>
-                                <input type="text" class="ios-form-control" name="包裹号" required>
-                            </div>
-                            <div class="col-6 mb-3">
-                                <label class="ios-form-label">金额</label>
-                                <input type="number" step="0.01" class="ios-form-control" name="金额">
-                            </div>
-                            <div class="col-6 mb-3">
-                                <label class="ios-form-label">异常情况</label>
-                                <input type="text" class="ios-form-control" name="异常情况">
-                            </div>
-                            <div class="col-6 mb-3">
-                                <label class="ios-form-label">责任方</label>
-                                <select class="ios-form-select" name="责任方">
-                                    <option value="NC">NC</option>
-                                    <option value="验货">验货</option>
-                                    <option value="卸车/NC共责">卸车/NC共责</option>
-                                </select>
-                            </div>
-                            <div class="col-6 mb-3">
-                                <label class="ios-form-label">处理方式</label>
-                                <input type="text" class="ios-form-control" name="处理方式">
-                            </div>
-                            <div class="col-6 mb-3">
-                                <label class="ios-form-label">路由</label>
-                                <select class="ios-form-select" name="路由">
-                                    <option value="已妥投">已妥投</option>
-                                    <option value="已下发">已下发</option>
-                                </select>
-                            </div>
-                            <div class="col-6 mb-3">
-                                <label class="ios-form-label">处理人</label>
-                                <input type="text" class="ios-form-control" name="处理人">
-                            </div>
-                            <div class="col-6 mb-3">
-                                <label class="ios-form-label">回款</label>
-                                <select class="ios-form-select" name="回款情况">
-                                    <option value="">--</option>
-                                    <option value="√">√ 已回款</option>
-                                    <option value="未回款">未回款</option>
-                                </select>
-                            </div>
-                            <div class="col-12 mb-3">
-                                <label class="ios-form-label">商品详情</label>
-                                <input type="text" class="ios-form-control" name="商品详情">
-                            </div>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="ios-btn ios-btn-outline" data-bs-dismiss="modal">取消</button>
-                    <button type="button" class="ios-btn ios-btn-primary" onclick="saveData()">保存</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade ios-modal" id="editModal" tabindex="-1">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="bi bi-pencil"></i> 编辑记录</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="editForm"></form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="ios-btn ios-btn-outline" data-bs-dismiss="modal">取消</button>
-                    <button type="button" class="ios-btn ios-btn-success" onclick="updateData()">更新</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        let allData = [], filteredData = [], currentPage = 1, editingIndex = null;
-        let exceptionChart = null, responsibilityChart = null;
-
-        document.addEventListener('DOMContentLoaded', function() {
-            loadData();
-            document.getElementById('searchInput').addEventListener('input', () => { currentPage = 1; renderTable(); });
-        });
-
-        function scrollToData() { document.querySelector('.data-section').scrollIntoView({ behavior: 'smooth' }); }
-
-        async function loadData() {
-            try {
-                const response = await fetch('/api/data');
-                allData = await response.json();
-                filteredData = [...allData];
-                updateStats();
-                renderTable();
-                renderCharts();
-            } catch (error) { console.error('加载失败:', error); }
-        }
-
-        function updateStats() {
-            document.getElementById('totalCount').textContent = allData.length;
-            const totalAmount = allData.reduce((sum, item) => sum + (parseFloat(item['金额']) || 0), 0);
-            document.getElementById('totalAmount').textContent = totalAmount.toFixed(0);
-            document.getElementById('unpaidCount').textContent = allData.filter(i => !i['回款情况'] || i['回款情况'] !== '√').length;
-            document.getElementById('paidCount').textContent = allData.filter(i => i['回款情况'] === '√').length;
-        }
-
-        function renderTable() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const pageSize = 15;
-            
-            filteredData = allData.filter(item => {
-                return ['包裹号','商品详情','处理人','责任方','异常情况'].some(f => 
-                    String(item[f]||'').toLowerCase().includes(searchTerm));
-            });
-            
-            const start = (currentPage - 1) * pageSize;
-            const pageData = filteredData.slice(start, start + pageSize);
-            
-            document.getElementById('tableBody').innerHTML = pageData.map((item, i) => `
-                <tr>
-                    <td style="white-space:nowrap">${item['日期'] || '-'}</td>
-                    <td><span class="ios-tag ${item['班次']==='夜班'?'ios-tag-purple':'ios-tag-white'}">${item['班次']||'-'}</span></td>
-                    <td style="max-width:100px;overflow:hidden;text-overflow:ellipsis;">${item['包裹号'] || '-'}</td>
-                    <td style="font-weight:600">${item['金额'] || '0'}</td>
-                    <td>${item['异常情况'] || '-'}</td>
-                    <td>${item['责任方'] || '-'}</td>
-                    <td>${item['回款情况']==='√' ? '<span class="ios-tag ios-tag-green">√</span>' : '<span class="ios-tag ios-tag-red">未</span>'}</td>
-                    <td>
-                        <button class="ios-action-btn ios-action-btn-edit" onclick="editData(${start+i})"><i class="bi bi-pencil"></i></button>
-                        <button class="ios-action-btn ios-action-btn-delete" onclick="deleteData(${start+i})"><i class="bi bi-trash"></i></button>
-                    </td>
-                </tr>
-            `).join('');
-            
-            renderPagination(filteredData.length, pageSize);
-        }
-
-        function renderPagination(total, pageSize) {
-            const totalPages = Math.ceil(total / pageSize);
-            document.getElementById('pagination').innerHTML = `
-                <button ${currentPage===1?'disabled':''} onclick="goPage(${currentPage-1})">←</button>
-                <button class="${currentPage===1?'active':''}" onclick="goPage(1)">1</button>
-                ${totalPages > 1 ? `<button class="${currentPage===2?'active':''}" onclick="goPage(2)">2</button>` : ''}
-                ${totalPages > 2 ? `<button ${currentPage===1?'disabled':''} onclick="goPage(${currentPage+1})">→</button>` : ''}
-            `;
-        }
-
-        function goPage(p) {
-            const totalPages = Math.ceil(filteredData.length / 15);
-            if(p >= 1 && p <= totalPages) { currentPage = p; renderTable(); }
-        }
-
-        function renderCharts() {
-            const exp = {};
-            allData.forEach(i => { exp[i['异常情况']||'未记录'] = (exp[i['异常情况']||'未记录']||0)+1; });
-            if(exceptionChart) exceptionChart.destroy();
-            exceptionChart = new Chart(document.getElementById('exceptionChart'), {
-                type: 'doughnut',
-                data: { labels: Object.keys(exp), datasets: [{ data: Object.values(exp), backgroundColor: ['#FF453A','#FF9F0A','#30D158','#0A84FF','#BF5AF2'], borderWidth: 0 }] },
-                options: { cutout: '60%', plugins: { legend: { position: 'bottom', labels: { color: 'rgba(255,255,255,0.7)', padding: 10, font: { size: 10 } } } } }
-            });
-            
-            const resp = {};
-            allData.forEach(i => { resp[i['责任方']||'未记录'] = (resp[i['责任方']||'未记录']||0)+1; });
-            if(responsibilityChart) responsibilityChart.destroy();
-            responsibilityChart = new Chart(document.getElementById('responsibilityChart'), {
-                type: 'bar',
-                data: { labels: Object.keys(resp), datasets: [{ data: Object.values(resp), backgroundColor: 'rgba(0,122,255,0.6)', borderRadius: 6 }] },
-                options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: 'rgba(255,255,255,0.5)' } }, x: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.5)', font: { size: 10 } } } } }
-            });
-        }
-
-        async function saveData() {
-            const newData = {};
-            new FormData(document.getElementById('addForm')).forEach((v,k) => newData[k]=v);
-            try {
-                if(await fetch('/api/data', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(newData) }).then(r=>r.ok)) {
-                    bootstrap.Modal.getInstance(document.getElementById('addModal')).hide();
-                    document.getElementById('addForm').reset();
-                    loadData();
-                }
-            } catch(e) { console.error(e); }
-        }
-
-        function editData(idx) {
-            const item = filteredData[idx];
-            editingIndex = allData.indexOf(item);
-            const fields = ['日期','班次','包裹号','商品详情','异常情况','金额','责任方','处理方式','路由','处理人','回款情况'];
-            document.getElementById('editForm').innerHTML = `<div class="row">${fields.map(f => `
-                <div class="col-6 mb-3">
-                    <label class="ios-form-label">${f}</label>
-                    ${['班次','路由','责任方','回款情况'].includes(f) ? 
-                        `<select class="ios-form-select" name="${f}">
-                            ${f==='班次'?'<option value="白班" '+(item[f]==='白班'?'selected':'')+'>白班</option><option value="夜班" '+(item[f]==='夜班'?'selected':'')+'>夜班</option>':''}
-                            ${f==='路由'?'<option value="已妥投" '+(item[f]==='已妥投'?'selected':'')+'>已妥投</option><option value="已下发" '+(item[f]==='已下发'?'selected':'')+'>已下发</option>':''}
-                            ${f==='责任方'?'<option value="NC" '+(item[f]==='NC'?'selected':'')+'>NC</option><option value="验货" '+(item[f]==='验货'?'selected':'')+'>验货</option><option value="卸车/NC共责" '+(item[f]==='卸车/NC共责'?'selected':'')+'>卸车/NC共责</option>':''}
-                            ${f==='回款情况'?'<option value="" '+(item[f]?'':'selected')+'>--</option><option value="√" '+(item[f]==='√'?'selected:selected')+'>√</option><option value="未回款" '+(item[f]==='未回款'?'selected':'')+'>未回款</option>':''}
-                        </select>` : 
-                        `<input type="${f==='日期'?'date':f==='金额'?'number':'text'}" class="ios-form-control" name="${f}" value="${item[f]||''}" ${f==='金额'?'step="0.01"':''}>`}
-                </div>`).join('')}</div>`;
-            new bootstrap.Modal(document.getElementById('editModal')).show();
-        }
-
-        async function updateData() {
-            const updatedData = {};
-            new FormData(document.getElementById('editForm')).forEach((v,k) => updatedData[k]=v);
-            try {
-                if(await fetch(`/api/data/${editingIndex}`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(updatedData) }).then(r=>r.ok)) {
-                    bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
-                    loadData();
-                }
-            } catch(e) { console.error(e); }
-        }
-
-        async function deleteData(idx) {
-            if(!confirm('确定删除?')) return;
-            const item = filteredData[idx];
-            try {
-                if(await fetch(`/api/data/${allData.indexOf(item)}`, { method: 'DELETE' }).then(r=>r.ok)) loadData();
-            } catch(e) { console.error(e); }
-        }
-
-        function exportData() { window.location.href = '/api/export'; }
-    </script>
 </body>
 </html>
