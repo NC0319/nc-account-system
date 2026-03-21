@@ -50,6 +50,12 @@ def save_data(data):
             json.dump(data, f, ensure_ascii=False, indent=2)
     except:
         pass
+    # 同时尝试保存到嵌入文件（本地环境）
+    try:
+        with open(EMBEDDED_DATA_FILE, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except:
+        pass
 
 def sync_to_github(data):
     """同步数据到GitHub（需要配置GITHUB_TOKEN环境变量）"""
