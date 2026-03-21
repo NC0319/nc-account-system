@@ -18,23 +18,25 @@ DATA_FILE = '/tmp/nc_account_data.json'
 EMBEDDED_DATA_FILE = os.path.join(os.path.dirname(__file__), 'embedded_data.json')
 
 def load_data():
-    """加载数据 - 优先嵌入文件，其次临时文件"""
-    # 1. 从嵌入的数据文件加载（持久化数据）
-    if os.path.exists(EMBEDDED_DATA_FILE):
+    """加载数据 - 优先临时文件（最新修改），其次嵌入文件"""
+    # 1. 优先从临时文件加载（运行时修改的数据，最新）
+    if os.path.exists(DATA_FILE):
         try:
-            with open(EMBEDDED_DATA_FILE, 'r', encoding='utf-8') as f:
+            with open(DATA_FILE, 'r', encoding='utf-8') as f:
                 data = json.load(f)
                 if data and len(data) > 0:
                     return data
         except:
             pass
     
-    # 2. 其次从临时文件加载
-    if os.path.exists(DATA_FILE):
+    # 2. 其次从嵌入的数据文件加载（GitHub同步的数据）
+    if os.path.exists(EMBEDDED_DATA_FILE):
         try:
-            with open(DATA_FILE, 'r', encoding='utf-8') as f:
+            with open(EMBEDDED_DATA_FILE, 'r', encoding='utf-8') as f:
                 data = json.load(f)
                 if data and len(data) > 0:
+                    # 复制到临时文件
+                    save_data(data)
                     return data
         except:
             pass

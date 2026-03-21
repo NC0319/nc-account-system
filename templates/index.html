@@ -4,100 +4,174 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NC台账管理系统</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
-        :root { --liquid-blur: 60px; --card-radius: 28px; }
-        * { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Noto Sans SC', sans-serif; -webkit-font-smoothing: antialiased; box-sizing: border-box; }
-        body { background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 25%, #d0d5db 50%, #b8c0c8 75%, #a8b0b8 100%); background-size: 400% 400%; animation: gradientShift 25s ease infinite; min-height: 100vh; padding: 20px; padding-bottom: 100px; }
-        @keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-        .liquid-glass { background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 100%); backdrop-filter: blur(var(--liquid-blur)) saturate(180%); -webkit-backdrop-filter: blur(var(--liquid-blur)) saturate(180%); border: 1px solid rgba(255,255,255,0.3); border-radius: var(--card-radius); box-shadow: 0 8px 32px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.4); transition: all 0.3s; }
-        .ios-header { padding: 12px 0 24px; text-align: center; position: relative; }
-        .settings-btn { position: absolute; top: 10px; right: 10px; width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; font-size: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s; backdrop-filter: blur(10px); }
-        .settings-btn:hover { background: rgba(255,255,255,0.3); transform: rotate(90deg); }
-        .setting-item { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid rgba(0,0,0,0.1); }
-        .setting-item:last-child { border-bottom: none; }
-        .setting-label { font-weight: 600; color: #333; }
-        .setting-desc { font-size: 12px; color: #888; margin-top: 4px; }
-        .toggle-switch { position: relative; width: 52px; height: 28px; }
-        .toggle-switch input { opacity: 0; width: 0; height: 0; }
-        .toggle-slider { position: absolute; cursor: pointer; inset: 0; background: #ccc; border-radius: 28px; transition: 0.3s; }
-        .toggle-slider:before { content: ''; position: absolute; width: 22px; height: 22px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.3s; }
-        .toggle-switch input:checked + .toggle-slider { background: #34C759; }
-        .toggle-switch input:checked + .toggle-slider:before { transform: translateX(24px); }
-        .ios-header h1 { font-size: 36px; font-weight: 800; color: white; margin: 0; text-shadow: 0 2px 20px rgba(0,0,0,0.2); }
-        .ios-header .subtitle { font-size: 16px; color: rgba(255,255,255,0.85); margin-top: 8px; }
-        .stat-card { padding: 24px; border-radius: 28px; transition: all 0.4s; cursor: pointer; }
-        .stat-card:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 20px 40px rgba(0,0,0,0.15); }
-        .stat-card .icon { width: 52px; height: 52px; border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 16px; background: rgba(255,255,255,0.25); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.3); }
-        .stat-card .number { font-size: 36px; font-weight: 800; color: white; }
-        .stat-card .label { font-size: 14px; color: rgba(255,255,255,0.85); margin-top: 8px; }
-        .gradient-blue { background: linear-gradient(135deg, rgba(0,122,255,0.8), rgba(88,86,214,0.8)); }
-        .gradient-green { background: linear-gradient(135deg, rgba(52,199,89,0.8), rgba(48,209,88,0.8)); }
-        .gradient-orange { background: linear-gradient(135deg, rgba(255,149,0,0.8), rgba(255,59,48,0.8)); }
-        .gradient-pink { background: linear-gradient(135deg, rgba(255,45,85,0.8), rgba(175,82,222,0.8)); }
-        .chart-card { padding: 24px; border-radius: 28px; margin-bottom: 20px; }
-        .chart-card h5 { font-size: 18px; font-weight: 700; color: white; margin-bottom: 20px; }
-        .chart-card canvas { max-height: 180px; }
-        .ios-btn { padding: 14px 24px; border-radius: 16px; font-size: 16px; font-weight: 600; border: none; transition: all 0.3s; }
-        .ios-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-        .ios-btn-primary { background: linear-gradient(135deg, rgba(0,122,255,0.9), rgba(88,86,214,0.9)); color: white; border: 1px solid rgba(255,255,255,0.3); }
-        .ios-btn-success { background: linear-gradient(135deg, rgba(52,199,89,0.9), rgba(48,209,88,0.9)); color: white; border: 1px solid rgba(255,255,255,0.3); }
-        .ios-btn-outline { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); }
-        .search-box { position: relative; flex: 1; min-width: 200px; }
-        .search-box input { width: 100%; padding: 14px 20px 14px 48px; border: none; border-radius: 16px; font-size: 16px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; }
-        .search-box input::placeholder { color: rgba(255,255,255,0.6); }
-        .search-box input:focus { outline: none; background: rgba(255,255,255,0.3); }
-        .search-box i { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.7); }
-        .filter-select { padding: 12px 16px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.15); color: white; font-size: 14px; font-weight: 500; }
+        :root {
+            --liquid-blur: 40px;
+            --card-radius: 24px;
+            --purple-1: #667eea;
+            --purple-2: #764ba2;
+            --purple-3: #f093fb;
+            --purple-4: #f5576c;
+        }
+        * { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Noto Sans SC', sans-serif; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, var(--purple-1) 0%, var(--purple-2) 50%, var(--purple-3) 100%);
+            background-size: 400% 400%;
+            animation: gradientMove 20s ease infinite;
+            min-height: 100vh;
+            padding: 20px;
+            padding-bottom: 100px;
+            position: relative;
+            overflow-x: hidden;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.15) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 80%, rgba(255,255,255,0.1) 0%, transparent 40%);
+            animation: lightFloat 15s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+        @keyframes gradientMove {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        @keyframes lightFloat {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(30px, -30px) rotate(2deg); }
+            66% { transform: translate(-20px, 20px) rotate(-2deg); }
+        }
+        .container { position: relative; z-index: 1; }
+        .liquid-glass {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(var(--liquid-blur));
+            -webkit-backdrop-filter: blur(var(--liquid-blur));
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: var(--card-radius);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .liquid-glass:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15); }
+        .ios-header { padding: 10px 0 20px; text-align: center; position: relative; }
+        .ios-header h1 { font-size: 32px; font-weight: 800; color: white; margin: 0; text-shadow: 0 2px 20px rgba(0, 0, 0, 0.2); }
+        .ios-header .subtitle { font-size: 14px; color: rgba(255, 255, 255, 0.85); margin-top: 6px; }
+        .settings-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
+        }
+        .settings-btn:hover { background: rgba(255, 255, 255, 0.3); transform: rotate(90deg); }
+        .stat-card { padding: 20px; border-radius: var(--card-radius); cursor: pointer; }
+        .stat-card .icon { width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 12px; background: rgba(255, 255, 255, 0.25); border: 1px solid rgba(255, 255, 255, 0.3); }
+        .stat-card .number { font-size: 28px; font-weight: 800; color: white; }
+        .stat-card .label { font-size: 13px; color: rgba(255, 255, 255, 0.85); margin-top: 6px; }
+        .gradient-blue { background: linear-gradient(135deg, rgba(102, 126, 234, 0.85), rgba(118, 75, 162, 0.85)); }
+        .gradient-green { background: linear-gradient(135deg, rgba(52, 199, 89, 0.85), rgba(48, 209, 88, 0.85)); }
+        .gradient-orange { background: linear-gradient(135deg, rgba(255, 149, 0, 0.85), rgba(255, 59, 48, 0.85)); }
+        .gradient-pink { background: linear-gradient(135deg, rgba(240, 147, 251, 0.85), rgba(245, 87, 108, 0.85)); }
+        .chart-card { padding: 20px; border-radius: var(--card-radius); margin-bottom: 16px; }
+        .chart-card h5 { font-size: 16px; font-weight: 700; color: white; margin-bottom: 16px; }
+        .chart-card canvas { max-height: 160px; }
+        .ios-btn { padding: 12px 20px; border-radius: 14px; font-size: 14px; font-weight: 600; border: none; transition: all 0.2s; white-space: nowrap; }
+        .ios-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2); }
+        .ios-btn-primary { background: rgba(0, 122, 255, 0.9); color: white; }
+        .ios-btn-success { background: rgba(52, 199, 89, 0.9); color: white; }
+        .ios-btn-outline { background: rgba(255, 255, 255, 0.15); color: white; border: 1px solid rgba(255, 255, 255, 0.3); }
+        .search-box { position: relative; flex: 1; min-width: 180px; }
+        .search-box input { width: 100%; padding: 12px 16px 12px 44px; border: none; border-radius: 14px; font-size: 14px; background: rgba(255, 255, 255, 0.2); color: white; }
+        .search-box input::placeholder { color: rgba(255, 255, 255, 0.6); }
+        .search-box input:focus { outline: none; background: rgba(255, 255, 255, 0.3); }
+        .search-box i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: rgba(255, 255, 255, 0.7); }
+        .filter-select { padding: 10px 14px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.3); background: rgba(255, 255, 255, 0.15); color: white; font-size: 13px; }
         .filter-select option { background: #333; color: white; }
-        .table-card { border-radius: 28px; overflow: hidden; }
-        .table-wrapper { overflow-x: auto; }
-        .data-table { width: 100%; min-width: 1000px; border-collapse: collapse; }
-        .data-table th { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.9); font-weight: 600; font-size: 13px; padding: 16px 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .data-table td { padding: 14px 12px; color: rgba(255,255,255,0.95); border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .data-table tbody tr:hover { background: rgba(255,255,255,0.08); }
-        .text-truncate { max-width: 150px; display: inline-block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .amount { font-weight: 700; color: #FF9500; }
-        .badge { display: inline-block; padding: 6px 12px; border-radius: 10px; font-size: 12px; font-weight: 600; backdrop-filter: blur(10px); }
-        .badge-day { background: rgba(255,214,10,0.25); color: #b8860b; border: 1px solid rgba(255,214,10,0.3); }
-        .badge-night { background: rgba(100,149,237,0.25); color: #4169e1; border: 1px solid rgba(100,149,237,0.3); }
-        .badge-paid { background: rgba(52,199,89,0.3); color: #34C759; border: 1px solid rgba(52,199,89,0.4); }
-        .badge-unpaid { background: rgba(142,142,147,0.3); color: #8E8E93; border: 1px solid rgba(142,142,147,0.4); }
-        .table-footer { padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
-        .page-info { color: rgba(255,255,255,0.7); font-size: 14px; }
-        .page-size-select { padding: 8px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; font-size: 14px; }
-        .pagination { display: flex; gap: 6px; }
-        .page-link { padding: 10px 16px; border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.1); transition: all 0.2s; }
-        .page-link:hover { background: rgba(255,255,255,0.2); color: white; }
-        .page-item.active .page-link { background: rgba(0,122,255,0.8); color: white; }
-        .modal-backdrop { background: rgba(0,0,0,0.4) !important; backdrop-filter: blur(20px) !important; }
-        .modal-content { background: linear-gradient(135deg, rgba(255,255,255,0.85), rgba(255,255,255,0.7)) !important; backdrop-filter: blur(60px) saturate(180%) !important; border: 1px solid rgba(255,255,255,0.4) !important; border-radius: 28px !important; box-shadow: 0 25px 50px rgba(0,0,0,0.25) !important; animation: modalSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-        @keyframes modalSlideIn { from { opacity: 0; transform: translateY(30px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
-        .modal-header { background: linear-gradient(135deg, rgba(0,122,255,0.9), rgba(88,86,214,0.9)) !important; color: white !important; border-radius: 28px 28px 0 0 !important; padding: 24px !important; }
-        .modal-title { font-size: 20px; font-weight: 700; }
-        .modal-body { padding: 24px !important; }
-        .modal-footer { padding: 20px 24px !important; border-top: 1px solid rgba(0,0,0,0.1) !important; }
-        .form-label { font-size: 14px; font-weight: 600; color: #333; margin-bottom: 8px; }
-        .form-control, .form-select { padding: 14px 18px; border: 1px solid rgba(0,0,0,0.1); border-radius: 14px; font-size: 15px; background: rgba(255,255,255,0.7); transition: all 0.3s; }
-        .form-control:focus, .form-select:focus { outline: none; border-color: #007AFF; box-shadow: 0 0 0 4px rgba(0,122,255,0.15); }
-        .loading-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(20px); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; gap: 20px; }
-        .spinner { width: 56px; height: 56px; border: 4px solid rgba(255,255,255,0.2); border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        .table-card { border-radius: var(--card-radius); overflow: hidden; }
+        .table-wrapper { overflow-x: auto; max-height: 60vh; overflow-y: auto; }
+        .data-table { width: 100%; min-width: 900px; border-collapse: collapse; }
+        .data-table th { position: sticky; top: 0; background: rgba(102, 126, 234, 0.9); color: white; font-weight: 600; font-size: 12px; padding: 14px 10px; text-align: left; z-index: 10; }
+        .data-table td { padding: 12px 10px; color: rgba(255, 255, 255, 0.95); border-bottom: 1px solid rgba(255, 255, 255, 0.1); font-size: 13px; }
+        .data-table tbody tr:hover { background: rgba(255, 255, 255, 0.08); }
+        .text-truncate { max-width: 120px; display: inline-block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .amount { font-weight: 700; color: #FFD60A; }
+        .badge { display: inline-block; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 600; }
+        .badge-day { background: rgba(255, 214, 10, 0.25); color: #FFD60A; }
+        .badge-night { background: rgba(100, 149, 237, 0.25); color: #87CEEB; }
+        .badge-paid { background: rgba(52, 199, 89, 0.25); color: #34C759; }
+        .badge-unpaid { background: rgba(142, 142, 147, 0.25); color: #D1D1D6; }
+        .table-footer { padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+        .page-info { color: rgba(255, 255, 255, 0.7); font-size: 13px; }
+        .page-size-select { padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(255, 255, 255, 0.1); color: white; font-size: 13px; }
+        .pagination { display: flex; gap: 4px; flex-wrap: wrap; }
+        .page-link { padding: 8px 14px; border-radius: 10px; color: rgba(255, 255, 255, 0.8); background: rgba(255, 255, 255, 0.1); transition: all 0.2s; font-size: 13px; }
+        .page-link:hover { background: rgba(255, 255, 255, 0.2); color: white; }
+        .page-item.active .page-link { background: rgba(0, 122, 255, 0.8); color: white; }
+        .modal-content { background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.8)) !important; backdrop-filter: blur(60px) !important; border-radius: 24px !important; animation: modalIn 0.3s ease; }
+        @keyframes modalIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .modal-header { background: linear-gradient(135deg, var(--purple-1), var(--purple-2)) !important; color: white !important; border-radius: 24px 24px 0 0 !important; padding: 20px !important; }
+        .modal-title { font-size: 18px; font-weight: 700; }
+        .modal-body { padding: 20px !important; }
+        .modal-footer { padding: 16px 20px !important; }
+        .form-label { font-size: 13px; font-weight: 600; color: #333; margin-bottom: 6px; }
+        .form-control, .form-select { padding: 12px 14px; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 12px; font-size: 14px; }
+        .form-control:focus, .form-select:focus { border-color: var(--purple-1); box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15); }
+        .loading-overlay { position: fixed; inset: 0; background: rgba(102, 126, 234, 0.8); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; gap: 16px; }
+        .spinner { width: 48px; height: 48px; border: 4px solid rgba(255, 255, 255, 0.3); border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .loading-text { color: white; font-size: 17px; font-weight: 600; }
-        .toast-container { position: fixed; top: 24px; right: 24px; z-index: 10000; display: flex; flex-direction: column; gap: 12px; }
-        .toast { background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,0.9)); padding: 16px 24px; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 12px; animation: slideIn 0.3s ease; backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.5); }
-        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .loading-text { color: white; font-size: 16px; font-weight: 600; }
+        .toast-container { position: fixed; top: 20px; right: 20px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; }
+        .toast { background: rgba(255, 255, 255, 0.95); padding: 14px 20px; border-radius: 14px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2); display: flex; align-items: center; gap: 10px; animation: toastIn 0.3s ease; font-size: 14px; font-weight: 500; }
+        @keyframes toastIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         .toast.success { border-left: 4px solid #34C759; }
         .toast.error { border-left: 4px solid #FF3B30; }
-        @media (max-width: 768px) { body { padding: 16px; } .ios-header h1 { font-size: 28px; } .stat-card .number { font-size: 28px; } }
+        .setting-item { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid rgba(0, 0, 0, 0.08); }
+        .setting-item:last-child { border-bottom: none; }
+        .setting-label { font-weight: 600; color: #333; font-size: 14px; }
+        .setting-desc { font-size: 11px; color: #888; margin-top: 3px; }
+        .toggle-switch { position: relative; width: 48px; height: 26px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider { position: absolute; cursor: pointer; inset: 0; background: #ccc; border-radius: 26px; transition: 0.3s; }
+        .toggle-slider:before { content: ''; position: absolute; width: 20px; height: 20px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.3s; }
+        .toggle-switch input:checked + .toggle-slider { background: #34C759; }
+        .toggle-switch input:checked + .toggle-slider:before { transform: translateX(22px); }
+        .btn-action { padding: 6px 10px; border-radius: 8px; font-size: 12px; }
+        .btn-primary { background: rgba(0, 122, 255, 0.8); color: white; border: none; }
+        .btn-danger { background: rgba(255, 59, 48, 0.8); color: white; border: none; }
+        @media (max-width: 768px) { body { padding: 12px; } .ios-header h1 { font-size: 24px; } .stat-card .number { font-size: 22px; } .stat-card { padding: 16px; } }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(255,255,255,0.1); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div><div class="loading-text">加载中...</div></div>
-        <div class="ios-header"><button class="settings-btn" onclick="openSettings()" title="设置"><i class="bi bi-gear"></i></button><h1><i class="bi bi-database-fill"></i> NC台账管理系统</h1><div class="subtitle">液体玻璃风格 · 数据可视化</div></div>
+        <div class="ios-header">
+            <button class="settings-btn" onclick="openSettings()" title="设置"><i class="bi bi-gear"></i></button>
+            <h1><i class="bi bi-database-fill"></i> NC台账管理系统</h1>
+            <div class="subtitle">紫色系渐变 · 流畅体验</div>
+        </div>
         <div class="row g-3 mb-4">
             <div class="col-md-3 col-6"><div class="stat-card liquid-glass gradient-blue"><div class="icon"><i class="bi bi-list-ol"></i></div><div class="number" id="totalCount">0</div><div class="label">总记录数</div></div></div>
             <div class="col-md-3 col-6"><div class="stat-card liquid-glass gradient-pink"><div class="icon"><i class="bi bi-currency-yen"></i></div><div class="number" id="totalAmount">0</div><div class="label">累计金额</div></div></div>
@@ -109,77 +183,94 @@
             <div class="col-md-6"><div class="chart-card liquid-glass"><h5><i class="bi bi-bar-chart"></i> 责任方分布</h5><canvas id="responsibilityChart"></canvas></div></div>
         </div>
         <div class="liquid-glass p-4 mb-4">
-            <div class="d-flex flex-wrap gap-3 align-items-center">
-                <div class="search-box"><i class="bi bi-search"></i><input type="text" id="searchInput" placeholder="搜索包裹号/商品详情/处理人..."></div>
-                <select class="filter-select" id="filterMonth" onchange="applyFilters()"><option value="">全部月份</option><option value="2026-01">2026年1月</option><option value="2026-02">2026年2月</option><option value="2026-03">2026年3月</option></select>
-                <select class="filter-select" id="filterShift" onchange="applyFilters()"><option value="">全部班次</option><option value="白班">白班</option><option value="夜班">夜班</option></select>
-                <select class="filter-select" id="filterResponsibility" onchange="applyFilters()"><option value="">全部责任方</option><option value="NC">NC</option><option value="验货">验货</option><option value="卸车/NC共责">卸车/NC共责</option><option value="其他">其他</option></select>
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+                <div class="search-box"><i class="bi bi-search"></i><input type="text" id="searchInput" placeholder="搜索..."></div>
+                <select class="filter-select" id="filterMonth"><option value="">全部月份</option><option value="2026-01">1月</option><option value="2026-02">2月</option><option value="2026-03">3月</option></select>
+                <select class="filter-select" id="filterShift"><option value="">全部班次</option><option value="白班">白班</option><option value="夜班">夜班</option></select>
+                <select class="filter-select" id="filterResponsibility"><option value="">全部责任方</option><option value="NC">NC</option><option value="验货">验货</option></select>
                 <button class="ios-btn ios-btn-outline" onclick="clearFilters()"><i class="bi bi-x-lg"></i> 清除</button>
                 <button class="ios-btn ios-btn-primary" onclick="openAddModal()"><i class="bi bi-plus-lg"></i> 添加</button>
                 <button class="ios-btn ios-btn-success" onclick="exportData()"><i class="bi bi-download"></i> 导出</button>
-                <button class="ios-btn ios-btn-outline" onclick="document.getElementById('importFile').click()"><i class="bi bi-upload"></i> 导入Excel</button>
+                <button class="ios-btn ios-btn-outline" onclick="document.getElementById('importFile').click()"><i class="bi bi-upload"></i> 导入</button>
                 <input type="file" id="importFile" accept=".xlsx,.xls" style="display:none" onchange="importExcel(this)">
-                <button class="ios-btn ios-btn-outline" onclick="openBatchModal()"><i class="bi bi-check2-all"></i> 批量回款</button>
+                <button class="ios-btn ios-btn-outline" onclick="openBatchModal()"><i class="bi bi-check2-all"></i> 批量</button>
             </div>
         </div>
         <div class="table-card liquid-glass">
             <div class="table-wrapper">
                 <table class="data-table">
-                    <thead><tr><th>日期</th><th>班次</th><th>包裹号</th><th>商品详情</th><th>异常</th><th>金额</th><th>责任方</th><th>处理方式</th><th>路由</th><th>处理人</th><th>回款</th><th>操作</th></tr></thead>
+                    <thead><tr><th>日期</th><th>班次</th><th>包裹号</th><th>商品</th><th>异常</th><th>金额</th><th>责任方</th><th>路由</th><th>回款</th><th>操作</th></tr></thead>
                     <tbody id="tableBody"></tbody>
                 </table>
             </div>
             <div class="table-footer">
-                <div class="page-info">共 <strong id="pageTotal">0</strong> 条记录，每页<select class="page-size-select" id="pageSize" onchange="renderTable()"><option value="20">20</option><option value="50">50</option><option value="100">100</option></select>条</div>
-                <nav><ul class="pagination" id="pagination"></ul></nav>
+                <div class="page-info">共 <strong id="pageTotal">0</strong> 条</div>
+                <div class="d-flex align-items-center gap-2">
+                    <select class="page-size-select" id="pageSize" onchange="changePageSize(this.value)"><option value="20">20条/页</option><option value="50">50条/页</option><option value="100">100条/页</option></select>
+                    <nav><ul class="pagination" id="pagination"></ul></nav>
+                </div>
             </div>
         </div>
     </div>
-    <div class="modal fade" id="addModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h5 class="modal-title"><i class="bi bi-plus-circle"></i> 添加新数据</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><form id="addForm"><div class="row g-3"><div class="col-md-6"><label class="form-label">日期 *</label><input type="date" class="form-control" name="日期" required></div><div class="col-md-6"><label class="form-label">班次</label><select class="form-select" name="班次"><option value="白班">白班</option><option value="夜班">夜班</option></select></div><div class="col-md-6"><label class="form-label">包裹号 *</label><input type="text" class="form-control" name="包裹号" required placeholder="输入包裹单号"></div><div class="col-md-6"><label class="form-label">商品详情</label><input type="text" class="form-control" name="商品详情" placeholder="商品名称/描述"></div><div class="col-md-6"><label class="form-label">异常情况</label><input type="text" class="form-control" name="异常情况" placeholder="如：破损1、丢失等"></div><div class="col-md-6"><label class="form-label">金额(元)</label><input type="number" step="0.01" class="form-control" name="金额" placeholder="0.00"></div><div class="col-md-6"><label class="form-label">责任方</label><input type="text" class="form-control" name="责任方" list="respList" placeholder="选择或输入"><datalist id="respList"><option value="NC"><option value="验货"><option value="卸车/NC共责"><option value="其他"></datalist></div><div class="col-md-6"><label class="form-label">处理方式</label><input type="text" class="form-control" name="处理方式" placeholder="处理方式"></div><div class="col-md-6"><label class="form-label">路由</label><select class="form-select" name="路由"><option value="已妥投">已妥投</option><option value="已下发">已下发</option><option value="处理中">处理中</option></select></div><div class="col-md-6"><label class="form-label">处理人</label><input type="text" class="form-control" name="处理人" placeholder="处理人姓名"></div><div class="col-md-6"><label class="form-label">回款情况</label><select class="form-select" name="回款情况"><option value="">--</option><option value="√">√ 已回款</option><option value="未回款">未回款</option></select></div></div></form></div><div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">取消</button><button type="button" class="btn btn-primary" onclick="saveData()"><i class="bi bi-check-lg"></i> 保存</button></div></div></div></div>
-    <div class="modal fade" id="editModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header" style="background: linear-gradient(135deg, #34C759, #30D158) !important;"><h5 class="modal-title"><i class="bi bi-pencil"></i> 编辑数据</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><form id="editForm"></form></div><div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">取消</button><button type="button" class="btn btn-success" onclick="updateData()"><i class="bi bi-check-lg"></i> 更新</button></div></div></div></div>
-    <div class="modal fade" id="batchModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header" style="background: linear-gradient(135deg, #FF9500, #FF6B00) !important;"><h5 class="modal-title"><i class="bi bi-check2-all"></i> 批量标记回款</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><p style="margin-bottom:16px;color:#666;">选择需要标记为已回款的记录：</p><div style="margin-bottom:16px;display:flex;gap:10px;"><button class="btn btn-outline-primary btn-sm" onclick="selectAllBatch()">全选</button><button class="btn btn-outline-secondary btn-sm" onclick="clearAllBatch()">清除选择</button><button class="btn btn-outline-info btn-sm" onclick="selectByFilter()">按当前筛选选择</button></div><div id="batchList" style="max-height:400px;overflow-y:auto;"></div></div><div class="modal-footer"><span id="batchCount" style="margin-right:auto;color:#666;">已选择 0 条</span><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">取消</button><button type="button" class="btn btn-warning" onclick="batchMarkPaid()"><i class="bi bi-check-lg"></i> 标记已回款</button></div></div></div></div>
+    <div class="modal fade" id="addModal"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h5 class="modal-title"><i class="bi bi-plus-circle"></i> 添加数据</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><form id="addForm"><div class="row g-3"><div class="col-md-6"><label class="form-label">日期 *</label><input type="date" class="form-control" name="日期" required></div><div class="col-md-6"><label class="form-label">班次</label><select class="form-select" name="班次"><option value="白班">白班</option><option value="夜班">夜班</option></select></div><div class="col-md-6"><label class="form-label">包裹号 *</label><input type="text" class="form-control" name="包裹号" required placeholder="输入包裹号"></div><div class="col-md-6"><label class="form-label">金额</label><input type="number" step="0.01" class="form-control" name="金额" placeholder="0.00"></div><div class="col-md-6"><label class="form-label">异常情况</label><input type="text" class="form-control" name="异常情况" placeholder="如：破损1"></div><div class="col-md-6"><label class="form-label">责任方</label><input type="text" class="form-control" name="责任方" list="respList" placeholder="选择或输入"><datalist id="respList"><option value="NC"><option value="验货"><option value="卸车/NC共责"><option value="其他"></datalist></div><div class="col-md-6"><label class="form-label">处理方式</label><input type="text" class="form-control" name="处理方式" placeholder="处理方式"></div><div class="col-md-6"><label class="form-label">路由</label><select class="form-select" name="路由"><option value="已妥投">已妥投</option><option value="已下发">已下发</option><option value="处理中">处理中</option></select></div><div class="col-md-6"><label class="form-label">处理人</label><input type="text" class="form-control" name="处理人" placeholder="处理人"></div><div class="col-md-6"><label class="form-label">回款</label><select class="form-select" name="回款情况"><option value="">--</option><option value="√">√ 已回款</option><option value="未回款">未回款</option></select></div></div></form></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button><button type="button" class="btn btn-primary" onclick="saveData()">保存</button></div></div></div></div>
+    <div class="modal fade" id="editModal"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header" style="background: linear-gradient(135deg, #34C759, #30D158) !important;"><h5 class="modal-title"><i class="bi bi-pencil"></i> 编辑数据</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><form id="editForm"></form></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button><button type="button" class="btn btn-success" onclick="updateData()">更新</button></div></div></div></div>
+    <div class="modal fade" id="batchModal"><div class="modal-dialog"><div class="modal-content"><div class="modal-header" style="background: linear-gradient(135deg, #FF9500, #FF6B00) !important;"><h5 class="modal-title"><i class="bi bi-check2-all"></i> 批量标记回款</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="d-flex gap-2 mb-3"><button class="btn btn-outline-light btn-sm" onclick="selectAllBatch()">全选</button><button class="btn btn-outline-light btn-sm" onclick="clearAllBatch()">清除</button></div><div id="batchList" style="max-height:350px;overflow-y:auto;"></div></div><div class="modal-footer"><span id="batchCount" class="me-auto text-muted">已选 0 条</span><button class="btn btn-secondary" data-bs-dismiss="modal">取消</button><button class="btn btn-warning" onclick="batchMarkPaid()">标记已回款</button></div></div></div></div>
+    <div class="modal fade" id="settingsModal"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title"><i class="bi bi-gear"></i> 设置</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="setting-item"><div><div class="setting-label">动画效果</div><div class="setting-desc">开启/关闭背景动画</div></div><label class="toggle-switch"><input type="checkbox" id="animationToggle" checked onchange="toggleAnimation(this.checked)"><span class="toggle-slider"></span></label></div><div class="setting-item"><div><div class="setting-label">重置所有设置</div><div class="setting-desc">恢复默认设置</div></div><button class="btn btn-outline-secondary btn-sm" onclick="resetSettings()">重置</button></div></div></div></div>
     <div class="toast-container" id="toastContainer"></div>
-    <div class="modal fade" id="settingsModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title"><i class="bi bi-gear"></i> 设置</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="setting-item"><div><div class="setting-label">深色模式</div><div class="setting-desc">切换深色/浅色主题</div></div><label class="toggle-switch"><input type="checkbox" id="darkModeToggle" onchange="toggleDarkMode(this.checked)"><span class="toggle-slider"></span></label></div><div class="setting-item"><div><div class="setting-label">动画效果</div><div class="setting-desc">开启/关闭过渡动画</div></div><label class="toggle-switch"><input type="checkbox" id="animationToggle" checked onchange="toggleAnimation(this.checked)"><span class="toggle-slider"></span></label></div><div class="setting-item"><div><div class="setting-label">每页显示条数</div><div class="setting-desc">数据表格每页显示的记录数</div></div><select class="form-select" style="width:120px;" id="pageSizeSetting" onchange="changePageSize(this.value)"><option value="20">20条</option><option value="50">50条</option><option value="100">100条</option></select></div><div class="setting-item"><div><div class="setting-label">重置所有设置</div><div class="setting-desc">恢复默认设置</div></div><button class="btn btn-outline-secondary btn-sm" onclick="resetSettings()">重置</button></div></div></div></div></div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-let allData=[], filteredData=[], currentPage=1, editingIndex=null, exceptionChart=null, responsibilityChart=null;
-document.addEventListener('DOMContentLoaded', function() { loadData(); var searchTimer; document.getElementById('searchInput').addEventListener('input', function() { clearTimeout(searchTimer); searchTimer = setTimeout(function() { applyFilters(); }, 300); }); });
-function showLoading() { document.getElementById('loadingOverlay').style.display = 'flex'; }
-function hideLoading() { document.getElementById('loadingOverlay').style.display = 'none'; }
-function showToast(message, type) { type = type || 'success'; var t = document.createElement('div'); t.className = 'toast ' + type; t.innerHTML = '<i class="bi bi-' + (type==='success'?'check-circle-fill':'exclamation-circle-fill') + '" style="color:' + (type==='success'?'#34C759':'#FF3B30') + '"></i><span>' + message + '</span>'; document.getElementById('toastContainer').appendChild(t); setTimeout(function() { t.remove(); }, 3000); }
-async function loadData() { showLoading(); try { var r = await fetch('/api/data'); var data = await r.json(); allData = data; allData.sort(function(a,b) { return (b['日期']||'').localeCompare(a['日期']||''); }); filteredData = allData.slice(); updateStats(); renderTable(); renderCharts(); } catch(e) { showToast('数据加载失败', 'error'); } finally { hideLoading(); } }
-function updateStats() { document.getElementById('totalCount').textContent = allData.length; var amt = 0; for(var i=0;i<allData.length;i++) { amt += parseFloat(allData[i]['金额'])||0; } document.getElementById('totalAmount').textContent = amt.toLocaleString('zh-CN', {maximumFractionDigits:2}); var unpaid = 0; for(var i=0;i<allData.length;i++) { if(!allData[i]['回款情况'] || allData[i]['回款情况']!=='√') unpaid++; } document.getElementById('unpaidCount').textContent = unpaid; document.getElementById('paidCount').textContent = allData.length - unpaid; }
-function applyFilters() { currentPage = 1; var st = document.getElementById('searchInput').value.toLowerCase().trim(); var mf = document.getElementById('filterMonth').value; var sf = document.getElementById('filterShift').value; var rf = document.getElementById('filterResponsibility').value; filteredData = allData.filter(function(item) { if(st) { var fields = ['包裹号','商品详情','处理人','责任方','异常情况','处理方式']; var found = false; for(var i=0;i<fields.length;i++) { if((item[fields[i]]||'').toLowerCase().indexOf(st) >= 0) { found = true; break; } } if(!found) return false; } if(mf && !(item['日期']||'').match('^' + mf)) return false; if(sf && item['班次'] !== sf) return false; if(rf && item['责任方'] !== rf) return false; return true; }); renderTable(); }
-function clearFilters() { document.getElementById('searchInput').value = ''; document.getElementById('filterMonth').value = ''; document.getElementById('filterShift').value = ''; document.getElementById('filterResponsibility').value = ''; currentPage = 1; filteredData = allData.slice(); renderTable(); }
-function renderTable() { var ps = parseInt(document.getElementById('pageSize').value); var start = (currentPage-1)*ps; var end = start + ps; var pageData = filteredData.slice(start, end); var tbody = document.getElementById('tableBody'); var html = ''; for(var i=0;i<pageData.length;i++) { var item = pageData[i]; var realIndex = allData.findIndex(function(x) { return x['包裹号'] === item['包裹号'] && x['日期'] === item['日期']; }); if(realIndex === -1) realIndex = start + i; var detail = item['商品详情']||''; var detailShort = detail.length > 25 ? detail.substring(0,25) + '...' : detail; html += '<tr><td>' + (item['日期']||'-') + '</td><td><span class="badge ' + (item['班次']==='白班'?'badge-day':'badge-night') + '">' + (item['班次']||'-') + '</span></td><td><span class="text-truncate" title="' + (item['包裹号']||'') + '">' + (item['包裹号']||'-') + '</span></td><td><span class="text-truncate" title="' + detail + '">' + detailShort + '</span></td><td>' + (item['异常情况']||'-') + '</td><td class="amount">' + (item['金额']||'-') + '</td><td>' + (item['责任方']||'-') + '</td><td><span class="text-truncate">' + (item['处理方式']||'-') + '</span></td><td>' + (item['路由']||'-') + '</td><td>' + (item['处理人']||'-') + '</td><td><span class="badge ' + (item['回款情况']==='√'?'badge-paid':'badge-unpaid') + '">' + (item['回款情况']==='√'?'√':'-') + '</span></td><td><button class="btn btn-sm btn-outline-primary" onclick="editData(' + realIndex + ')"><i class="bi bi-pencil"></i></button> <button class="btn btn-sm btn-outline-danger" onclick="deleteData(' + realIndex + ')"><i class="bi bi-trash"></i></button></td></tr>'; } tbody.innerHTML = html; document.getElementById('pageTotal').textContent = filteredData.length; renderPagination(filteredData.length, ps); }
-function renderPagination(total, ps) { var tp = Math.ceil(total/ps)||1; var p = document.getElementById('pagination'); if(tp <= 1) { p.innerHTML = ''; return; } var html = ''; html += '<li class="page-item ' + (currentPage===1?'disabled':'') + '"><a class="page-link" href="#" onclick="goPage(' + (currentPage-1) + ');return false;">‹</a></li>'; for(var i=1;i<=tp;i++) { if(i===1 || i===tp || (i>=currentPage-1 && i<=currentPage+1)) { html += '<li class="page-item ' + (i===currentPage?'active':'') + '"><a class="page-link" href="#" onclick="goPage(' + i + ');return false;">' + i + '</a></li>'; } else if(i===currentPage-2 || i===currentPage+2) { html += '<li class="page-item disabled"><span class="page-link">...</span></li>'; } } html += '<li class="page-item ' + (currentPage===tp?'disabled':'') + '"><a class="page-link" href="#" onclick="goPage(' + (currentPage+1) + ');return false;">›</a></li>'; p.innerHTML = html; }
-function goPage(page) { var ps = parseInt(document.getElementById('pageSize').value); var tp = Math.ceil(filteredData.length/ps)||1; if(page>=1 && page<=tp) { currentPage = page; renderTable(); } }
-function renderCharts() { var colors=['#4f46e5','#dc2626','#059669','#d97706','#8b5cf6','#ec4899','#0891b2','#65a30d']; var ec={}; for(var i=0;i<allData.length;i++) { var k=allData[i]['异常情况']||'未记录'; ec[k]=(ec[k]||0)+1; } if(exceptionChart) { exceptionChart.destroy(); exceptionChart=null; } var ecCanvas=document.getElementById('exceptionChart'); if(ecCanvas && ecCanvas.getContext) { exceptionChart = new Chart(ecCanvas.getContext('2d'), {type:'doughnut', data:{labels:Object.keys(ec), datasets:[{data:Object.values(ec), backgroundColor:colors, borderWidth:2, borderColor:'#fff'}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom', labels:{boxWidth:12, padding:15}}}}}); } var rc={}; for(var i=0;i<allData.length;i++) { var k=allData[i]['责任方']||'未记录'; rc[k]=(rc[k]||0)+1; } if(responsibilityChart) { responsibilityChart.destroy(); responsibilityChart=null; } var rcCanvas=document.getElementById('responsibilityChart'); if(rcCanvas && rcCanvas.getContext) { responsibilityChart = new Chart(rcCanvas.getContext('2d'), {type:'bar', data:{labels:Object.keys(rc), datasets:[{label:'数量', data:Object.values(rc), backgroundColor:'#4f46e5', borderRadius:6}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}, x:{grid:{display:false}}}}}); } }
-function openAddModal() { document.getElementById('addForm').reset(); var today = new Date().toISOString().split('T')[0]; document.querySelector('#addForm input[name="日期"]').value = today; new bootstrap.Modal(document.getElementById('addModal')).show(); }
-async function saveData() { var form = document.getElementById('addForm'); if(!form.checkValidity()) { form.reportValidity(); return; } var fd = new FormData(form); var d = {}; fd.forEach(function(v,k) { d[k] = v; }); try { var r = await fetch('/api/data', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(d)}); if(r.ok) { bootstrap.Modal.getInstance(document.getElementById('addModal')).hide(); showToast('数据添加成功！'); loadData(); } else { showToast('保存失败', 'error'); } } catch(e) { showToast('保存失败: ' + e.message, 'error'); } }
-function editData(index) { var item = allData[index]; editingIndex = index; var fields = ['日期','班次','包裹号','商品详情','异常情况','金额','责任方','处理方式','路由','处理人','回款情况']; var f = document.getElementById('editForm'); var html = '<div class="row g-3">'; for(var i=0;i<fields.length;i++) { var field = fields[i]; var v = item[field]||''; if(field === '班次') { html += '<div class="col-md-6"><label class="form-label">'+field+'</label><select class="form-select" name="'+field+'"><option value="白班" '+(v==='白班'?'selected':'')+'>白班</option><option value="夜班" '+(v==='夜班'?'selected':'')+'>夜班</option></select></div>'; } else if(field === '路由') { html += '<div class="col-md-6"><label class="form-label">'+field+'</label><select class="form-select" name="'+field+'"><option value="已妥投" '+(v==='已妥投'?'selected':'')+'>已妥投</option><option value="已下发" '+(v==='已下发'?'selected':'')+'>已下发</option><option value="处理中" '+(v==='处理中'?'selected':'')+'>处理中</option></select></div>';
- } else if(field === '回款情况') { html += '<div class="col-md-6"><label class="form-label">'+field+'</label><select class="form-select" name="'+field+'"><option value="" '+(v===''?'selected':'')+'>--</option><option value="√" '+(v==='√'?'selected':'')+'>√ 已回款</option><option value="未回款" '+(v==='未回款'?'selected':'')+'>未回款</option></select></div>';
- } else if(field === '责任方') { html += '<div class="col-md-6"><label class="form-label">'+field+'</label><input type="text" class="form-control" name="'+field+'" list="editRespList" value="'+v+'" placeholder="选择或输入"><datalist id="editRespList"><option value="NC"><option value="验货"><option value="卸车/NC共责"><option value="其他"></datalist></div>';
- } else { html += '<div class="col-md-6"><label class="form-label">'+field+'</label><input type="'+(field==='金额'?'number':'text')+'" class="form-control" name="'+field+'" value="'+v+'" '+(field==='金额'?'step="0.01"':'')+'></div>';
- } } html += '</div>'; f.innerHTML = html; new bootstrap.Modal(document.getElementById('editModal')).show(); }
-async function updateData() { var form = document.getElementById('editForm'); if(!form.checkValidity()) { form.reportValidity(); return; } var fd = new FormData(form); var d = {}; fd.forEach(function(v,k) { d[k] = v; }); console.log('更新数据，索引:', editingIndex, '数据:', d); try { var r = await fetch('/api/data/'+editingIndex, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(d)}); console.log('响应状态:', r.status); if(r.ok) { bootstrap.Modal.getInstance(document.getElementById('editModal')).hide(); showToast('数据更新成功！'); loadData(); } else { var err = await r.text(); console.error('更新失败:', err); showToast('更新失败: ' + err, 'error'); } } catch(e) { console.error('更新异常:', e); showToast('更新失败: ' + e.message, 'error'); } }
-async function deleteData(index) { if(!confirm('确定删除这条记录？')) return; try { var r = await fetch('/api/data/'+index, {method:'DELETE'}); if(r.ok) { showToast('删除成功！'); loadData(); } else { showToast('删除失败', 'error'); } } catch(e) { showToast('删除失败: ' + e.message, 'error'); } }
-function exportData() { showToast('正在导出...'); window.location.href='/api/export'; }
-async function importExcel(input) { var file = input.files[0]; if(!file) return; if(!file.name.match(/\.(xlsx|xls)$/)) { showToast('请选择Excel文件(.xlsx或.xls)', 'error'); input.value = ''; return; } showToast('正在导入...'); var formData = new FormData(); formData.append('file', file); try { var r = await fetch('/api/import', {method: 'POST', body: formData}); var result = await r.json(); if(result.success) { showToast('导入成功！新增' + result.added + '条，替换' + result.replaced + '条，共' + result.total + '条'); loadData(); } else { showToast('导入失败: ' + (result.error || '未知错误'), 'error'); } } catch(e) { showToast('导入失败: ' + e.message, 'error'); } input.value = ''; }
-function openSettings() { var dark = localStorage.getItem('darkMode') === 'true'; var anim = localStorage.getItem('animation') !== 'false'; document.getElementById('darkModeToggle').checked = dark; document.getElementById('animationToggle').checked = anim; document.getElementById('pageSizeSetting').value = localStorage.getItem('pageSize') || '20'; new bootstrap.Modal(document.getElementById('settingsModal')).show(); }
-function toggleDarkMode(enabled) { localStorage.setItem('darkMode', enabled); document.body.setAttribute('data-theme', enabled ? 'dark' : 'light'); if(enabled) { document.body.style.background = 'linear-gradient(135deg, #1a1a2e 0%, #16213e 25%, #1a1a2e 50%, #0f3460 75%, #1a1a2e 100%)'; document.querySelectorAll('.liquid-glass, .stat-card, .chart-card, .table-card').forEach(function(el) { el.style.background = 'rgba(255,255,255,0.1)'; el.style.color = '#fff'; }); } else { document.body.style.background = 'linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 25%, #d0d5db 50%, #b8c0c8 75%, #a8b0b8 100%)'; document.querySelectorAll('.liquid-glass, .stat-card, .chart-card, .table-card').forEach(function(el) { el.style.background = ''; el.style.color = ''; }); } }
-function toggleAnimation(enabled) { localStorage.setItem('animation', enabled); if(!enabled) { document.body.style.animation = 'none'; document.querySelectorAll('*').forEach(function(el) { el.style.transition = 'none'; }); } else { document.body.style.animation = 'gradientShift 25s ease infinite'; document.querySelectorAll('*').forEach(function(el) { el.style.transition = ''; }); } }
-function changePageSize(size) { localStorage.setItem('pageSize', size); document.getElementById('pageSize').value = size; renderTable(); }
-function resetSettings() { localStorage.clear(); showToast('已重置所有设置'); location.reload(); }
-document.addEventListener('DOMContentLoaded', function() { var dark = localStorage.getItem('darkMode') === 'true'; if(dark) { toggleDarkMode(true); } });
-var selectedBatch = new Set();
-function openBatchModal() { selectedBatch = new Set(); var unpaid = allData.filter(function(item) { return item['回款情况'] !== '√'; }); var list = document.getElementById('batchList'); if(unpaid.length === 0) { list.innerHTML = '<p style="text-align:center;color:#999;padding:20px;">没有未回款的记录</p>'; } else { var html = '<div style="display:flex;flex-direction:column;gap:8px;">'; for(var i=0; i<unpaid.length; i++) { var item = unpaid[i]; var idx = allData.indexOf(item); html += '<label style="display:flex;align-items:center;padding:12px;background:rgba(0,0,0,0.05);border-radius:12px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background=\'rgba(0,122,255,0.1)\'" onmouseout="this.style.background=\'rgba(0,0,0,0.05)\'"><input type="checkbox" style="margin-right:12px;width:18px;height:18px;" onchange="toggleBatch('+idx+', this.checked)"><div style="flex:1"><div style="font-weight:600;">'+(item['包裹号']||'-')+'</div><div style="font-size:12px;color:#888;">'+(item['日期']||'-')+' · '+(item['商品详情']||'').substring(0,30)+'... · 金额:'+(item['金额']||'-')+'</div></div></label>'; } html += '</div>'; list.innerHTML = html; } updateBatchCount(); new bootstrap.Modal(document.getElementById('batchModal')).show(); }
-function toggleBatch(idx, checked) { if(checked) { selectedBatch.add(idx); } else { selectedBatch.delete(idx); } updateBatchCount(); }
-function selectAllBatch() { var checkboxes = document.querySelectorAll('#batchList input[type="checkbox"]'); for(var i=0; i<checkboxes.length; i++) { checkboxes[i].checked = true; } for(var i=0; i<allData.length; i++) { if(allData[i]['回款情况'] !== '√') { selectedBatch.add(i); } } updateBatchCount(); }
-function clearAllBatch() { var checkboxes = document.querySelectorAll('#batchList input[type="checkbox"]'); for(var i=0; i<checkboxes.length; i++) { checkboxes[i].checked = false; } selectedBatch.clear(); updateBatchCount(); }
-function selectByFilter() { clearAllBatch(); var checkboxes = document.querySelectorAll('#batchList input[type="checkbox"]'); var filtered = filteredData.filter(function(item) { return item['回款情况'] !== '√'; }); for(var i=0; i<filtered.length; i++) { var idx = allData.indexOf(filtered[i]); if(idx >= 0) { selectedBatch.add(idx); } } for(var i=0; i<checkboxes.length; i++) { var label = checkboxes[i].parentElement; var idx = parseInt(label.querySelector('input').getAttribute('onchange').match(/\d+/)[0]); if(selectedBatch.has(idx)) { checkboxes[i].checked = true; } } updateBatchCount(); }
-function updateBatchCount() { document.getElementById('batchCount').textContent = '已选择 ' + selectedBatch.size + ' 条'; }
-async function batchMarkPaid() { if(selectedBatch.size === 0) { showToast('请先选择记录', 'error'); return; } var indices = Array.from(selectedBatch); var formData = new FormData(); formData.append('indices', JSON.stringify(indices)); try { var r = await fetch('/api/batch-paid', {method: 'POST', body: formData}); var result = await r.json(); if(result.success) { bootstrap.Modal.getInstance(document.getElementById('batchModal')).hide(); showToast('成功标记 ' + result.count + ' 条记录为已回款'); loadData(); } else { showToast('操作失败: ' + (result.error || '未知错误'), 'error'); } } catch(e) { showToast('操作失败: ' + e.message, 'error'); } }
+var allData=[], filteredData=[], currentPage=1, editingIndex=null;
+var exceptionChart=null, responsibilityChart=null;
+var chartColors=['#667eea','#764ba2','#f093fb','#f5576c','#4facfe','#00f2fe','#ff9a9e','#a18cd1'];
+
+document.addEventListener('DOMContentLoaded',function(){var savedSize=localStorage.getItem('pageSize')||'20';document.getElementById('pageSize').value=savedSize;loadData();});
+
+function showLoading(){document.getElementById('loadingOverlay').style.display='flex';}
+function hideLoading(){document.getElementById('loadingOverlay').style.display='none';}
+function showToast(msg,type){type=type||'success';var t=document.createElement('div');t.className='toast '+type;t.innerHTML='<i class="bi bi-'+(type==='success'?'check-circle-fill':'exclamation-circle-fill')+'" style="color:'+(type==='success'?'#34C759':'#FF3B30')+'"></i><span>'+msg+'</span>';document.getElementById('toastContainer').appendChild(t);setTimeout(function(){t.remove();},3000);}
+
+async function loadData(){showLoading();try{var r=await fetch('/api/data');allData=await r.json();allData.sort(function(a,b){return(b['日期']||'').localeCompare(a['日期']||'');});filteredData=allData.slice();updateStats();renderTable();renderCharts();}catch(e){showToast('数据加载失败','error');}finally{hideLoading();}}
+
+function updateStats(){var total=allData.length,amt=0,unpaid=0;for(var i=0;i<allData.length;i++){amt+=parseFloat(allData[i]['金额'])||0;if(!allData[i]['回款情况']||allData[i]['回款情况']!=='√')unpaid++;}document.getElementById('totalCount').textContent=total;document.getElementById('totalAmount').textContent=amt.toLocaleString('zh-CN',{maximumFractionDigits:2});document.getElementById('unpaidCount').textContent=unpaid;document.getElementById('paidCount').textContent=total-unpaid;}
+
+function applyFilters(){currentPage=1;var st=document.getElementById('searchInput').value.toLowerCase().trim();var mf=document.getElementById('filterMonth').value;var sf=document.getElementById('filterShift').value;var rf=document.getElementById('filterResponsibility').value;filteredData=allData.filter(function(item){if(st){var found=['包裹号','商品详情','处理人','责任方','异常情况','处理方式'].some(function(f){return(item[f]||'').toLowerCase().indexOf(st)>=0;});if(!found)return false;}if(mf&&!(item['日期']||'').startsWith(mf))return false;if(sf&&item['班次']!==sf)return false;if(rf&&item['责任方']!==rf)return false;return true;});renderTable();}
+
+function clearFilters(){document.getElementById('searchInput').value='';document.getElementById('filterMonth').value='';document.getElementById('filterShift').value='';document.getElementById('filterResponsibility').value='';currentPage=1;filteredData=allData.slice();renderTable();}
+
+function renderTable(){var ps=parseInt(document.getElementById('pageSize').value);var start=(currentPage-1)*ps;var end=start+ps;var pageData=filteredData.slice(start,end);var tbody=document.getElementById('tableBody');var html='';for(var i=0;i<pageData.length;i++){var item=pageData[i];var idx=allData.indexOf(item);var detail=(item['商品详情']||'');html+='<tr><td>'+(item['日期']||'-')+'</td><td><span class="badge '+(item['班次']==='白班'?'badge-day':'badge-night')+'">'+(item['班次']||'-')+'</span></td><td><span class="text-truncate" title="'+(item['包裹号']||'')+'">'+(item['包裹号']||'-')+'</span></td><td><span class="text-truncate" title="'+detail+'">'+detail.substring(0,20)+(detail.length>20?'...':'')+'</span></td><td>'+(item['异常情况']||'-')+'</td><td class="amount">'+(item['金额']||'-')+'</td><td>'+(item['责任方']||'-')+'</td><td>'+(item['路由']||'-')+'</td><td><span class="badge '+(item['回款情况']==='√'?'badge-paid':'badge-unpaid')+'">'+(item['回款情况']==='√'?'√':'-')+'</span></td><td><button class="btn btn-action btn-primary" onclick="editData('+idx+')"><i class="bi bi-pencil"></i></button> <button class="btn btn-action btn-danger" onclick="deleteData('+idx+')"><i class="bi bi-trash"></i></button></td></tr>';}tbody.innerHTML=html;document.getElementById('pageTotal').textContent=filteredData.length;renderPagination();}
+
+function renderPagination(){var ps=parseInt(document.getElementById('pageSize').value);var tp=Math.ceil(filteredData.length/ps)||1;var p=document.getElementById('pagination');if(tp<=1){p.innerHTML='';return;}var html='';html+='<li class="page-item '+(currentPage===1?'disabled':'')+'"><a class="page-link" href="#" onclick="goPage('+(currentPage-1)+');return false;">‹</a></li>';for(var i=1;i<=tp;i++){if(i===1||i===tp||(i>=currentPage-1&&i<=currentPage+1)){html+='<li class="page-item '+(i===currentPage?'active':'')+'"><a class="page-link" href="#" onclick="goPage('+i+');return false;">'+i+'</a></li>';}else if(i===currentPage-2||(i===currentPage+2){html+='<li class="page-item disabled"><span class="page-link">...</span></li>';}}html+='<li class="page-item '+(currentPage===tp?'disabled':'')+'"><a class="page-link" href="#" onclick="goPage('+(currentPage+1)+');return false;">›</a></li>';p.innerHTML=html;}
+function goPage(page){var ps=parseInt(document.getElementById('pageSize').value);var tp=Math.ceil(filteredData.length/ps)||1;if(page>=1&&page<=tp){currentPage=page;renderTable();}}
+
+function renderCharts(){if(exceptionChart){exceptionChart.destroy();exceptionChart=null;}if(responsibilityChart){responsibilityChart.destroy();responsibilityChart=null;}var ec={};for(var i=0;i<allData.length;i++){var k=allData[i]['异常情况']||'未记录';ec[k]=(ec[k]||0)+1;}var ecCanvas=document.getElementById('exceptionChart');if(ecCanvas&&ecCanvas.getContext){exceptionChart=new Chart(ecCanvas.getContext('2d'),{type:'doughnut',data:{labels:Object.keys(ec),datasets:[{data:Object.values(ec),backgroundColor:chartColors,borderWidth:2,borderColor:'rgba(255,255,255,0.5)'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'white',boxWidth:12,padding:12}}}}});}var rc={};for(var i=0;i<allData.length;i++){var k=allData[i]['责任方']||'未记录';rc[k]=(rc[k]||0)+1;}var rcCanvas=document.getElementById('responsibilityChart');if(rcCanvas&&rcCanvas.getContext){responsibilityChart=new Chart(rcCanvas.getContext('2d'),{type:'bar',data:{labels:Object.keys(rc),datasets:[{label:'数量',data:Object.values(rc),backgroundColor:'rgba(102,126,234,0.8)',borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'rgba(255,255,255,0.1)'},ticks:{color:'white'}},x:{grid:{display:false},ticks:{color:'white'}}}}}}});}}
+
+function openAddModal(){document.getElementById('addForm').reset();document.querySelector('#addForm input[name="日期"]').value=new Date().toISOString().split('T')[0];new bootstrap.Modal(document.getElementById('addModal')).show();}
+async function saveData(){var form=document.getElementById('addForm');if(!form.checkValidity()){form.reportValidity();return;}var fd=new FormData(form),d={};fd.forEach(function(v,k){d[k]=v;});try{var r=await fetch('/api/data',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});if(r.ok){bootstrap.Modal.getInstance(document.getElementById('addModal')).hide();showToast('添加成功！');loadData();}else{showToast('添加失败','error');}}catch(e){showToast('添加失败','error');}}
+function editData(idx){editingIndex=idx;var item=allData[idx];var fields=['日期','班次','包裹号','商品详情','异常情况','金额','责任方','处理方式','路由','处理人','回款情况'];var f=document.getElementById('editForm');var html='<div class="row g-3">';for(var i=0;i<fields.length;i++){var field=fields[i];var v=item[field]||'';if(field==='班次'){html+='<div class="col-md-6"><label class="form-label">'+field+'</label><select class="form-select" name="'+field+'"><option value="白班" '+(v==='白班'?'selected':'')+'>白班</option><option value="夜班" '+(v==='夜班'?'selected':'')+'>夜班</option></select></div>';}else if(field==='路由'){html+='<div class="col-md-6"><label class="form-label">'+field+'</label><select class="form-select" name="'+field+'"><option value="已妥投" '+(v==='已妥投'?'selected':'')+'>已妥投</option><option value="已下发" '+(v==='已下发'?'selected':'')+'>已下发</option><option value="处理中" '+(v==='处理中'?'selected':'')+'>处理中</option></select></div>';}else if(field==='回款情况'){html+='<div class="col-md-6"><label class="form-label">'+field+'</label><select class="form-select" name="'+field+'"><option value="" '+(v===''?'selected':'')+'>--</option><option value="√" '+(v==='√'?'selected':'')+'>√ 已回款</option><option value="未回款" '+(v==='未回款'?'selected':'')+'>未回款</option></select></div>';}else{html+='<div class="col-md-6"><label class="form-label">'+field+'</label><input type="'+(field==='金额'?'number':'text')+'" class="form-control" name="'+field+'" value="'+v+'" '+(field==='金额'?'step="0.01"':'')+'></div>';}}html+='</div>';f.innerHTML=html;new bootstrap.Modal(document.getElementById('editModal')).show();}
+async function updateData(){var form=document.getElementById('editForm');var fd=new FormData(form),d={};fd.forEach(function(v,k){d[k]=v;});try{var r=await fetch('/api/data/'+editingIndex,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});if(r.ok){bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();showToast('更新成功！');loadData();}else{showToast('更新失败','error');}}catch(e){showToast('更新失败','error');}}
+async function deleteData(idx){if(!confirm('确定删除？'))return;try{var r=await fetch('/api/data/'+idx,{method:'DELETE'});if(r.ok){showToast('删除成功！');loadData();}else{showToast('删除失败','error');}}catch(e){showToast('删除失败','error');}}
+function exportData(){showToast('正在导出...');window.location.href='/api/export';}
+async function importExcel(input){var file=input.files[0];if(!file)return;if(!file.name.match(/\.(xlsx|xls)$/)){showToast('请选择Excel文件','error');input.value='';return;}showToast('正在导入...');var formData=new FormData();formData.append('file',file);try{var r=await fetch('/api/import',{method:'POST',body:formData});var result=await r.json();if(result.success){showToast('导入成功！新增'+result.added+'条，替换'+result.replaced+'条');loadData();}else{showToast('导入失败: '+(result.error||''),'error');}}catch(e){showToast('导入失败','error');}input.value='';}
+
+var selectedBatch=[];
+function openBatchModal(){selectedBatch=[];var unpaid=allData.filter(function(item){return item['回款情况']!=='√';});var list=document.getElementById('batchList');if(unpaid.length===0){list.innerHTML='<p class="text-center text-muted py-4">没有未回款记录</p>';}else{var html='<div style="display:flex;flex-direction:column;gap:8px;">';for(var i=0;i<unpaid.length;i++){var item=unpaid[i];var idx=allData.indexOf(item);html+='<label style="display:flex;align-items:center;padding:10px 12px;background:rgba(0,0,0,0.05);border-radius:10px;cursor:pointer;"><input type="checkbox" style="margin-right:10px;width:18px;height:18px;" data-idx="'+idx+'" onchange="toggleBatchItem('+idx+',this.checked)"><div><div style="font-weight:600;font-size:13px;">'+(item['包裹号']||'-')+'</div><div style="font-size:11px;color:#888;">'+(item['日期']||'')+' · '+(item['金额']||'')+'元</div></div></label>';}html+='</div>';list.innerHTML=html;}updateBatchCount();new bootstrap.Modal(document.getElementById('batchModal')).show();}
+function toggleBatchItem(idx,checked){if(checked){selectedBatch.push(idx);}else{selectedBatch=selectedBatch.filter(function(i){return i!==idx;});}updateBatchCount();}
+function selectAllBatch(){var checkboxes=document.querySelectorAll('#batchList input[type="checkbox"]');selectedBatch=allData.filter(function(item){return item['回款情况']!=='√';}).map(function(item){return allData.indexOf(item);});checkboxes.forEach(function(cb){cb.checked=true;});updateBatchCount();}
+function clearAllBatch(){document.querySelectorAll('#batchList input[type="checkbox"]').forEach(function(cb){cb.checked=false;});selectedBatch=[];updateBatchCount();}
+function updateBatchCount(){document.getElementById('batchCount').textContent='已选 '+selectedBatch.length+' 条';}
+async function batchMarkPaid(){if(selectedBatch.length===0){showToast('请先选择','error');return;}try{var r=await fetch('/api/batch-paid',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'indices='+encodeURIComponent(JSON.stringify(selectedBatch))});var result=await r.json();if(result.success){bootstrap.Modal.getInstance(document.getElementById('batchModal')).hide();showToast('已标记'+result.count+'条为已回款');loadData();}else{showToast('操作失败','error');}}catch(e){showToast('操作失败','error');}}
+
+function openSettings(){document.getElementById('animationToggle').checked=localStorage.getItem('animation')!=='false';new bootstrap.Modal(document.getElementById('settingsModal')).show();}
+function toggleAnimation(enabled){localStorage.setItem('animation',enabled);document.body.style.animation=enabled?'gradientMove 20s ease infinite':'none';document.body.style.backgroundSize=enabled?'400% 400%':'100% 100%';}
+function changePageSize(size){localStorage.setItem('pageSize',size);document.getElementById('pageSize').value=size;renderTable();}
+function resetSettings(){localStorage.clear();showToast('已重置');location.reload();}
+
+// 搜索防抖
+var searchTimer;
+document.getElementById('searchInput').addEventListener('input',function(){clearTimeout(searchTimer);searchTimer=setTimeout(applyFilters,300);});
+document.getElementById('filterMonth').addEventListener('change',applyFilters);
+document.getElementById('filterShift').addEventListener('change',applyFilters);
+document.getElementById('filterResponsibility').addEventListener('change',applyFilters);
     </script>
 </body>
 </html>
