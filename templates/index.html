@@ -16,7 +16,7 @@
             --purple-3: #f093fb;
             --purple-4: #f5576c;
         }
-        * { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Noto Sans SC', sans-serif; box-sizing: border-box; }
+        * { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Noto Sans SC', sans-serif; -webkit-font-smoothing: antialiased; box-sizing: border-box; }
         body {
             background: linear-gradient(135deg, var(--purple-1) 0%, var(--purple-2) 50%, var(--purple-3) 100%);
             background-size: 400% 400%;
@@ -46,9 +46,9 @@
             100% { background-position: 0% 50%; }
         }
         @keyframes lightFloat {
-            0%, 100% { transform: translate(0, 0) rotate(0deg); }
-            33% { transform: translate(30px, -30px) rotate(2deg); }
-            66% { transform: translate(-20px, 20px) rotate(-2deg); }
+            0%, 100% { transform: translate(0, 0); }
+            33% { transform: translate(30px, -30px); }
+            66% { transform: translate(-20px, 20px); }
         }
         .container { position: relative; z-index: 1; }
         .liquid-glass {
@@ -157,6 +157,7 @@
         .btn-action { padding: 6px 10px; border-radius: 8px; font-size: 12px; }
         .btn-primary { background: rgba(0, 122, 255, 0.8); color: white; border: none; }
         .btn-danger { background: rgba(255, 59, 48, 0.8); color: white; border: none; }
+        .btn-success { background: rgba(52, 199, 89, 0.9); color: white; border: none; }
         @media (max-width: 768px) { body { padding: 12px; } .ios-header h1 { font-size: 24px; } .stat-card .number { font-size: 22px; } .stat-card { padding: 16px; } }
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: rgba(255,255,255,0.1); border-radius: 4px; }
@@ -212,64 +213,308 @@
             </div>
         </div>
     </div>
-    <div class="modal fade" id="addModal"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h5 class="modal-title"><i class="bi bi-plus-circle"></i> 添加数据</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><form id="addForm"><div class="row g-3"><div class="col-md-6"><label class="form-label">日期 *</label><input type="date" class="form-control" name="日期" required></div><div class="col-md-6"><label class="form-label">班次</label><select class="form-select" name="班次"><option value="白班">白班</option><option value="夜班">夜班</option></select></div><div class="col-md-6"><label class="form-label">包裹号 *</label><input type="text" class="form-control" name="包裹号" required placeholder="输入包裹号"></div><div class="col-md-6"><label class="form-label">金额</label><input type="number" step="0.01" class="form-control" name="金额" placeholder="0.00"></div><div class="col-md-6"><label class="form-label">异常情况</label><input type="text" class="form-control" name="异常情况" placeholder="如：破损1"></div><div class="col-md-6"><label class="form-label">责任方</label><input type="text" class="form-control" name="责任方" list="respList" placeholder="选择或输入"><datalist id="respList"><option value="NC"><option value="验货"><option value="卸车/NC共责"><option value="其他"></datalist></div><div class="col-md-6"><label class="form-label">处理方式</label><input type="text" class="form-control" name="处理方式" placeholder="处理方式"></div><div class="col-md-6"><label class="form-label">路由</label><select class="form-select" name="路由"><option value="已妥投">已妥投</option><option value="已下发">已下发</option><option value="处理中">处理中</option></select></div><div class="col-md-6"><label class="form-label">处理人</label><input type="text" class="form-control" name="处理人" placeholder="处理人"></div><div class="col-md-6"><label class="form-label">回款</label><select class="form-select" name="回款情况"><option value="">--</option><option value="√">√ 已回款</option><option value="未回款">未回款</option></select></div></div></form></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button><button type="button" class="btn btn-primary" onclick="saveData()">保存</button></div></div></div></div>
-    <div class="modal fade" id="editModal"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header" style="background: linear-gradient(135deg, #34C759, #30D158) !important;"><h5 class="modal-title"><i class="bi bi-pencil"></i> 编辑数据</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><form id="editForm"></form></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button><button type="button" class="btn btn-success" onclick="updateData()">更新</button></div></div></div></div>
-    <div class="modal fade" id="batchModal"><div class="modal-dialog"><div class="modal-content"><div class="modal-header" style="background: linear-gradient(135deg, #FF9500, #FF6B00) !important;"><h5 class="modal-title"><i class="bi bi-check2-all"></i> 批量标记回款</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="d-flex gap-2 mb-3"><button class="btn btn-outline-light btn-sm" onclick="selectAllBatch()">全选</button><button class="btn btn-outline-light btn-sm" onclick="clearAllBatch()">清除</button></div><div id="batchList" style="max-height:350px;overflow-y:auto;"></div></div><div class="modal-footer"><span id="batchCount" class="me-auto text-muted">已选 0 条</span><button class="btn btn-secondary" data-bs-dismiss="modal">取消</button><button class="btn btn-warning" onclick="batchMarkPaid()">标记已回款</button></div></div></div></div>
-    <div class="modal fade" id="settingsModal"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title"><i class="bi bi-gear"></i> 设置</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="setting-item"><div><div class="setting-label">背景颜色</div><div class="setting-desc">选择喜欢的配色方案</div></div><select class="form-select" style="width:160px;" id="colorScheme" onchange="changeColorScheme(this.value)"><option value="purple">紫色渐变</option><option value="blue">蓝色渐变</option><option value="green">绿色渐变</option><option value="pink">粉色渐变</option><option value="orange">橙色渐变</option><option value="dark">暗夜模式</option></select></div><div class="setting-item"><div><div class="setting-label">动画效果</div><div class="setting-desc">开启/关闭背景动画</div></div><label class="toggle-switch"><input type="checkbox" id="animationToggle" checked onchange="toggleAnimation(this.checked)"><span class="toggle-slider"></span></label></div><div class="setting-item"><div><div class="setting-label">重置所有设置</div><div class="setting-desc">恢复默认设置</div></div><button class="btn btn-outline-secondary btn-sm" onclick="resetSettings()">重置</button></div></div></div></div>
+    <div class="modal fade" id="addModal"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h5 class="modal-title"><i class="bi bi-plus-circle"></i> 添加数据</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><form id="addForm"><div class="row g-3"><div class="col-md-6"><label class="form-label">日期 *</label><input type="date" class="form-control" name="日期" required></div><div class="col-md-6"><label class="form-label">班次</label><select class="form-select" name="班次"><option value="白班">白班</option><option value="夜班">夜班</option></select></div><div class="col-md-6"><label class="form-label">包裹号 *</label><input type="text" class="form-control" name="包裹号" required placeholder="输入包裹号"></div><div class="col-md-6"><label class="form-label">金额</label><input type="number" step="0.01" class="form-control" name="金额" placeholder="0.00"></div><div class="col-md-6"><label class="form-label">异常情况</label><input type="text" class="form-control" name="异常情况" placeholder="如：破损1"></div><div class="col-md-6"><label class="form-label">责任方</label><input type="text" class="form-control" name="责任方" list="respList" placeholder="选择或输入"><datalist id="respList"><option value="NC"><option value="验货"><option value="卸车/NC共责"><option value="其他"></datalist></div><div class="col-md-6"><label class="form-label">处理方式</label><input type="text" class="form-control" name="处理方式" placeholder="处理方式"></div><div class="col-md-6"><label class="form-label">路由</label><select class="form-select" name="路由"><option value="已妥投">已妥投</option><option value="已下发">已下发</option><option value="处理中">处理中</option></select></div><div class="col-md-6"><label class="form-label">处理人</label><input type="text" class="form-control" name="处理人" placeholder="处理人"></div><div class="col-md-6"><label class="form-label">回款</label><select class="form-select" name="回款情况"><option value="">--</option><option value="√">√ 已回款</option><option value="未回款">未回款</option></select></div><div class="col-12"><label class="form-label">商品详情</label><input type="text" class="form-control" name="商品详情" placeholder="商品详情"></div></div></form></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button><button type="button" class="btn btn-primary" onclick="saveData()">保存</button></div></div></div></div>
+    <div class="modal fade" id="editModal"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header" style="background:linear-gradient(135deg,#34C759,#30D158)!important;"><h5 class="modal-title"><i class="bi bi-pencil"></i> 编辑数据</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><form id="editForm"></form></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button><button type="button" class="btn btn-success" onclick="updateData()">更新</button></div></div></div></div>
+    <div class="modal fade" id="batchModal"><div class="modal-dialog"><div class="modal-content"><div class="modal-header" style="background:linear-gradient(135deg,#FF9500,#FF6B00)!important;"><h5 class="modal-title"><i class="bi bi-check2-all"></i> 批量标记回款</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="d-flex gap-2 mb-3"><button class="btn btn-outline-light btn-sm" onclick="selectAllBatch()">全选</button><button class="btn btn-outline-light btn-sm" onclick="clearAllBatch()">清除</button></div><div id="batchList" style="max-height:350px;overflow-y:auto;"></div></div><div class="modal-footer"><span id="batchCount" class="me-auto text-muted">已选 0 条</span><button class="btn btn-secondary" data-bs-dismiss="modal">取消</button><button class="btn btn-warning" onclick="batchMarkPaid()">标记已回款</button></div></div></div></div>
+    <div class="modal fade" id="settingsModal"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title"><i class="bi bi-gear"></i> 设置</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="setting-item"><div><div class="setting-label">背景颜色</div><div class="setting-desc">选择喜欢的配色方案</div></div><select class="form-select" style="width:140px" id="colorScheme" onchange="changeColorScheme(this.value)"><option value="purple">紫色渐变</option><option value="blue">蓝色渐变</option><option value="green">绿色渐变</option><option value="pink">粉色渐变</option><option value="orange">橙色渐变</option><option value="dark">暗夜模式</option></select></div><div class="setting-item"><div><div class="setting-label">动画效果</div><div class="setting-desc">开启/关闭背景动画</div></div><label class="toggle-switch"><input type="checkbox" id="animationToggle" checked onchange="toggleAnimation(this.checked)"><span class="toggle-slider"></span></label></div><div class="setting-item"><div><div class="setting-label">重置所有设置</div><div class="setting-desc">恢复默认设置</div></div><button class="btn btn-outline-secondary btn-sm" onclick="resetSettings()">重置</button></div></div></div></div></div>
     <div class="toast-container" id="toastContainer"></div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-var allData=[], filteredData=[], currentPage=1, editingIndex=null;
+var allData=[], filteredData=[], currentPage=1, editingIndex=null, selectedBatch=[];
 var exceptionChart=null, responsibilityChart=null;
 var chartColors=['#667eea','#764ba2','#f093fb','#f5576c','#4facfe','#00f2fe','#ff9a9e','#a18cd1'];
 
-document.addEventListener('DOMContentLoaded',function(){var savedSize=localStorage.getItem('pageSize')||'20';document.getElementById('pageSize').value=savedSize;var scheme=localStorage.getItem('colorScheme')||'purple';if(scheme!=='purple'){applyColorScheme(scheme);}loadData();});
+document.addEventListener('DOMContentLoaded',function(){
+    var savedSize=localStorage.getItem('pageSize')||'20';
+    document.getElementById('pageSize').value=savedSize;
+    loadData();
+});
 
 function showLoading(){document.getElementById('loadingOverlay').style.display='flex';}
 function hideLoading(){document.getElementById('loadingOverlay').style.display='none';}
 function showToast(msg,type){type=type||'success';var t=document.createElement('div');t.className='toast '+type;t.innerHTML='<i class="bi bi-'+(type==='success'?'check-circle-fill':'exclamation-circle-fill')+'" style="color:'+(type==='success'?'#34C759':'#FF3B30')+'"></i><span>'+msg+'</span>';document.getElementById('toastContainer').appendChild(t);setTimeout(function(){t.remove();},3000);}
 
-async function loadData(){showLoading();try{var r=await fetch('/api/data');allData=await r.json();allData.sort(function(a,b){return(b['日期']||'').localeCompare(a['日期']||'');});filteredData=allData.slice();updateStats();renderTable();renderCharts();}catch(e){showToast('数据加载失败','error');}finally{hideLoading();}}
+async function loadData(){
+    showLoading();
+    try{
+        var r=await fetch('/api/data');
+        allData=await r.json();
+        allData.sort(function(a,b){return(b['日期']||'').localeCompare(a['日期']||'');});
+        filteredData=allData.slice();
+        updateStats();
+        renderTable();
+        renderCharts();
+    }catch(e){
+        showToast('数据加载失败','error');
+    }finally{
+        hideLoading();
+    }
+}
 
-function updateStats(){var total=allData.length,amt=0,unpaid=0;for(var i=0;i<allData.length;i++){amt+=parseFloat(allData[i]['金额'])||0;if(!allData[i]['回款情况']||allData[i]['回款情况']!=='√')unpaid++;}document.getElementById('totalCount').textContent=total;document.getElementById('totalAmount').textContent=amt.toLocaleString('zh-CN',{maximumFractionDigits:2});document.getElementById('unpaidCount').textContent=unpaid;document.getElementById('paidCount').textContent=total-unpaid;}
+function updateStats(){
+    var total=allData.length,amt=0,unpaid=0;
+    for(var i=0;i<allData.length;i++){amt+=parseFloat(allData[i]['金额'])||0;if(!allData[i]['回款情况']||allData[i]['回款情况']!=='√')unpaid++;}
+    document.getElementById('totalCount').textContent=total;
+    document.getElementById('totalAmount').textContent=amt.toLocaleString('zh-CN',{maximumFractionDigits:2});
+    document.getElementById('unpaidCount').textContent=unpaid;
+    document.getElementById('paidCount').textContent=total-unpaid;
+}
 
-function applyFilters(){currentPage=1;var st=document.getElementById('searchInput').value.toLowerCase().trim();var mf=document.getElementById('filterMonth').value;var sf=document.getElementById('filterShift').value;var rf=document.getElementById('filterResponsibility').value;filteredData=allData.filter(function(item){if(st){var found=['包裹号','商品详情','处理人','责任方','异常情况','处理方式'].some(function(f){return(item[f]||'').toLowerCase().indexOf(st)>=0;});if(!found)return false;}if(mf&&!(item['日期']||'').startsWith(mf))return false;if(sf&&item['班次']!==sf)return false;if(rf&&item['责任方']!==rf)return false;return true;});renderTable();}
+function applyFilters(){
+    currentPage=1;
+    var st=document.getElementById('searchInput').value.toLowerCase().trim();
+    var mf=document.getElementById('filterMonth').value;
+    var sf=document.getElementById('filterShift').value;
+    var rf=document.getElementById('filterResponsibility').value;
+    filteredData=allData.filter(function(item){
+        if(st){
+            var found=['包裹号','商品详情','处理人','责任方','异常情况','处理方式'].some(function(f){return(item[f]||'').toLowerCase().indexOf(st)>=0;});
+            if(!found)return false;
+        }
+        if(mf&&!(item['日期']||'').startsWith(mf))return false;
+        if(sf&&item['班次']!==sf)return false;
+        if(rf&&item['责任方']!==rf)return false;
+        return true;
+    });
+    renderTable();
+}
 
-function clearFilters(){document.getElementById('searchInput').value='';document.getElementById('filterMonth').value='';document.getElementById('filterShift').value='';document.getElementById('filterResponsibility').value='';currentPage=1;filteredData=allData.slice();renderTable();}
+function clearFilters(){
+    document.getElementById('searchInput').value='';
+    document.getElementById('filterMonth').value='';
+    document.getElementById('filterShift').value='';
+    document.getElementById('filterResponsibility').value='';
+    currentPage=1;
+    filteredData=allData.slice();
+    renderTable();
+}
 
-function renderTable(){var ps=parseInt(document.getElementById('pageSize').value);var start=(currentPage-1)*ps;var end=start+ps;var pageData=filteredData.slice(start,end);var tbody=document.getElementById('tableBody');var html='';for(var i=0;i<pageData.length;i++){var item=pageData[i];var idx=allData.indexOf(item);var detail=(item['商品详情']||'');html+='<tr><td>'+(item['日期']||'-')+'</td><td><span class="badge '+(item['班次']==='白班'?'badge-day':'badge-night')+'">'+(item['班次']||'-')+'</span></td><td><span class="text-truncate" title="'+(item['包裹号']||'')+'">'+(item['包裹号']||'-')+'</span></td><td><span class="text-truncate" title="'+detail+'">'+detail.substring(0,20)+(detail.length>20?'...':'')+'</span></td><td>'+(item['异常情况']||'-')+'</td><td class="amount">'+(item['金额']||'-')+'</td><td>'+(item['责任方']||'-')+'</td><td>'+(item['路由']||'-')+'</td><td><span class="badge '+(item['回款情况']==='√'?'badge-paid':'badge-unpaid')+'">'+(item['回款情况']==='√'?'√':'-')+'</span></td><td><button class="btn btn-action btn-primary" onclick="editData('+idx+')"><i class="bi bi-pencil"></i></button> <button class="btn btn-action btn-danger" onclick="deleteData('+idx+')"><i class="bi bi-trash"></i></button></td></tr>';}tbody.innerHTML=html;document.getElementById('pageTotal').textContent=filteredData.length;renderPagination();}
+function renderTable(){
+    var ps=parseInt(document.getElementById('pageSize').value);
+    var start=(currentPage-1)*ps;
+    var end=start+ps;
+    var pageData=filteredData.slice(start,end);
+    var tbody=document.getElementById('tableBody');
+    var html='';
+    for(var i=0;i<pageData.length;i++){
+        var item=pageData[i];
+        var idx=allData.indexOf(item);
+        var detail=(item['商品详情']||'');
+        html+='<tr><td>'+(item['日期']||'-')+'</td><td><span class="badge '+(item['班次']==='白班'?'badge-day':'badge-night')+'">'+(item['班次']||'-')+'</span></td><td><span class="text-truncate" title="'+(item['包裹号']||'')+'">'+(item['包裹号']||'-')+'</span></td><td><span class="text-truncate" title="'+detail+'">'+detail.substring(0,20)+(detail.length>20?'...':'')+'</span></td><td>'+(item['异常情况']||'-')+'</td><td class="amount">'+(item['金额']||'-')+'</td><td>'+(item['责任方']||'-')+'</td><td>'+(item['路由']||'-')+'</td><td><span class="badge '+(item['回款情况']==='√'?'badge-paid':'badge-unpaid')+'">'+(item['回款情况']==='√'?'√':'-')+'</span></td><td><button class="btn btn-action btn-primary" onclick="editData('+idx+')"><i class="bi bi-pencil"></i></button> <button class="btn btn-action btn-danger" onclick="deleteData('+idx+')"><i class="bi bi-trash"></i></button></td></tr>';
+    }
+    tbody.innerHTML=html;
+    document.getElementById('pageTotal').textContent=filteredData.length;
+    renderPagination();
+}
 
-function renderPagination(){var ps=parseInt(document.getElementById('pageSize').value);var tp=Math.ceil(filteredData.length/ps)||1;var p=document.getElementById('pagination');if(tp<=1){p.innerHTML='';return;}var html='';html+='<li class="page-item '+(currentPage===1?'disabled':'')+'"><a class="page-link" href="#" onclick="goPage('+(currentPage-1)+');return false;">‹</a></li>';for(var i=1;i<=tp;i++){if(i===1||i===tp||(i>=currentPage-1&&i<=currentPage+1)){html+='<li class="page-item '+(i===currentPage?'active':'')+'"><a class="page-link" href="#" onclick="goPage('+i+');return false;">'+i+'</a></li>';}else if(i===currentPage-2||(i===currentPage+2){html+='<li class="page-item disabled"><span class="page-link">...</span></li>';}}html+='<li class="page-item '+(currentPage===tp?'disabled':'')+'"><a class="page-link" href="#" onclick="goPage('+(currentPage+1)+');return false;">›</a></li>';p.innerHTML=html;}
-function goPage(page){var ps=parseInt(document.getElementById('pageSize').value);var tp=Math.ceil(filteredData.length/ps)||1;if(page>=1&&page<=tp){currentPage=page;renderTable();}}
+function renderPagination(){
+    var ps=parseInt(document.getElementById('pageSize').value);
+    var tp=Math.ceil(filteredData.length/ps)||1;
+    var p=document.getElementById('pagination');
+    if(tp<=1){p.innerHTML='';return;}
+    var html='';
+    html+='<li class="page-item '+(currentPage===1?'disabled':'')+'"><a class="page-link" href="#" onclick="goPage('+(currentPage-1)+');return false;">‹</a></li>';
+    for(var i=1;i<=tp;i++){
+        if(i===1||i===tp||(i>=currentPage-1&&i<=currentPage+1)){
+            html+='<li class="page-item '+(i===currentPage?'active':'')+'"><a class="page-link" href="#" onclick="goPage('+i+');return false;">'+i+'</a></li>';
+        }else if(i===currentPage-2||i===currentPage+2){
+            html+='<li class="page-item disabled"><span class="page-link">...</span></li>';
+        }
+    }
+    html+='<li class="page-item '+(currentPage===tp?'disabled':'')+'"><a class="page-link" href="#" onclick="goPage('+(currentPage+1)+');return false;">›</a></li>';
+    p.innerHTML=html;
+}
 
-function renderCharts(){if(exceptionChart){exceptionChart.destroy();exceptionChart=null;}if(responsibilityChart){responsibilityChart.destroy();responsibilityChart=null;}var ec={};for(var i=0;i<allData.length;i++){var k=allData[i]['异常情况']||'未记录';ec[k]=(ec[k]||0)+1;}var ecCanvas=document.getElementById('exceptionChart');if(ecCanvas&&ecCanvas.getContext){exceptionChart=new Chart(ecCanvas.getContext('2d'),{type:'doughnut',data:{labels:Object.keys(ec),datasets:[{data:Object.values(ec),backgroundColor:chartColors,borderWidth:2,borderColor:'rgba(255,255,255,0.5)'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'white',boxWidth:12,padding:12}}}}});}var rc={};for(var i=0;i<allData.length;i++){var k=allData[i]['责任方']||'未记录';rc[k]=(rc[k]||0)+1;}var rcCanvas=document.getElementById('responsibilityChart');if(rcCanvas&&rcCanvas.getContext){responsibilityChart=new Chart(rcCanvas.getContext('2d'),{type:'bar',data:{labels:Object.keys(rc),datasets:[{label:'数量',data:Object.values(rc),backgroundColor:'rgba(102,126,234,0.8)',borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'rgba(255,255,255,0.1)'},ticks:{color:'white'}},x:{grid:{display:false},ticks:{color:'white'}}}}}}});}}
+function goPage(page){
+    var ps=parseInt(document.getElementById('pageSize').value);
+    var tp=Math.ceil(filteredData.length/ps)||1;
+    if(page>=1&&page<=tp){currentPage=page;renderTable();}
+}
 
-function openAddModal(){document.getElementById('addForm').reset();document.querySelector('#addForm input[name="日期"]').value=new Date().toISOString().split('T')[0];new bootstrap.Modal(document.getElementById('addModal')).show();}
-async function saveData(){var form=document.getElementById('addForm');if(!form.checkValidity()){form.reportValidity();return;}var fd=new FormData(form),d={};fd.forEach(function(v,k){d[k]=v;});try{var r=await fetch('/api/data',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});if(r.ok){bootstrap.Modal.getInstance(document.getElementById('addModal')).hide();showToast('添加成功！');loadData();}else{showToast('添加失败','error');}}catch(e){showToast('添加失败','error');}}
-function editData(idx){editingIndex=idx;var item=allData[idx];var fields=['日期','班次','包裹号','商品详情','异常情况','金额','责任方','处理方式','路由','处理人','回款情况'];var f=document.getElementById('editForm');var html='<div class="row g-3">';for(var i=0;i<fields.length;i++){var field=fields[i];var v=item[field]||'';if(field==='班次'){html+='<div class="col-md-6"><label class="form-label">'+field+'</label><select class="form-select" name="'+field+'"><option value="白班" '+(v==='白班'?'selected':'')+'>白班</option><option value="夜班" '+(v==='夜班'?'selected':'')+'>夜班</option></select></div>';}else if(field==='路由'){html+='<div class="col-md-6"><label class="form-label">'+field+'</label><select class="form-select" name="'+field+'"><option value="已妥投" '+(v==='已妥投'?'selected':'')+'>已妥投</option><option value="已下发" '+(v==='已下发'?'selected':'')+'>已下发</option><option value="处理中" '+(v==='处理中'?'selected':'')+'>处理中</option></select></div>';}else if(field==='回款情况'){html+='<div class="col-md-6"><label class="form-label">'+field+'</label><select class="form-select" name="'+field+'"><option value="" '+(v===''?'selected':'')+'>--</option><option value="√" '+(v==='√'?'selected':'')+'>√ 已回款</option><option value="未回款" '+(v==='未回款'?'selected':'')+'>未回款</option></select></div>';}else{html+='<div class="col-md-6"><label class="form-label">'+field+'</label><input type="'+(field==='金额'?'number':'text')+'" class="form-control" name="'+field+'" value="'+v+'" '+(field==='金额'?'step="0.01"':'')+'></div>';}}html+='</div>';f.innerHTML=html;new bootstrap.Modal(document.getElementById('editModal')).show();}
-async function updateData(){var form=document.getElementById('editForm');var fd=new FormData(form),d={};fd.forEach(function(v,k){d[k]=v;});try{var r=await fetch('/api/data/'+editingIndex,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});if(r.ok){bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();showToast('更新成功！');loadData();}else{showToast('更新失败','error');}}catch(e){showToast('更新失败','error');}}
-async function deleteData(idx){if(!confirm('确定删除？'))return;try{var r=await fetch('/api/data/'+idx,{method:'DELETE'});if(r.ok){showToast('删除成功！');loadData();}else{showToast('删除失败','error');}}catch(e){showToast('删除失败','error');}}
+function renderCharts(){
+    if(exceptionChart){exceptionChart.destroy();exceptionChart=null;}
+    if(responsibilityChart){responsibilityChart.destroy();responsibilityChart=null;}
+    var ec={};
+    for(var i=0;i<allData.length;i++){var k=allData[i]['异常情况']||'未记录';ec[k]=(ec[k]||0)+1;}
+    var ecCanvas=document.getElementById('exceptionChart');
+    if(ecCanvas&&ecCanvas.getContext){
+        exceptionChart=new Chart(ecCanvas.getContext('2d'),{type:'doughnut',data:{labels:Object.keys(ec),datasets:[{data:Object.values(ec),backgroundColor:chartColors,borderWidth:2,borderColor:'rgba(255,255,255,0.5)'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'white',boxWidth:12,padding:12}}}}});
+    }
+    var rc={};
+    for(var i=0;i<allData.length;i++){var k=allData[i]['责任方']||'未记录';rc[k]=(rc[k]||0)+1;}
+    var rcCanvas=document.getElementById('responsibilityChart');
+    if(rcCanvas&&rcCanvas.getContext){
+        responsibilityChart=new Chart(rcCanvas.getContext('2d'),{type:'bar',data:{labels:Object.keys(rc),datasets:[{label:'数量',data:Object.values(rc),backgroundColor:'rgba(102,126,234,0.8)',borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'rgba(255,255,255,0.1)'},ticks:{color:'white'}},x:{grid:{display:false},ticks:{color:'white'}}}}});
+    }
+}
+
+function openAddModal(){
+    document.getElementById('addForm').reset();
+    document.querySelector('#addForm input[name="日期"]').value=new Date().toISOString().split('T')[0];
+    new bootstrap.Modal(document.getElementById('addModal')).show();
+}
+
+async function saveData(){
+    var form=document.getElementById('addForm');
+    if(!form.checkValidity()){form.reportValidity();return;}
+    var fd=new FormData(form),d={};
+    fd.forEach(function(v,k){d[k]=v;});
+    try{
+        var r=await fetch('/api/data',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
+        if(r.ok){bootstrap.Modal.getInstance(document.getElementById('addModal')).hide();showToast('添加成功！');loadData();}
+        else{showToast('添加失败','error');}
+    }catch(e){showToast('添加失败','error');}
+}
+
+function editData(idx){
+    editingIndex=idx;
+    var item=allData[idx];
+    var fields=['日期','班次','包裹号','商品详情','异常情况','金额','责任方','处理方式','路由','处理人','回款情况'];
+    var f=document.getElementById('editForm');
+    var html='<div class="row g-3">';
+    for(var i=0;i<fields.length;i++){
+        var field=fields[i];
+        var v=item[field]||'';
+        if(field==='班次'){
+            html+='<div class="col-md-6"><label class="form-label">'+field+'</label><select class="form-select" name="'+field+'"><option value="白班" '+(v==='白班'?'selected':'')+'>白班</option><option value="夜班" '+(v==='夜班'?'selected':'')+'>夜班</option></select></div>';
+        }else if(field==='路由'){
+            html+='<div class="col-md-6"><label class="form-label">'+field+'</label><select class="form-select" name="'+field+'"><option value="已妥投" '+(v==='已妥投'?'selected':'')+'>已妥投</option><option value="已下发" '+(v==='已下发'?'selected':'')+'>已下发</option><option value="处理中" '+(v==='处理中'?'selected':'')+'>处理中</option></select></div>';
+        }else if(field==='回款情况'){
+            html+='<div class="col-md-6"><label class="form-label">'+field+'</label><select class="form-select" name="'+field+'"><option value="" '+(v===''?'selected':'')+'>--</option><option value="√" '+(v==='√'?'selected':'')+'>√ 已回款</option><option value="未回款" '+(v==='未回款'?'selected':'')+'>未回款</option></select></div>';
+        }else{
+            html+='<div class="col-md-6"><label class="form-label">'+field+'</label><input type="'+(field==='金额'?'number':'text')+'" class="form-control" name="'+field+'" value="'+v+'" '+(field==='金额'?'step="0.01"':'')+'></div>';
+        }
+    }
+    html+='</div>';
+    f.innerHTML=html;
+    new bootstrap.Modal(document.getElementById('editModal')).show();
+}
+
+async function updateData(){
+    var form=document.getElementById('editForm');
+    var fd=new FormData(form),d={};
+    fd.forEach(function(v,k){d[k]=v;});
+    try{
+        var r=await fetch('/api/data/'+editingIndex,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
+        if(r.ok){bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();showToast('更新成功！');loadData();}
+        else{showToast('更新失败','error');}
+    }catch(e){showToast('更新失败','error');}
+}
+
+async function deleteData(idx){
+    if(!confirm('确定删除？'))return;
+    try{
+        var r=await fetch('/api/data/'+idx,{method:'DELETE'});
+        if(r.ok){showToast('删除成功！');loadData();}
+        else{showToast('删除失败','error');}
+    }catch(e){showToast('删除失败','error');}
+}
+
 function exportData(){showToast('正在导出...');window.location.href='/api/export';}
-async function importExcel(input){var file=input.files[0];if(!file)return;if(!file.name.match(/\.(xlsx|xls)$/)){showToast('请选择Excel文件','error');input.value='';return;}showToast('正在导入...');var formData=new FormData();formData.append('file',file);try{var r=await fetch('/api/import',{method:'POST',body:formData});var result=await r.json();if(result.success){showToast('导入成功！新增'+result.added+'条，替换'+result.replaced+'条');loadData();}else{showToast('导入失败: '+(result.error||''),'error');}}catch(e){showToast('导入失败','error');}input.value='';}
 
-var selectedBatch=[];
-function openBatchModal(){selectedBatch=[];var unpaid=allData.filter(function(item){return item['回款情况']!=='√';});var list=document.getElementById('batchList');if(unpaid.length===0){list.innerHTML='<p class="text-center text-muted py-4">没有未回款记录</p>';}else{var html='<div style="display:flex;flex-direction:column;gap:8px;">';for(var i=0;i<unpaid.length;i++){var item=unpaid[i];var idx=allData.indexOf(item);html+='<label style="display:flex;align-items:center;padding:10px 12px;background:rgba(0,0,0,0.05);border-radius:10px;cursor:pointer;"><input type="checkbox" style="margin-right:10px;width:18px;height:18px;" data-idx="'+idx+'" onchange="toggleBatchItem('+idx+',this.checked)"><div><div style="font-weight:600;font-size:13px;">'+(item['包裹号']||'-')+'</div><div style="font-size:11px;color:#888;">'+(item['日期']||'')+' · '+(item['金额']||'')+'元</div></div></label>';}html+='</div>';list.innerHTML=html;}updateBatchCount();new bootstrap.Modal(document.getElementById('batchModal')).show();}
-function toggleBatchItem(idx,checked){if(checked){selectedBatch.push(idx);}else{selectedBatch=selectedBatch.filter(function(i){return i!==idx;});}updateBatchCount();}
-function selectAllBatch(){var checkboxes=document.querySelectorAll('#batchList input[type="checkbox"]');selectedBatch=allData.filter(function(item){return item['回款情况']!=='√';}).map(function(item){return allData.indexOf(item);});checkboxes.forEach(function(cb){cb.checked=true;});updateBatchCount();}
-function clearAllBatch(){document.querySelectorAll('#batchList input[type="checkbox"]').forEach(function(cb){cb.checked=false;});selectedBatch=[];updateBatchCount();}
+async function importExcel(input){
+    var file=input.files[0];
+    if(!file)return;
+    if(!file.name.match(/\.(xlsx|xls)$/)){showToast('请选择Excel文件','error');input.value='';return;}
+    showToast('正在导入...');
+    var formData=new FormData();
+    formData.append('file',file);
+    try{
+        var r=await fetch('/api/import',{method:'POST',body:formData});
+        var result=await r.json();
+        if(result.success){showToast('导入成功！新增'+result.added+'条，替换'+result.replaced+'条');loadData();}
+        else{showToast('导入失败: '+(result.error||''),'error');}
+    }catch(e){showToast('导入失败','error');}
+    input.value='';
+}
+
+function openBatchModal(){
+    selectedBatch=[];
+    var unpaid=allData.filter(function(item){return item['回款情况']!=='√';});
+    var list=document.getElementById('batchList');
+    if(unpaid.length===0){list.innerHTML='<p class="text-center text-muted py-4">没有未回款记录</p>';}
+    else{
+        var html='<div style="display:flex;flex-direction:column;gap:8px;">';
+        for(var i=0;i<unpaid.length;i++){
+            var item=unpaid[i];
+            var idx=allData.indexOf(item);
+            html+='<label style="display:flex;align-items:center;padding:10px 12px;background:rgba(0,0,0,0.05);border-radius:10px;cursor:pointer;"><input type="checkbox" style="margin-right:10px;width:18px;height:18px;" data-idx="'+idx+'" onchange="toggleBatchItem('+idx+',this.checked)"><div><div style="font-weight:600;font-size:13px;">'+(item['包裹号']||'-')+'</div><div style="font-size:11px;color:#888;">'+(item['日期']||'')+' · '+(item['金额']||'')+'元</div></div></label>';
+        }
+        html+='</div>';
+        list.innerHTML=html;
+    }
+    updateBatchCount();
+    new bootstrap.Modal(document.getElementById('batchModal')).show();
+}
+
+function toggleBatchItem(idx,checked){
+    if(checked){selectedBatch.push(idx);}
+    else{selectedBatch=selectedBatch.filter(function(i){return i!==idx;});}
+    updateBatchCount();
+}
+
+function selectAllBatch(){
+    selectedBatch=allData.filter(function(item){return item['回款情况']!=='√';}).map(function(item){return allData.indexOf(item);});
+    document.querySelectorAll('#batchList input[type="checkbox"]').forEach(function(cb){cb.checked=true;});
+    updateBatchCount();
+}
+
+function clearAllBatch(){
+    document.querySelectorAll('#batchList input[type="checkbox"]').forEach(function(cb){cb.checked=false;});
+    selectedBatch=[];
+    updateBatchCount();
+}
+
 function updateBatchCount(){document.getElementById('batchCount').textContent='已选 '+selectedBatch.length+' 条';}
-async function batchMarkPaid(){if(selectedBatch.length===0){showToast('请先选择','error');return;}try{var r=await fetch('/api/batch-paid',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'indices='+encodeURIComponent(JSON.stringify(selectedBatch))});var result=await r.json();if(result.success){bootstrap.Modal.getInstance(document.getElementById('batchModal')).hide();showToast('已标记'+result.count+'条为已回款');loadData();}else{showToast('操作失败','error');}}catch(e){showToast('操作失败','error');}}
 
-function openSettings(){document.getElementById('animationToggle').checked=localStorage.getItem('animation')!=='false';document.getElementById('colorScheme').value=localStorage.getItem('colorScheme')||'purple';new bootstrap.Modal(document.getElementById('settingsModal')).show();}
-function changeColorScheme(scheme){localStorage.setItem('colorScheme',scheme);applyColorScheme(scheme);}
-function applyColorScheme(scheme){var colors={purple:{bg:'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',card:'rgba(255,255,255,0.25)'},blue:{bg:'linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #667eea 100%)',card:'rgba(255,255,255,0.2)'},green:{bg:'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',card:'rgba(255,255,255,0.2)'},pink:{bg:'linear-gradient(135deg, #ec008c 0%, #fc6767 100%)',card:'rgba(255,255,255,0.2)'},orange:{bg:'linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%)',card:'rgba(255,255,255,0.2)'},dark:{bg:'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)',card:'rgba(255,255,255,0.15)'}};var c=colors[scheme]||colors.purple;document.body.style.background=c.bg;document.body.style.backgroundSize='400% 400%';if(scheme==='dark'){document.querySelectorAll('.liquid-glass,.stat-card,.chart-card,.table-card').forEach(function(el){el.style.background=c.card;});}
-function toggleAnimation(enabled){localStorage.setItem('animation',enabled);document.body.style.animation=enabled?'gradientMove 20s ease infinite':'none';document.body.style.backgroundSize=enabled?'400% 400%':'100% 100%';}
+async function batchMarkPaid(){
+    if(selectedBatch.length===0){showToast('请先选择','error');return;}
+    try{
+        var r=await fetch('/api/batch-paid',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'indices='+encodeURIComponent(JSON.stringify(selectedBatch))});
+        var result=await r.json();
+        if(result.success){bootstrap.Modal.getInstance(document.getElementById('batchModal')).hide();showToast('已标记'+result.count+'条为已回款');loadData();}
+        else{showToast('操作失败','error');}
+    }catch(e){showToast('操作失败','error');}
+}
+
+function openSettings(){
+    document.getElementById('animationToggle').checked=localStorage.getItem('animation')!=='false';
+    document.getElementById('colorScheme').value=localStorage.getItem('colorScheme')||'purple';
+    new bootstrap.Modal(document.getElementById('settingsModal')).show();
+}
+
+function changeColorScheme(scheme){
+    localStorage.setItem('colorScheme',scheme);
+    applyColorScheme(scheme);
+}
+
+function applyColorScheme(scheme){
+    var colors={
+        purple:{bg:'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)'},
+        blue:{bg:'linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #667eea 100%)'},
+        green:{bg:'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)'},
+        pink:{bg:'linear-gradient(135deg, #ec008c 0%, #fc6767 100%)'},
+        orange:{bg:'linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%)'},
+        dark:{bg:'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)'}
+    };
+    var c=colors[scheme]||colors.purple;
+    document.body.style.background=c.bg;
+    document.body.style.backgroundSize='400% 400%';
+}
+
+function toggleAnimation(enabled){
+    localStorage.setItem('animation',enabled);
+    document.body.style.animation=enabled?'gradientMove 20s ease infinite':'none';
+}
+
 function changePageSize(size){localStorage.setItem('pageSize',size);document.getElementById('pageSize').value=size;renderTable();}
 function resetSettings(){localStorage.clear();showToast('已重置');location.reload();}
 
-// 搜索防抖
-var searchTimer;
-document.getElementById('searchInput').addEventListener('input',function(){clearTimeout(searchTimer);searchTimer=setTimeout(applyFilters,300);});
+// 事件绑定
+document.getElementById('searchInput').addEventListener('input',function(){
+    clearTimeout(this.searchTimer);
+    this.searchTimer=setTimeout(applyFilters,300);
+});
 document.getElementById('filterMonth').addEventListener('change',applyFilters);
 document.getElementById('filterShift').addEventListener('change',applyFilters);
 document.getElementById('filterResponsibility').addEventListener('change',applyFilters);
