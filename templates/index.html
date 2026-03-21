@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NC台账管理系统</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        // 确保 Chart.js 加载完成
+        window.addEventListener('load', function() {
+            console.log('Page loaded, Chart.js ready');
+        });
+    </script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
@@ -50,9 +56,26 @@
             font-size: 20px; color: #007aff;
             cursor: pointer;
             transition: all 0.2s;
+            /* 图标文字备用 */
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
         .header-btn:hover { background: rgba(255,255,255,0.8); transform: scale(1.05); }
         .header-btn:active { transform: scale(0.95); }
+        
+        /* 图标兼容性 */
+        [class*="bi-"]:before {
+            font-family: inherit !important;
+        }
+        
+        /* 图表容器 */
+        .chart-card {
+            padding: 20px;
+            min-height: 220px;
+        }
+        .chart-card canvas {
+            max-height: 160px;
+            width: 100% !important;
+        }
         
         /* iOS Style Cards */
         .card {
@@ -724,33 +747,95 @@ function goPage(page){
 }
 
 function renderCharts(){
-    if(ecChart){ ecChart.destroy(); ecChart = null; }
-    if(rcChart){ rcChart.destroy(); rcChart = null; }
-    var ec = {};
-    for(var i=0; i<allData.length; i++){
-        var k = allData[i]['异常情况'] || '未记录';
-        ec[k] = (ec[k]||0) + 1;
-    }
-    var ecCanvas = document.getElementById('exceptionChart');
-    if(ecCanvas && ecCanvas.getContext){
-        ecChart = new Chart(ecCanvas.getContext('2d'), {
-            type: 'doughnut',
-            data: { labels: Object.keys(ec), datasets: [{ data: Object.values(ec), backgroundColor: chartColors, borderWidth: 2, borderColor: 'white' }] },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 10, color: '#1c1c1e' } } } }
-        });
-    }
-    var rc = {};
-    for(var i=0; i<allData.length; i++){
-        var k = allData[i]['责任方'] || '未记录';
-        rc[k] = (rc[k]||0) + 1;
-    }
-    var rcCanvas = document.getElementById('responsibilityChart');
-    if(rcCanvas && rcCanvas.getContext){
-        rcChart = new Chart(rcCanvas.getContext('2d'), {
-            type: 'bar',
-            data: { labels: Object.keys(rc), datasets: [{ label: '数量', data: Object.values(rc), backgroundColor: 'rgba(120,86,254,0.7)', borderRadius: 6 }] },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { color: '#8e8e93' } }, x: { grid: { display: false }, ticks: { color: '#8e8e93' } } } }
-        });
+    try {
+        if(ecChart){ ecChart.destroy(); ecChart = null; }
+        if(rcChart){ rcChart.destroy(); rcChart = null; }
+        
+        // 饼图 - 异常分布
+        var ec = {};
+        for(var i=0; i<allData.length; i++){
+            var k = allData[i]['异常情况'] || '未记录';
+            ec[k] = (ec[k]||0) + 1;
+        }
+        
+        var ecCanvas = document.getElementById('exceptionChart');
+        if(ecCanvas && typeof Chart !== 'undefined' && ecCanvas.getContext){
+            ecCanvas.width = ecCanvas.offsetWidth;
+            ecCanvas.height = 160;
+            ecChart = new Chart(ecCanvas.getContext('2d'), {
+                type: 'doughnut',
+                data: { 
+                    labels: Object.keys(ec), 
+                    datasets: [{ 
+                        data: Object.values(ec), 
+                        backgroundColor: chartColors, 
+                        borderWidth: 2, 
+                        borderColor: '#fff' 
+                    }] 
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    animation: { duration: 500 },
+                    plugins: { 
+                        legend: { 
+                            position: 'bottom', 
+                            labels: { 
+                                boxWidth: 12, 
+                                padding: 10, 
+                                color: '#1c1c1e',
+                                font: { size: 12 }
+                            } 
+                        } 
+                    }
+                }
+            });
+        }
+        
+        // 柱状图 - 责任方分布
+        var rc = {};
+        for(var i=0; i<allData.length; i++){
+            var k = allData[i]['责任方'] || '未记录';
+            rc[k] = (rc[k]||0) + 1;
+        }
+        
+        var rcCanvas = document.getElementById('responsibilityChart');
+        if(rcCanvas && typeof Chart !== 'undefined' && rcCanvas.getContext){
+            rcCanvas.width = rcCanvas.offsetWidth;
+            rcCanvas.height = 160;
+            rcChart = new Chart(rcCanvas.getContext('2d'), {
+                type: 'bar',
+                data: { 
+                    labels: Object.keys(rc), 
+                    datasets: [{ 
+                        label: '数量', 
+                        data: Object.values(rc), 
+                        backgroundColor: 'rgba(120,86,254,0.7)', 
+                        borderRadius: 6,
+                        barThickness: 30
+                    }] 
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    animation: { duration: 500 },
+                    plugins: { legend: { display: false } }, 
+                    scales: { 
+                        y: { 
+                            beginAtZero: true, 
+                            grid: { color: 'rgba(0,0,0,0.05)' }, 
+                            ticks: { color: '#8e8e93', font: { size: 11 } } 
+                        }, 
+                        x: { 
+                            grid: { display: false }, 
+                            ticks: { color: '#8e8e93', font: { size: 11 } } 
+                        } 
+                    } 
+                }
+            });
+        }
+    } catch(e) {
+        console.error('图表渲染失败:', e);
     }
 }
 
