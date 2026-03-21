@@ -656,7 +656,7 @@
         <!-- Header -->
         <div class="header">
             <h1 class="header-title">NC台账管理</h1>
-            <button class="header-btn" onclick="openSettings()" title="设置"><i class="bi bi-gear-fill"></i></button>
+            <button class="header-btn" onclick="openSettings()" title="设置">⚙️</button>
         </div>
         
         <!-- Stats -->
@@ -718,12 +718,12 @@
                 <option value="验货">验货</option>
                 <option value="卸车/NC共责">卸车/NC共责</option>
             </select>
-            <button class="action-btn secondary" onclick="clearFilters()"><i class="bi bi-x-lg"></i> 清除</button>
-            <button class="action-btn primary" onclick="openAddModal()"><i class="bi bi-plus-lg"></i> 添加</button>
-            <button class="action-btn green" onclick="exportData()"><i class="bi bi-download"></i> 导出</button>
-            <button class="action-btn secondary" onclick="document.getElementById('importFile').click()"><i class="bi bi-upload"></i> 导入</button>
+            <button class="action-btn secondary" onclick="clearFilters()">✕ 清除</button>
+            <button class="action-btn primary" onclick="openAddModal()">✚ 添加</button>
+            <button class="action-btn green" onclick="exportData()">⬇ 导出</button>
+            <button class="action-btn secondary" onclick="document.getElementById('importFile').click()">⬆ 导入</button>
             <input type="file" id="importFile" accept=".xlsx,.xls" style="display:none" onchange="importExcel(this)">
-            <button class="action-btn secondary" onclick="openBatchModal()"><i class="bi bi-check2-all"></i> 批量回款</button>
+            <button class="action-btn secondary" onclick="openBatchModal()">☑ 批量回款</button>
         </div>
         
         <!-- Table -->
@@ -758,7 +758,7 @@
         <div class="modal-box">
             <div class="modal-header">
                 <h3 id="modalTitle"><i class="bi bi-plus-circle"></i> 添加数据</h3>
-                <button class="modal-close" onclick="closeDataModal()"><i class="bi bi-x"></i></button>
+                <button class="modal-close" onclick="closeDataModal()">✕</button>
             </div>
             <div class="modal-body">
                 <form id="dataForm">
@@ -844,8 +844,8 @@
     <div class="modal-overlay" id="settingsModal">
         <div class="modal-box">
             <div class="modal-header">
-                <h3><i class="bi bi-gear-fill"></i> 设置</h3>
-                <button class="modal-close" onclick="closeSettings()"><i class="bi bi-x"></i></button>
+                <h3><h3>⚙️ 设置</h3></h3>
+                <button class="modal-close" onclick="closeSettings()">✕</button>
             </div>
             <div class="modal-body">
                 <div class="setting-item">
@@ -887,7 +887,7 @@
     <div class="modal-overlay" id="batchModal">
         <div class="modal-box">
             <div class="modal-header" style="background:linear-gradient(135deg,#ff9500,#ff6b00);color:white;">
-                <h3 style="color:white;"><i class="bi bi-check2-all"></i> 批量标记回款</h3>
+                <h3 style="color:white;">☑ 批量标记回款</h3>
                 <button class="modal-close" onclick="closeBatchModal()" style="background:rgba(255,255,255,0.3);color:white;"><i class="bi bi-x"></i></button>
             </div>
             <div class="modal-body">
@@ -1015,7 +1015,7 @@ function renderTable(){
         html += '<td>' + (item['责任方']||'-') + '</td>';
         html += '<td>' + (item['路由']||'-') + '</td>';
         html += '<td><span class="tag ' + (item['回款情况']==='√'?'tag-paid':'tag-unpaid') + '">' + (item['回款情况']==='√'?'√':'-') + '</span></td>';
-        html += '<td><button class="row-btn edit" onclick="openEditModal('+idx+')"><i class="bi bi-pencil"></i></button><button class="row-btn delete" onclick="deleteData('+idx+')"><i class="bi bi-trash"></i></button></td></tr>';
+        html += '<td><button class="row-btn edit" onclick="openEditModal('+idx+')">✏️</button><button class="row-btn delete" onclick="deleteData('+idx+')">🗑️</button></td></tr>';
     }
     tbody.innerHTML = html;
     document.getElementById('pageTotal').textContent = filteredData.length;
@@ -1153,7 +1153,7 @@ function openAddModal(){
 function openEditModal(idx){
     editingIndex = idx;
     var item = allData[idx];
-    document.getElementById('modalTitle').innerHTML = '<i class="bi bi-pencil"></i> 编辑数据';
+    document.getElementById('modalTitle').innerHTML = '✏️ 编辑数据';
     document.getElementById('confirmBtn').textContent = '更新';
     document.getElementById('confirmBtn').className = 'btn-confirm success';
     document.getElementById('fieldDate').value = item['日期'] || '';
