@@ -253,6 +253,7 @@ def calculate_shared_expense():
         start_date = request.form.get('start_date', '')
         end_date = request.form.get('end_date', '')
         keywords = request.form.get('keywords', '破损,买赔,赔')
+        exclude_responsibility = request.form.get('exclude_resp', '张三,李四,王五')  # 排除的具体人名
         
         if not schedule_file:
             return jsonify({'success': False, 'error': '请上传排班文件'}), 400
@@ -275,19 +276,41 @@ def calculate_shared_expense():
                 if person not in schedule[date]:
                     schedule[date].append(person)
         
-        # 筛选时间范围内的破损买赔数据
+        # 被排除的责任人名单
+        exclude_list = [name.strip() for name in exclude_responsibility.split(',') if name.strip()]
+        
+        # 筛选时间范围内的破损买赔数据（且责任方不是具体人名）
         nc_data = load_data()
         damaged_items = []
+        excluded_items = []  # 被剔除的记录
         keyword_list = [k.strip() for k in keywords.split(',') if k.strip()]
         
         for item in nc_data:
             item_date = str(item.get('日期', '')).strip()
             exception_type = str(item.get('异常情况', ''))
+            responsibility = str(item.get('责任方', '')).strip()
+            
             # 识别破损买赔相关单子
             is_damaged = any(keyword in exception_type for keyword in keyword_list) if keyword_list else True
             is_in_range = start_date <= item_date <= end_date
+            
+            # 检查责任方是否是需要公摊的类别（不是具体人名）
+            # 需要公摊的类别: NC, 验货, 卸车, 共责, 其他 等
+            # 排除的人名: 具体的员工名字
+            is_shared = False
             if is_damaged and is_in_range and item.get('金额'):
-                damaged_items.append(item)
+                # 如果责任方匹配排除名单，则不计入公摊
+                should_exclude = any(ex_name in responsibility for ex_name in exclude_list) if exclude_list else False
+                if not should_exclude:
+                    is_shared = True
+                    damaged_items.append(item)
+                else:
+                    excluded_items.append({
+                        'date': item_date,
+                        'package': item.get('包裹号', ''),
+                        'responsibility': responsibility,
+                        'amount': float(item.get('金额', 0) or 0)
+                    })
         
         # 按日期分组计算
         results = {}
@@ -336,7 +359,9 @@ def calculate_shared_expense():
             'people_count': len(results),
             'grand_total': round(grand_total, 2),
             'summary': summary,
-            'daily_details': daily_details
+            'daily_details': daily_details,
+            'excluded_count': len(excluded_items),
+            'excluded_list': excluded_items
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500

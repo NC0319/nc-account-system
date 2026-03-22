@@ -938,7 +938,12 @@
                     <div style="margin-top:10px;font-size:12px;color:#8e8e93;">排班文件需包含"日期"和"处理人/人员/姓名"列</div>
                 </div>
                 <div style="margin-bottom:16px;">
-                    <h4 style="margin-bottom:10px;color:#1c1c1e;font-size:15px;">3. 计算结果</h4>
+                    <h4 style="margin-bottom:10px;color:#1c1c1e;font-size:15px;">3. 排除的责任人名单</h4>
+                    <input type="text" class="form-control" id="excludeResp" placeholder="输入具体人名，用逗号分隔，如：张三,李四" value="" style="width:100%;">
+                    <div style="margin-top:8px;font-size:12px;color:#8e8e93;">这些责任人的单子不计入公摊（如班次负责人）</div>
+                </div>
+                <div style="margin-bottom:16px;">
+                    <h4 style="margin-bottom:10px;color:#1c1c1e;font-size:15px;">4. 计算结果</h4>
                     <div id="sharedStats" style="display:none;margin-bottom:16px;">
                         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
                             <div style="padding:12px;background:rgba(120,84,244,0.1);border-radius:12px;text-align:center;">
@@ -1441,29 +1446,19 @@ async function calculateShared(){
     var endDate = document.getElementById('sharedEndDate').value;
     var scheduleFile = document.getElementById('scheduleFile').files[0];
     
-    if(!startDate || !endDate){
-        showToast('请设置起止日期', 'error'); return;
-    }
-    if(!scheduleFile){
-        showToast('请上传排班文件', 'error'); return;
-    }
+    if(!startDate || !endDate){ showToast('请设置起止日期', 'error'); return; }
+    if(!scheduleFile){ showToast('请上传排班文件', 'error'); return; }
     
     showToast('正在计算...');
-    
     var formData = new FormData();
     formData.append('schedule', scheduleFile);
-    var body = {
-        start_date: startDate,
-        end_date: endDate,
-        keywords: document.getElementById('damageKeywords').value || '破损,买赔,赔'
-    };
+    formData.append('start_date', startDate);
+    formData.append('end_date', endDate);
+    formData.append('keywords', document.getElementById('damageKeywords').value || '破损,买赔,赔');
+    formData.append('exclude_resp', document.getElementById('excludeResp').value || '');
     
     try{
-        var r = await fetch('/api/calculate-shared', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(Object.assign({schedule: scheduleFile.name}, body))
-        });
+        var r = await fetch('/api/calculate-shared', { method: 'POST', body: formData });
         var result = await r.json();
         if(result.success){
             document.getElementById('sharedTotalDamage').textContent = result.total_damaged;
@@ -1471,24 +1466,27 @@ async function calculateShared(){
             document.getElementById('sharedPeopleCount').textContent = result.people_count;
             document.getElementById('sharedGrandTotal').textContent = result.grand_total;
             document.getElementById('sharedStats').style.display = 'block';
-            
             var html = '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
-            html += '<thead><tr style="background:rgba(120,84,244,0.1);"><th style="padding:10px;text-align:left;font-weight:600;">人员</th><th style="padding:10px;text-align:right;font-weight:600;">公摊金额</th><th style="padding:10px;text-align:left;font-weight:600;">涉及日期</th></tr></thead><tbody>';
+            html += '<thead><tr style="background:rgba(120,84,244,0.1);"><th style="padding:10px;">人员</th><th style="padding:10px;text-align:right;">公摊金额</th><th style="padding:10px;">涉及日期</th></tr></thead><tbody>';
             for(var i=0; i<result.summary.length; i++){
                 var item = result.summary[i];
-                var dates = item.details.map(function(d){ return d.date + '(' + d.amount + ')'; }).join(', ');
-                html += '<tr style="border-bottom:1px solid rgba(0,0,0,0.05);"><td style="padding:10px;">' + item.person + '</td><td style="padding:10px;text-align:right;font-weight:600;color:#ff9500;">' + item.total + '</td><td style="padding:10px;font-size:12px;color:#8e8e93;">' + dates + '</td></tr>';
+                var dates = item.details.map(function(d){ return d.date+'('+d.amount+')'; }).join(', ');
+                html += '<tr><td style="padding:10px;">'+item.person+'</td><td style="padding:10px;text-align:right;font-weight:600;color:#ff9500;">'+item.total+'</td><td style="padding:10px;font-size:12px;color:#8e8e93;">'+dates+'</td></tr>';
             }
             html += '</tbody></table>';
+            if(result.excluded_count > 0){
+                html += '<div style="margin-top:16px;padding:12px;background:rgba(255,149,0,0.1);border-radius:12px;"><div style="font-weight:600;color:#ff9500;margin-bottom:8px;">已剔除 '+result.excluded_count+' 条（责任人非班次人员）：</div>';
+                for(var j=0; j<result.excluded_list.length; j++){
+                    var ex = result.excluded_list[j];
+                    html += '<div style="font-size:12px;color:#666;">'+ex.date+' · '+ex.package+' · 责任人:'+ex.responsibility+' · '+ex.amount+'元</div>';
+                }
+                html += '</div>';
+            }
             document.getElementById('sharedTable').innerHTML = html;
             document.getElementById('sharedEmpty').style.display = 'none';
             showToast('计算完成！');
-        } else {
-            showToast(result.error || '计算失败', 'error');
-        }
-    } catch(e){
-        showToast('计算失败', 'error');
-    }
+        } else { showToast(result.error || '计算失败', 'error'); }
+    } catch(e){ showToast('计算失败', 'error'); }
 }
     </script>
 </body>
