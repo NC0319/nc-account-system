@@ -215,11 +215,20 @@
         /* 图表容器 */
         .chart-card {
             padding: 20px;
-            min-height: 220px;
+            min-height: 240px;
+            display: flex;
+            flex-direction: column;
         }
         .chart-card canvas {
-            max-height: 160px;
+            max-height: 180px;
+            min-height: 150px;
             width: 100% !important;
+            height: auto !important;
+        }
+        .chart-container {
+            position: relative;
+            min-height: 160px;
+            flex: 1;
         }
         
         /* iOS Style Cards */
@@ -688,11 +697,11 @@
         <div class="charts-row">
             <div class="card chart-card">
                 <div class="chart-title"><i class="bi bi-pie-chart-fill" style="color:#7854f4"></i> 异常分布</div>
-                <canvas id="exceptionChart" class="chart-canvas"></canvas>
+                <div class="chart-container"><canvas id="exceptionChart"></canvas></div>
             </div>
             <div class="card chart-card">
                 <div class="chart-title"><i class="bi bi-bar-chart-fill" style="color:#007aff"></i> 责任方分布</div>
-                <canvas id="responsibilityChart" class="chart-canvas"></canvas>
+                <div class="chart-container"><canvas id="responsibilityChart"></canvas></div>
             </div>
         </div>
         
@@ -1135,8 +1144,6 @@ function renderCharts(){
         
         var ecCanvas = document.getElementById('exceptionChart');
         if(ecCanvas && typeof Chart !== 'undefined' && ecCanvas.getContext){
-            ecCanvas.width = ecCanvas.offsetWidth;
-            ecCanvas.height = 160;
             ecChart = new Chart(ecCanvas.getContext('2d'), {
                 type: 'doughnut',
                 data: { 
@@ -1176,8 +1183,6 @@ function renderCharts(){
         
         var rcCanvas = document.getElementById('responsibilityChart');
         if(rcCanvas && typeof Chart !== 'undefined' && rcCanvas.getContext){
-            rcCanvas.width = rcCanvas.offsetWidth;
-            rcCanvas.height = 160;
             rcChart = new Chart(rcCanvas.getContext('2d'), {
                 type: 'bar',
                 data: { 
