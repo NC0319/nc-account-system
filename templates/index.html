@@ -724,6 +724,7 @@
             <button class="action-btn secondary" onclick="document.getElementById('importFile').click()">⬆ 导入</button>
             <input type="file" id="importFile" accept=".xlsx,.xls" style="display:none" onchange="importExcel(this)">
             <button class="action-btn secondary" onclick="openBatchModal()">☑ 批量回款</button>
+            <button class="action-btn secondary" onclick="openSharedModal()">📊 公摊计算</button>
         </div>
         
         <!-- Table -->
@@ -888,7 +889,7 @@
         <div class="modal-box">
             <div class="modal-header" style="background:linear-gradient(135deg,#ff9500,#ff6b00);color:white;">
                 <h3 style="color:white;">☑ 批量标记回款</h3>
-                <button class="modal-close" onclick="closeBatchModal()" style="background:rgba(255,255,255,0.3);color:white;"><i class="bi bi-x"></i></button>
+                <button class="modal-close" onclick="closeBatchModal()" style="background:rgba(255,255,255,0.3);color:white;">✕</button>
             </div>
             <div class="modal-body">
                 <div style="margin-bottom:16px;display:flex;gap:10px;">
@@ -901,6 +902,70 @@
                 <span id="batchCount" style="margin-right:auto;color:#8e8e93;">已选 0 条</span>
                 <button class="btn-cancel" onclick="closeBatchModal()">取消</button>
                 <button class="btn-confirm" style="background:#ff9500;" onclick="submitBatch()">标记已回款</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 公摊计算 Modal -->
+    <div class="modal-overlay" id="sharedModal">
+        <div class="modal-box" style="max-width:700px;">
+            <div class="modal-header" style="background:linear-gradient(135deg,#7854f4,#5c3dde);color:white;">
+                <h3 style="color:white;">📊 公摊金额计算</h3>
+                <button class="modal-close" onclick="closeSharedModal()" style="background:rgba(255,255,255,0.3);color:white;">✕</button>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom:20px;">
+                    <h4 style="margin-bottom:12px;color:#1c1c1e;font-size:15px;">1. 设置时间范围</h4>
+                    <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
+                        <div>
+                            <label style="font-size:12px;color:#8e8e93;">开始日期</label>
+                            <input type="date" class="form-control" id="sharedStartDate" style="width:150px;">
+                        </div>
+                        <div style="padding-top:18px;color:#8e8e93;">至</div>
+                        <div>
+                            <label style="font-size:12px;color:#8e8e93;">结束日期</label>
+                            <input type="date" class="form-control" id="sharedEndDate" style="width:150px;">
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-bottom:20px;">
+                    <h4 style="margin-bottom:12px;color:#1c1c1e;font-size:15px;">2. 上传排班文件</h4>
+                    <div style="padding:20px;border:2px dashed #ddd;border-radius:12px;text-align:center;background:rgba(0,0,0,0.02);">
+                        <input type="file" id="scheduleFile" accept=".xlsx,.xls" style="display:none;" onchange="showScheduleFileName(this)">
+                        <div id="scheduleFileName" style="margin-bottom:12px;color:#8e8e93;font-size:13px;">未选择文件</div>
+                        <button class="action-btn secondary" onclick="document.getElementById('scheduleFile').click()">选择排班Excel文件</button>
+                    </div>
+                    <div style="margin-top:10px;font-size:12px;color:#8e8e93;">排班文件需包含"日期"和"处理人/人员/姓名"列</div>
+                </div>
+                <div style="margin-bottom:16px;">
+                    <h4 style="margin-bottom:10px;color:#1c1c1e;font-size:15px;">3. 计算结果</h4>
+                    <div id="sharedStats" style="display:none;margin-bottom:16px;">
+                        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
+                            <div style="padding:12px;background:rgba(120,84,244,0.1);border-radius:12px;text-align:center;">
+                                <div style="font-size:20px;font-weight:700;color:#7854f4;" id="sharedTotalDamage">-</div>
+                                <div style="font-size:11px;color:#8e8e93;">破损总金额</div>
+                            </div>
+                            <div style="padding:12px;background:rgba(0,122,255,0.1);border-radius:12px;text-align:center;">
+                                <div style="font-size:20px;font-weight:700;color:#007aff;" id="sharedDaysCount">-</div>
+                                <div style="font-size:11px;color:#8e8e93;">涉及天数</div>
+                            </div>
+                            <div style="padding:12px;background:rgba(52,199,89,0.1);border-radius:12px;text-align:center;">
+                                <div style="font-size:20px;font-weight:700;color:#34c759;" id="sharedPeopleCount">-</div>
+                                <div style="font-size:11px;color:#8e8e93;">涉及人数</div>
+                            </div>
+                            <div style="padding:12px;background:rgba(255,149,0,0.1);border-radius:12px;text-align:center;">
+                                <div style="font-size:20px;font-weight:700;color:#ff9500;" id="sharedGrandTotal">-</div>
+                                <div style="font-size:11px;color:#8e8e93;">公摊总额</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="sharedTable" style="max-height:250px;overflow-y:auto;"></div>
+                    <div id="sharedEmpty" style="padding:20px;text-align:center;color:#8e8e93;">点击"开始计算"获取结果</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeSharedModal()">关闭</button>
+                <button class="btn-confirm" onclick="calculateShared()">开始计算</button>
             </div>
         </div>
     </div>
@@ -1350,6 +1415,81 @@ document.getElementById('filterMonth').addEventListener('change', applyFilters);
 document.getElementById('filterShift').addEventListener('change', applyFilters);
 document.getElementById('filterResp').addEventListener('change', applyFilters);
 function changePageSize(size){ localStorage.setItem('pageSize', size); renderTable(); }
+
+// 公摊计算
+function openSharedModal(){
+    var today = new Date().toISOString().split('T')[0];
+    var firstDay = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
+    document.getElementById('sharedStartDate').value = firstDay;
+    document.getElementById('sharedEndDate').value = today;
+    document.getElementById('sharedStats').style.display = 'none';
+    document.getElementById('sharedTable').innerHTML = '';
+    document.getElementById('sharedEmpty').style.display = 'block';
+    document.getElementById('sharedModal').classList.add('show');
+}
+
+function closeSharedModal(){
+    document.getElementById('sharedModal').classList.remove('show');
+}
+
+function showScheduleFileName(input){
+    document.getElementById('scheduleFileName').textContent = input.files[0] ? input.files[0].name : '未选择文件';
+}
+
+async function calculateShared(){
+    var startDate = document.getElementById('sharedStartDate').value;
+    var endDate = document.getElementById('sharedEndDate').value;
+    var scheduleFile = document.getElementById('scheduleFile').files[0];
+    
+    if(!startDate || !endDate){
+        showToast('请设置起止日期', 'error'); return;
+    }
+    if(!scheduleFile){
+        showToast('请上传排班文件', 'error'); return;
+    }
+    
+    showToast('正在计算...');
+    
+    var formData = new FormData();
+    formData.append('schedule', scheduleFile);
+    var body = {
+        start_date: startDate,
+        end_date: endDate,
+        keywords: document.getElementById('damageKeywords').value || '破损,买赔,赔'
+    };
+    
+    try{
+        var r = await fetch('/api/calculate-shared', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(Object.assign({schedule: scheduleFile.name}, body))
+        });
+        var result = await r.json();
+        if(result.success){
+            document.getElementById('sharedTotalDamage').textContent = result.total_damaged;
+            document.getElementById('sharedDaysCount').textContent = result.days_count;
+            document.getElementById('sharedPeopleCount').textContent = result.people_count;
+            document.getElementById('sharedGrandTotal').textContent = result.grand_total;
+            document.getElementById('sharedStats').style.display = 'block';
+            
+            var html = '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
+            html += '<thead><tr style="background:rgba(120,84,244,0.1);"><th style="padding:10px;text-align:left;font-weight:600;">人员</th><th style="padding:10px;text-align:right;font-weight:600;">公摊金额</th><th style="padding:10px;text-align:left;font-weight:600;">涉及日期</th></tr></thead><tbody>';
+            for(var i=0; i<result.summary.length; i++){
+                var item = result.summary[i];
+                var dates = item.details.map(function(d){ return d.date + '(' + d.amount + ')'; }).join(', ');
+                html += '<tr style="border-bottom:1px solid rgba(0,0,0,0.05);"><td style="padding:10px;">' + item.person + '</td><td style="padding:10px;text-align:right;font-weight:600;color:#ff9500;">' + item.total + '</td><td style="padding:10px;font-size:12px;color:#8e8e93;">' + dates + '</td></tr>';
+            }
+            html += '</tbody></table>';
+            document.getElementById('sharedTable').innerHTML = html;
+            document.getElementById('sharedEmpty').style.display = 'none';
+            showToast('计算完成！');
+        } else {
+            showToast(result.error || '计算失败', 'error');
+        }
+    } catch(e){
+        showToast('计算失败', 'error');
+    }
+}
     </script>
 </body>
 </html>

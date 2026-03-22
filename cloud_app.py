@@ -244,6 +244,103 @@ def batch_mark_paid():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/calculate-shared', methods=['POST'])
+def calculate_shared_expense():
+    """计算公摊金额"""
+    try:
+        # 处理 FormData 格式
+        schedule_file = request.files.get('schedule')
+        start_date = request.form.get('start_date', '')
+        end_date = request.form.get('end_date', '')
+        keywords = request.form.get('keywords', '破损,买赔,赔')
+        
+        if not schedule_file:
+            return jsonify({'success': False, 'error': '请上传排班文件'}), 400
+        
+        if not start_date or not end_date:
+            return jsonify({'success': False, 'error': '请设置起止日期'}), 400
+        
+        # 读取排班数据
+        schedule_df = pd.read_excel(schedule_file)
+        schedule_df['日期'] = pd.to_datetime(schedule_df['日期']).dt.strftime('%Y-%m-%d')
+        
+        # 构建排班字典: {日期: [人员列表]}
+        schedule = {}
+        for _, row in schedule_df.iterrows():
+            date = str(row.get('日期', '')).strip()
+            person = str(row.get('处理人', row.get('人员', row.get('姓名', '')))).strip()
+            if date and person and person not in ['', 'nan']:
+                if date not in schedule:
+                    schedule[date] = []
+                if person not in schedule[date]:
+                    schedule[date].append(person)
+        
+        # 筛选时间范围内的破损买赔数据
+        nc_data = load_data()
+        damaged_items = []
+        keyword_list = [k.strip() for k in keywords.split(',') if k.strip()]
+        
+        for item in nc_data:
+            item_date = str(item.get('日期', '')).strip()
+            exception_type = str(item.get('异常情况', ''))
+            # 识别破损买赔相关单子
+            is_damaged = any(keyword in exception_type for keyword in keyword_list) if keyword_list else True
+            is_in_range = start_date <= item_date <= end_date
+            if is_damaged and is_in_range and item.get('金额'):
+                damaged_items.append(item)
+        
+        # 按日期分组计算
+        results = {}
+        daily_details = {}
+        
+        # 先按日期统计破损金额
+        daily_damage = {}
+        for item in damaged_items:
+            date = item.get('日期', '')
+            amount = float(item.get('金额', 0) or 0)
+            daily_damage[date] = daily_damage.get(date, 0) + amount
+        
+        # 计算每天每人公摊
+        for date, total_damage in daily_damage.items():
+            people = schedule.get(date, [])
+            if people:
+                per_person = total_damage / len(people)
+                daily_details[date] = {
+                    'total': round(total_damage, 2),
+                    'people': len(people),
+                    'per_person': round(per_person, 2),
+                    'person_list': people
+                }
+                for person in people:
+                    if person not in results:
+                        results[person] = {'total': 0, 'dates': []}
+                    results[person]['total'] = round(results[person]['total'] + per_person, 2)
+                    results[person]['dates'].append({
+                        'date': date,
+                        'amount': round(per_person, 2)
+                    })
+        
+        # 汇总排序
+        summary = [{'person': p, 'total': d['total'], 'details': d['dates']} 
+                   for p, d in results.items()]
+        summary.sort(key=lambda x: x['total'], reverse=True)
+        
+        grand_total = sum(r['total'] for r in summary)
+        
+        return jsonify({
+            'success': True,
+            'start_date': start_date,
+            'end_date': end_date,
+            'total_damaged': round(sum(daily_damage.values()), 2),
+            'days_count': len(daily_damage),
+            'people_count': len(results),
+            'grand_total': round(grand_total, 2),
+            'summary': summary,
+            'daily_details': daily_details
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 # Render.com 需要
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
