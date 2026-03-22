@@ -939,8 +939,11 @@ async function loadData(){
     showLoading();
     try{
         var r = await fetch('/api/data');
-        allData = await r.json();
-        allData.sort(function(a,b){ return (b['日期']||'').localeCompare(a['日期']||''); });
+        var raw = await r.json();
+        // 先记录原始索引，再排序
+        raw.forEach(function(item, i){ item.__idx = i; });
+        raw.sort(function(a,b){ return (b['日期']||'').localeCompare(a['日期']||''); });
+        allData = raw;
         filteredData = allData.slice();
         updateStats();
         renderTable();
@@ -1004,7 +1007,7 @@ function renderTable(){
     var html = '';
     for(var i=0; i<pageData.length; i++){
         var item = pageData[i];
-        var idx = allData.indexOf(item);
+        var idx = item.__idx !== undefined ? item.__idx : allData.indexOf(item);
         var detail = item['商品详情'] || '';
         html += '<tr><td>' + (item['日期']||'-') + '</td>';
         html += '<td><span class="tag ' + (item['班次']==='白班'?'tag-day':'tag-night') + '">' + (item['班次']||'-') + '</span></td>';
@@ -1152,7 +1155,12 @@ function openAddModal(){
 
 function openEditModal(idx){
     editingIndex = idx;
-    var item = allData[idx];
+    // 找到对应的数据项（通过__idx匹配）
+    var item = null;
+    for(var i=0; i<allData.length; i++){
+        if(allData[i].__idx === idx){ item = allData[i]; break; }
+    }
+    if(!item){ showToast('找不到数据', 'error'); return; }
     document.getElementById('modalTitle').innerHTML = '✏️ 编辑数据';
     document.getElementById('confirmBtn').textContent = '更新';
     document.getElementById('confirmBtn').className = 'btn-confirm success';
