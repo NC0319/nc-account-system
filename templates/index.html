@@ -209,6 +209,8 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
         .header-btn:hover { background: rgba(255,255,255,0.8); transform: scale(1.05); }
+        .header-btn:hover i { animation: gearSpin 0.5s ease forwards; }
+        @keyframes gearSpin { from { transform: rotate(0deg); } to { transform: rotate(180deg); } }
         .header-btn:active { transform: scale(0.95); }
         
         /* 图表容器 */
