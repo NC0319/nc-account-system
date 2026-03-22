@@ -269,16 +269,76 @@ def calculate_shared_expense():
         schedule_df = pd.read_excel(schedule_file)
         schedule_df['日期'] = pd.to_datetime(schedule_df['日期']).dt.strftime('%Y-%m-%d')
         
-        # 构建排班字典: {日期: [人员列表]}
+        # 班次识别函数
+        def classify_shift(shift_str):
+            """识别班次类型: 返回 'day'(白班) 或 'night'(夜班) 或 None(未知)"""
+            if not shift_str or str(shift_str).strip() in ['', 'nan']:
+                return None
+            s = str(shift_str).strip()
+            # 白班: 早班、中班1次、中班3次、中班4次
+            if '早班' in s:
+                return 'day'
+            if '晚班' in s:
+                return 'night'
+            if '中班' in s:
+                import re
+                nums = re.findall(r'中班(\d+)次', s)
+                if nums:
+                    n = int(nums[0])
+                    if n in [1, 3, 4]:
+                        return 'day'
+                    elif n in [2, 5]:
+                        return 'night'
+            return None  # 无法识别
+
+        # 构建排班字典: {日期: {'day': [白班人员], 'night': [夜班人员], 'all': [全部人员]}}
         schedule = {}
+        # 检测排班文件是否有班次列
+        shift_col = None
+        for col in schedule_df.columns:
+            if '班次' in str(col) or '班型' in str(col) or '排班' in str(col):
+                shift_col = col
+                break
+
         for _, row in schedule_df.iterrows():
             date = str(row.get('日期', '')).strip()
             person = str(row.get('处理人', row.get('人员', row.get('姓名', '')))).strip()
-            if date and person and person not in ['', 'nan']:
-                if date not in schedule:
-                    schedule[date] = []
-                if person not in schedule[date]:
-                    schedule[date].append(person)
+            if not date or not person or person in ['', 'nan']:
+                continue
+            if date not in schedule:
+                schedule[date] = {'day': [], 'night': [], 'all': []}
+
+            # 识别班次
+            shift_type = None
+            if shift_col:
+                shift_val = str(row.get(shift_col, '')).strip()
+                shift_type = classify_shift(shift_val)
+            else:
+                # 没有班次列，尝试从人员列其他字段识别
+                for col in schedule_df.columns:
+                    val = str(row.get(col, '')).strip()
+                    t = classify_shift(val)
+                    if t:
+                        shift_type = t
+                        break
+
+            # 同一天同一人出现中班+早班，只识别为白班
+            if person not in schedule[date]['all']:
+                schedule[date]['all'].append(person)
+
+            if shift_type == 'day':
+                # 如果之前已在夜班，移到白班（早班优先）
+                if person in schedule[date]['night']:
+                    schedule[date]['night'].remove(person)
+                if person not in schedule[date]['day']:
+                    schedule[date]['day'].append(person)
+            elif shift_type == 'night':
+                # 只有当天没有白班记录时才加入夜班
+                if person not in schedule[date]['day'] and person not in schedule[date]['night']:
+                    schedule[date]['night'].append(person)
+            else:
+                # 无法识别班次，归入全部
+                pass
         
         # 被排除的责任人名单
         exclude_list = [name.strip() for name in exclude_responsibility.split(',') if name.strip()]
@@ -329,14 +389,33 @@ def calculate_shared_expense():
         
         # 计算每天每人公摊
         for date, total_damage in daily_damage.items():
-            people = schedule.get(date, [])
+            day_info = schedule.get(date, {})
+            # 兼容旧格式（列表）和新格式（字典）
+            if isinstance(day_info, list):
+                people = day_info
+                shift_label = ''
+            else:
+                day_people = day_info.get('day', [])
+                night_people = day_info.get('night', [])
+                all_people = day_info.get('all', [])
+                # 有班次区分时用 all（白班+夜班合并），无班次时用 all
+                people = all_people if all_people else []
+                # 构建班次标签
+                labels = []
+                if day_people:
+                    labels.append('白班:' + ','.join(day_people))
+                if night_people:
+                    labels.append('夜班:' + ','.join(night_people))
+                shift_label = ' | '.join(labels) if labels else ''
+
             if people:
                 per_person = total_damage / len(people)
                 daily_details[date] = {
                     'total': round(total_damage, 2),
                     'people': len(people),
                     'per_person': round(per_person, 2),
-                    'person_list': people
+                    'person_list': people,
+                    'shift_label': shift_label
                 }
                 for person in people:
                     if person not in results:
