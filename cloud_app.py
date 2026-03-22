@@ -366,6 +366,61 @@ def calculate_shared_expense():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/export-shared', methods=['POST'])
+def export_shared_expense():
+    """导出公摊计算结果为Excel"""
+    try:
+        # 接收计算结果数据
+        data = request.json or {}
+        summary = data.get('summary', [])
+        daily_details = data.get('daily_details', {})
+        excluded_list = data.get('excluded_list', [])
+        start_date = data.get('start_date', '')
+        end_date = data.get('end_date', '')
+        
+        # 创建结果DataFrame
+        rows = []
+        for item in summary:
+            dates_str = ', '.join([d['date'] + '(' + str(d['amount']) + ')' for d in item['details']])
+            rows.append({
+                '姓名': item['person'],
+                '总公摊金额': item['total'],
+                '涉及天数': len(item['details']),
+                '明细': dates_str
+            })
+        
+        result_df = pd.DataFrame(rows)
+        
+        # 创建明细DataFrame
+        detail_rows = []
+        for date, info in daily_details.items():
+            for person in info.get('person_list', []):
+                detail_rows.append({
+                    '日期': date,
+                    '当天破损总额': info['total'],
+                    '上班人数': info['people'],
+                    '每人公摊': info['per_person'],
+                    '上班人员': ', '.join(info.get('person_list', []))
+                })
+        detail_df = pd.DataFrame(detail_rows)
+        
+        # 被剔除的记录
+        excluded_df = pd.DataFrame(excluded_list) if excluded_list else pd.DataFrame()
+        
+        # 写入Excel（多个Sheet）
+        excel_path = '/tmp/nc_shared_expense.xlsx'
+        with pd.ExcelWriter(excel_path, engine='openpyxl') as writer:
+            if not result_df.empty:
+                result_df.to_excel(writer, index=False, sheet_name='公摊汇总')
+            if not detail_df.empty:
+                detail_df.to_excel(writer, index=False, sheet_name='每日明细')
+            if not excluded_df.empty:
+                excluded_df.to_excel(writer, index=False, sheet_name='已剔除记录')
+        
+        return send_file(excel_path, as_attachment=True, download_name='公摊计算结果.xlsx')
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 # Render.com 需要
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
