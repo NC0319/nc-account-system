@@ -78,6 +78,40 @@ function markAllUnpaid(){
       }).catch(function(){ showToast('操作失败','error'); });
 }
 
+
+
+// 已回款弹窗
+function openPaidModal(){
+    var paid = allData.filter(function(item){
+        var v = item['回款情况'] || '';
+        return v === '√' || v === '✔' || v === '已回款';
+    });
+    var tbody = document.getElementById('paidTableBody');
+    if(paid.length === 0){
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:#8e8e93;">暂无已回款记录</td></tr>';
+    } else {
+        var html = '';
+        var total = 0;
+        for(var i=0; i<paid.length; i++){
+            var amt = parseFloat(paid[i]['金额']) || 0;
+            total += amt;
+            var bg = i%2===0 ? 'rgba(52,199,89,0.03)' : 'transparent';
+            html += '<tr style="background:'+bg+';border-bottom:1px solid rgba(0,0,0,0.05);">';
+            html += '<td style="padding:12px;">'+(paid[i]['日期']||'-')+'</td>';
+            html += '<td style="padding:12px;font-size:12px;">'+(paid[i]['包裹号']||'-')+'</td>';
+            html += '<td style="padding:12px;text-align:right;font-weight:600;color:#34c759;">'+(paid[i]['金额']||'-')+'</td>';
+            html += '<td style="padding:12px;">'+(paid[i]['处理人']||'-')+'</td>';
+            html += '<td style="padding:12px;"><span style="color:#34c759;">'+(paid[i]['回款情况']||'-')+'</span></td>';
+            html += '</tr>';
+        }
+        tbody.innerHTML = html;
+    }
+    document.getElementById('paidTotalInfo').textContent = '共 ' + paid.length + ' 条，合计 ' + total.toFixed(2) + ' 元';
+    document.getElementById('paidModal').classList.add('show');
+}
+
+function closePaidModal(){ document.getElementById('paidModal').classList.remove('show'); }
+
 function markUnpaidSelected(){
     if(selectedUnpaid.length === 0){ showToast('请先选择', 'error'); return; }
     fetch('/api/batch-paid', {
@@ -169,6 +203,40 @@ function markAllUnpaid(){
           else{ showToast('操作失败','error'); }
       }).catch(function(){ showToast('操作失败','error'); });
 }
+
+
+
+// 已回款弹窗
+function openPaidModal(){
+    var paid = allData.filter(function(item){
+        var v = item['回款情况'] || '';
+        return v === '√' || v === '✔' || v === '已回款';
+    });
+    var tbody = document.getElementById('paidTableBody');
+    if(paid.length === 0){
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:#8e8e93;">暂无已回款记录</td></tr>';
+    } else {
+        var html = '';
+        var total = 0;
+        for(var i=0; i<paid.length; i++){
+            var amt = parseFloat(paid[i]['金额']) || 0;
+            total += amt;
+            var bg = i%2===0 ? 'rgba(52,199,89,0.03)' : 'transparent';
+            html += '<tr style="background:'+bg+';border-bottom:1px solid rgba(0,0,0,0.05);">';
+            html += '<td style="padding:12px;">'+(paid[i]['日期']||'-')+'</td>';
+            html += '<td style="padding:12px;font-size:12px;">'+(paid[i]['包裹号']||'-')+'</td>';
+            html += '<td style="padding:12px;text-align:right;font-weight:600;color:#34c759;">'+(paid[i]['金额']||'-')+'</td>';
+            html += '<td style="padding:12px;">'+(paid[i]['处理人']||'-')+'</td>';
+            html += '<td style="padding:12px;"><span style="color:#34c759;">'+(paid[i]['回款情况']||'-')+'</span></td>';
+            html += '</tr>';
+        }
+        tbody.innerHTML = html;
+    }
+    document.getElementById('paidTotalInfo').textContent = '共 ' + paid.length + ' 条，合计 ' + total.toFixed(2) + ' 元';
+    document.getElementById('paidModal').classList.add('show');
+}
+
+function closePaidModal(){ document.getElementById('paidModal').classList.remove('show'); }
 
 function markUnpaidSelected(){
     if(selectedUnpaid.length === 0){ showToast('请先选择', 'error'); return; }
@@ -858,10 +926,10 @@ function markUnpaidSelected(){
                 <div class="stat-num" id="unpaidCount">0</div>
                 <div class="stat-label">未回款(点击)</div>
             </div>
-            <div class="stat-card">
+            <div class="stat-card" onclick="openPaidModal()" style="cursor:pointer;" title="点击查看已回款记录">
                 <div class="stat-icon green"><i class="bi bi-check-circle"></i></div>
                 <div class="stat-num" id="paidCount">0</div>
-                <div class="stat-label">已回款</div>
+                <div class="stat-label">已回款(点击)</div>
             </div>
         </div>
         
@@ -1158,6 +1226,36 @@ function markUnpaidSelected(){
         </div>
     </div>
     
+    <!-- 已回款 Modal -->
+    <div class="modal-overlay" id="paidModal">
+        <div class="modal-box" style="max-width:800px;">
+            <div class="modal-header" style="background:linear-gradient(135deg,#34c759,#30d158);color:white;">
+                <h3 style="color:white;">已回款记录</h3>
+                <button class="modal-close" onclick="closePaidModal()" style="background:rgba(255,255,255,0.3);color:white;">✕</button>
+            </div>
+            <div class="modal-body">
+                <div style="max-height:400px;overflow-y:auto;">
+                    <table id="paidTable" style="width:100%;border-collapse:collapse;font-size:13px;">
+                        <thead>
+                            <tr style="background:rgba(52,199,89,0.1);">
+                                <th style="padding:12px;text-align:left;">日期</th>
+                                <th style="padding:12px;text-align:left;">包裹号</th>
+                                <th style="padding:12px;text-align:right;">金额</th>
+                                <th style="padding:12px;text-align:left;">处理人</th>
+                                <th style="padding:12px;text-align:left;">回款情况</th>
+                            </tr>
+                        </thead>
+                        <tbody id="paidTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <span id="paidTotalInfo" style="margin-right:auto;color:#8e8e93;"></span>
+                <button class="btn-cancel" onclick="closePaidModal()">关闭</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 未回款 Modal -->
     <div class="modal-overlay" id="unpaidModal">
         <div class="modal-box" style="max-width:700px;">
@@ -1257,6 +1355,40 @@ function markAllUnpaid(){
           else{ showToast('操作失败','error'); }
       }).catch(function(){ showToast('操作失败','error'); });
 }
+
+
+
+// 已回款弹窗
+function openPaidModal(){
+    var paid = allData.filter(function(item){
+        var v = item['回款情况'] || '';
+        return v === '√' || v === '✔' || v === '已回款';
+    });
+    var tbody = document.getElementById('paidTableBody');
+    if(paid.length === 0){
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:#8e8e93;">暂无已回款记录</td></tr>';
+    } else {
+        var html = '';
+        var total = 0;
+        for(var i=0; i<paid.length; i++){
+            var amt = parseFloat(paid[i]['金额']) || 0;
+            total += amt;
+            var bg = i%2===0 ? 'rgba(52,199,89,0.03)' : 'transparent';
+            html += '<tr style="background:'+bg+';border-bottom:1px solid rgba(0,0,0,0.05);">';
+            html += '<td style="padding:12px;">'+(paid[i]['日期']||'-')+'</td>';
+            html += '<td style="padding:12px;font-size:12px;">'+(paid[i]['包裹号']||'-')+'</td>';
+            html += '<td style="padding:12px;text-align:right;font-weight:600;color:#34c759;">'+(paid[i]['金额']||'-')+'</td>';
+            html += '<td style="padding:12px;">'+(paid[i]['处理人']||'-')+'</td>';
+            html += '<td style="padding:12px;"><span style="color:#34c759;">'+(paid[i]['回款情况']||'-')+'</span></td>';
+            html += '</tr>';
+        }
+        tbody.innerHTML = html;
+    }
+    document.getElementById('paidTotalInfo').textContent = '共 ' + paid.length + ' 条，合计 ' + total.toFixed(2) + ' 元';
+    document.getElementById('paidModal').classList.add('show');
+}
+
+function closePaidModal(){ document.getElementById('paidModal').classList.remove('show'); }
 
 function markUnpaidSelected(){
     if(selectedUnpaid.length === 0){ showToast('请先选择', 'error'); return; }
@@ -1882,6 +2014,40 @@ function markAllUnpaid(){
           else{ showToast('操作失败','error'); }
       }).catch(function(){ showToast('操作失败','error'); });
 }
+
+
+
+// 已回款弹窗
+function openPaidModal(){
+    var paid = allData.filter(function(item){
+        var v = item['回款情况'] || '';
+        return v === '√' || v === '✔' || v === '已回款';
+    });
+    var tbody = document.getElementById('paidTableBody');
+    if(paid.length === 0){
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:#8e8e93;">暂无已回款记录</td></tr>';
+    } else {
+        var html = '';
+        var total = 0;
+        for(var i=0; i<paid.length; i++){
+            var amt = parseFloat(paid[i]['金额']) || 0;
+            total += amt;
+            var bg = i%2===0 ? 'rgba(52,199,89,0.03)' : 'transparent';
+            html += '<tr style="background:'+bg+';border-bottom:1px solid rgba(0,0,0,0.05);">';
+            html += '<td style="padding:12px;">'+(paid[i]['日期']||'-')+'</td>';
+            html += '<td style="padding:12px;font-size:12px;">'+(paid[i]['包裹号']||'-')+'</td>';
+            html += '<td style="padding:12px;text-align:right;font-weight:600;color:#34c759;">'+(paid[i]['金额']||'-')+'</td>';
+            html += '<td style="padding:12px;">'+(paid[i]['处理人']||'-')+'</td>';
+            html += '<td style="padding:12px;"><span style="color:#34c759;">'+(paid[i]['回款情况']||'-')+'</span></td>';
+            html += '</tr>';
+        }
+        tbody.innerHTML = html;
+    }
+    document.getElementById('paidTotalInfo').textContent = '共 ' + paid.length + ' 条，合计 ' + total.toFixed(2) + ' 元';
+    document.getElementById('paidModal').classList.add('show');
+}
+
+function closePaidModal(){ document.getElementById('paidModal').classList.remove('show'); }
 
 function markUnpaidSelected(){
     if(selectedUnpaid.length === 0){ showToast('请先选择', 'error'); return; }
