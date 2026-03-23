@@ -7,10 +7,23 @@
 import os
 import json
 from datetime import datetime
-from flask import Flask, render_template, jsonify, request, send_file
+from flask import Flask, render_template, jsonify, request, send_file, Response
+import gzip
 import pandas as pd
 
 app = Flask(__name__)
+
+# Gzip压缩
+@app.after_request
+def compress_response(response):
+    accept_encoding = request.headers.get('Accept-Encoding', '').lower()
+    if 'gzip' in accept_encoding and response.status_code == 200:
+        content = response.get_data()
+        gzip_response = Response(gzip.compress(content), content_type=response.content_type)
+        gzip_response.headers['Content-Encoding'] = 'gzip'
+        gzip_response.headers['Content-Length'] = len(gzip_response.get_data())
+        return gzip_response
+    return response
 
 # Render.com环境变量或本地文件
 EXCEL_FILE = os.environ.get('EXCEL_FILE', os.path.expanduser('~/Desktop/26年NC台账勿删.xlsx'))
