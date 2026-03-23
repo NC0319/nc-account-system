@@ -270,8 +270,20 @@ def calculate_shared_expense():
         schedule_df['日期'] = pd.to_datetime(schedule_df['日期']).dt.strftime('%Y-%m-%d')
         
         # 班次识别函数
-        def classify_shift(shift_str):
-            """识别班次类型: 返回 'day'(白班) 或 'night'(夜班) 或 None(未知)"""
+        def classify_shift(shift_str, clock_time=None):
+            """识别班次类型: 返回 'day'(白班) 或 'night'(夜班) 或 'rest'(休息) 或 None(未知)"""
+            # 先检查是否休息
+            if shift_str:
+                s = str(shift_str).strip()
+                if '休息' in s or '休' == s:
+                    return 'rest'
+            
+            # 检查是否打卡（无打卡时间视为休息/未上班）
+            if clock_time is not None:
+                ct = str(clock_time).strip()
+                if ct in ['', 'nan', 'None', 'null']:
+                    return 'rest'  # 没打卡视为休息
+            
             if not shift_str or str(shift_str).strip() in ['', 'nan']:
                 return None
             s = str(shift_str).strip()
@@ -293,12 +305,22 @@ def calculate_shared_expense():
 
         # 构建排班字典: {日期: {'day': [白班人员], 'night': [夜班人员], 'all': [全部人员]}}
         schedule = {}
-        # 检测排班文件是否有班次列
+        # 检测排班文件是否有班次列和打卡时间列
         shift_col = None
+        clock_col = None
         for col in schedule_df.columns:
-            if '班次' in str(col) or '班型' in str(col) or '排班' in str(col):
+            col_str = str(col)
+            if '班次' in col_str or '班型' in col_str or '排班' in col_str:
                 shift_col = col
-                break
+            if '打卡' in col_str or '时间' in col_str or 'Clock' in col_str:
+                clock_col = col
+        
+        # 如果没找到打卡列，尝试常见列名
+        if not clock_col:
+            for col in ['上班打卡', '打卡时间', 'ClockIn', 'clock_in', '签到']:
+                if col in schedule_df.columns:
+                    clock_col = col
+                    break
 
         for _, row in schedule_df.iterrows():
             date = str(row.get('日期', '')).strip()
@@ -308,19 +330,26 @@ def calculate_shared_expense():
             if date not in schedule:
                 schedule[date] = {'day': [], 'night': [], 'all': []}
 
+            # 获取打卡时间
+            clock_time = row.get(clock_col) if clock_col else None
+            
             # 识别班次
             shift_type = None
             if shift_col:
                 shift_val = str(row.get(shift_col, '')).strip()
-                shift_type = classify_shift(shift_val)
+                shift_type = classify_shift(shift_val, clock_time)
             else:
-                # 没有班次列，尝试从人员列其他字段识别
+                # 没有班次列，尝试从其他字段识别
                 for col in schedule_df.columns:
                     val = str(row.get(col, '')).strip()
-                    t = classify_shift(val)
+                    t = classify_shift(val, clock_time)
                     if t:
                         shift_type = t
                         break
+
+            # 跳过休息的人
+            if shift_type == 'rest':
+                continue
 
             # 同一天同一人出现中班+早班，只识别为白班
             if person not in schedule[date]['all']:
