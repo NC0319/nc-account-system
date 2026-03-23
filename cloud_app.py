@@ -186,6 +186,10 @@ def import_excel():
         df = df[df['包裹号'].notna() & (df['包裹号'] != '')]
         df = df.drop_duplicates(subset=['包裹号', '日期'], keep='last')
         
+        # 转换为列表前，确保所有值都是基本类型
+        for col in df.columns:
+            df[col] = df[col].apply(lambda x: '' if pd.isna(x) or str(x) == 'nan' else str(x))
+        
         new_data = df.to_dict('records')
         
         # 获取现有数据
