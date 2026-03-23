@@ -1583,9 +1583,11 @@ function renderChartsCore(){
     try {
         // 饼图 - 异常分布
         var ec = {};
+        var total = 0;
         for(var i=0; i<allData.length; i++){
             var k = allData[i]['异常情况'] || '未记录';
             ec[k] = (ec[k]||0) + 1;
+            total++;
         }
         
         var ecCanvas = document.getElementById('exceptionChart');
@@ -1595,8 +1597,35 @@ function renderChartsCore(){
             try{ ecChart.destroy(); }catch(e){}
             ecChart = new Chart(ecCanvas.getContext('2d'), {
                 type: 'doughnut',
-                data: { labels: Object.keys(ec), datasets: [{ data: Object.values(ec), backgroundColor: ['#7854f4','#007aff','#34c759','#ff9500','#ff3b30'], borderWidth: 2, borderColor: '#fff' }] },
-                options: { responsive: false, maintainAspectRatio: false, animation: false, legend: { position: 'bottom', labels: { boxWidth: 10, padding: 6, font: { size: 10 } } } }
+                data: { labels: Object.keys(ec), datasets: [{ data: Object.values(ec), backgroundColor: ['#7854f4','#007aff','#34c759','#ff9500','#ff3b30','#5856d6','#af52de','#00c7be'], borderWidth: 2, borderColor: '#fff', hoverBorderWidth: 3, hoverOffset: 10 }] },
+                options: { 
+                    responsive: false, 
+                    maintainAspectRatio: false, 
+                    animation: { duration: 200 },
+                    hover: { mode: 'index', intersect: false },
+                    plugins: { 
+                        legend: { position: 'bottom', labels: { boxWidth: 10, padding: 6, font: { size: 10 }, usePointStyle: true, pointStyle: 'circle' } },
+                        tooltip: {
+                            backgroundColor: 'rgba(30,30,30,0.9)',
+                            titleFont: { size: 13, weight: 'bold' },
+                            bodyFont: { size: 12 },
+                            padding: 12,
+                            cornerRadius: 8,
+                            displayColors: true,
+                            callbacks: {
+                                title: function(items) { return items[0].label; },
+                                label: function(context) {
+                                    var value = context.raw || 0;
+                                    var pct = Math.round(value/total*100);
+                                    return ' ' + value + ' 条 (' + pct + '%)';
+                                },
+                                afterLabel: function(context) {
+                                    return '占总异常 ' + Math.round(context.raw/total*100) + '%';
+                                }
+                            }
+                        }
+                    } 
+                }
             });
         }
         
@@ -1614,8 +1643,36 @@ function renderChartsCore(){
             try{ rcChart.destroy(); }catch(e){}
             rcChart = new Chart(rcCanvas.getContext('2d'), {
                 type: 'bar',
-                data: { labels: Object.keys(rc), datasets: [{ data: Object.values(rc), backgroundColor: '#7854f4', borderRadius: 4 }] },
-                options: { responsive: false, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { font: { size: 10 } } }, x: { ticks: { font: { size: 10 } } } } }
+                data: { labels: Object.keys(rc), datasets: [{ label: '数量', data: Object.values(rc), backgroundColor: ['#7854f4','#007aff','#34c759','#ff9500','#ff3b30','#5856d6','#af52de','#00c7be','#ff6b6b','#4ecdc4'], hoverBackgroundColor: 'rgba(120,86,244,0.9)', borderRadius: 6, borderSkipped: false }] },
+                options: { 
+                    responsive: false, 
+                    maintainAspectRatio: false, 
+                    animation: { duration: 200 },
+                    hover: { mode: 'index', intersect: false, axis: 'x' },
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(30,30,30,0.9)',
+                            titleFont: { size: 13, weight: 'bold' },
+                            bodyFont: { size: 12 },
+                            padding: 12,
+                            cornerRadius: 8,
+                            displayColors: false,
+                            callbacks: {
+                                title: function(items) { return '责任方: ' + items[0].label; },
+                                label: function(context) {
+                                    var value = context.raw || 0;
+                                    var pct = Math.round(value/total*100);
+                                    return ' 数量: ' + value + ' 条 (' + pct + '%)';
+                                }
+                            }
+                        }
+                    }, 
+                    scales: { 
+                        y: { beginAtZero: true, ticks: { font: { size: 10 }, stepSize: 1 }, grid: { color: 'rgba(0,0,0,0.05)' } }, 
+                        x: { ticks: { font: { size: 10 }, maxRotation: 45 }, grid: { display: false } } 
+                    }
+                }
             });
         }
     } catch(e) { console.error('图表渲染失败:', e); }
