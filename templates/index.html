@@ -465,8 +465,15 @@ function markUnpaidSelected(){
         }
         .chart-container {
             position: relative;
-            min-height: 160px;
+            height: 180px;
+            width: 100%;
             flex: 1;
+        }
+        
+        .chart-card canvas {
+            width: 100% !important;
+            height: 100% !important;
+            display: block;
         }
         
         /* iOS Style Cards */
@@ -1550,8 +1557,32 @@ function goPage(page){
 
 function renderCharts(){
     try {
-        if(ecChart){ ecChart.destroy(); ecChart = null; }
-        if(rcChart){ rcChart.destroy(); rcChart = null; }
+        // 确保Canvas元素存在
+        var ecCanvas = document.getElementById('exceptionChart');
+        var rcCanvas = document.getElementById('responsibilityChart');
+        
+        if(!ecCanvas || !rcCanvas){
+            console.log('Canvas元素未找到');
+            return;
+        }
+        
+        // 销毁旧图表
+        if(ecChart){ try{ ecChart.destroy(); }catch(e){} ecChart = null; }
+        if(rcChart){ try{ rcChart.destroy(); }catch(e){} rcChart = null; }
+        
+        // 等待DOM就绪
+        setTimeout(function(){
+            renderChartsCore();
+        }, 50);
+    } catch(e) {
+        console.error('图表渲染失败:', e);
+    }
+}
+
+function renderChartsCore(){
+    try {
+        var ecCanvas = document.getElementById('exceptionChart');
+        var rcCanvas = document.getElementById('responsibilityChart');
         
         // 饼图 - 异常分布
         var ec = {};
