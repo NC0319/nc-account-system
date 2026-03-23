@@ -1450,15 +1450,20 @@ async function loadData(){
 }
 
 function updateStats(){
-    var total = allData.length, amt = 0, unpaid = 0;
+    var total = allData.length, amt = 0, unpaid = 0, paid = 0;
     for(var i=0; i<allData.length; i++){
         amt += parseFloat(allData[i]['金额']) || 0;
-        if(!allData[i]['回款情况'] || allData[i]['回款情况'] !== '√') unpaid++;
+        var v = allData[i]['回款情况'] || '';
+        if(v === '√' || v === '✔' || v === '已回款'){
+            paid++;
+        } else {
+            unpaid++;
+        }
     }
     document.getElementById('totalCount').textContent = total;
     document.getElementById('totalAmount').textContent = amt.toLocaleString('zh-CN', {maximumFractionDigits:2});
     document.getElementById('unpaidCount').textContent = unpaid;
-    document.getElementById('paidCount').textContent = total - unpaid;
+    document.getElementById('paidCount').textContent = paid;
 }
 
 function applyFilters(){
