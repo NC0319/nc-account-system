@@ -195,7 +195,7 @@ function markUnpaidSelected(){
         body {
             background: linear-gradient(135deg, #e8e4f0 0%, #d4cce8 25%, #c9bfe0 50%, #b8aed0 75%, #a89bc4 100%);
             background-size: 400% 400%;
-            animation: gradientShift 20s ease infinite;
+            animation: gradientShift 30s ease infinite;
             min-height: 100vh;
             padding: 20px;
             padding-bottom: 80px;
@@ -271,8 +271,7 @@ function markUnpaidSelected(){
         
         /* 页面入场动画 */
         .container {
-            animation: containerIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
-            animation-delay: 0.1s;
+            animation: containerIn 0.5s ease backwards;
         }
         
         @keyframes containerIn {
@@ -282,7 +281,7 @@ function markUnpaidSelected(){
         
         /* 卡片悬浮动画 - 弹性效果 */
         .card {
-            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+            transition: box-shadow 0.2s ease;
         }
         .card:hover { 
             transform: translateY(-8px) scale(1.02); 
@@ -293,7 +292,7 @@ function markUnpaidSelected(){
         .action-btn, .row-btn, .header-btn {
             position: relative;
             overflow: hidden;
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: all 0.2s ease;
         }
         .action-btn:active, .row-btn:active, .header-btn:active {
             transform: scale(0.92) !important;
@@ -304,7 +303,7 @@ function markUnpaidSelected(){
         
         /* 数字动画 */
         .stat-num {
-            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: all 0.2s ease;
             display: inline-block;
         }
         .stat-card:hover .stat-num { 
@@ -323,7 +322,7 @@ function markUnpaidSelected(){
         
         /* 分页按钮动画 */
         .page-btn {
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: all 0.2s ease;
         }
         .page-btn:hover:not(:disabled) {
             transform: scale(1.15) translateY(-2px);
@@ -336,7 +335,7 @@ function markUnpaidSelected(){
         
         /* 标签悬浮效果 */
         .tag {
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: all 0.2s ease;
         }
         .tag:hover {
             transform: scale(1.1) translateY(-2px);
@@ -345,8 +344,7 @@ function markUnpaidSelected(){
         
         /* 图表卡片动画 */
         .chart-card canvas {
-            animation: chartIn 0.8s ease backwards;
-            animation-delay: 0.5s;
+            animation: chartIn 0.4s ease backwards;
         }
         
         @keyframes chartIn {
@@ -419,19 +417,20 @@ function markUnpaidSelected(){
         /* Stats Grid */
         .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
         @media (max-width: 768px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
-        .stat-card {
+        /* 简化动画以提升性能 */
+.stat-card {
             padding: 18px 16px;
             background: rgba(255,255,255,0.72);
             backdrop-filter: blur(20px);
             border-radius: var(--radius);
             border: 1px solid rgba(255,255,255,0.4);
-            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-            animation: cardAppear 0.6s ease backwards;
-        }
-        .stat-card:nth-child(1) { animation-delay: 0.1s; }
-        .stat-card:nth-child(2) { animation-delay: 0.2s; }
-        .stat-card:nth-child(3) { animation-delay: 0.3s; }
-        .stat-card:nth-child(4) { animation-delay: 0.4s; }
+            transition: all 0.2s ease;
+            }
+        .stat-card { animation: fadeInUp 0.4s ease backwards; }
+        .stat-card:nth-child(1) { animation-delay: 0.05s; }
+        .stat-card:nth-child(2) { animation-delay: 0.1s; }
+        .stat-card:nth-child(3) { animation-delay: 0.15s; }
+        .stat-card:nth-child(4) { animation-delay: 0.2s; }
         
         @keyframes cardAppear {
             from { opacity: 0; transform: translateY(20px) scale(0.95); }
@@ -675,7 +674,8 @@ function markUnpaidSelected(){
         }
         
         /* 统计卡片入场动画 */
-        .stat-card {
+        /* 简化动画以提升性能 */
+.stat-card {
             animation: statCardIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
         }
         .stat-card:nth-child(1) { animation-delay: 0.15s; }
