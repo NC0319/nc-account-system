@@ -13,17 +13,26 @@ import pandas as pd
 
 app = Flask(__name__)
 
-# Gzip压缩
+# Gzip压缩 - 只压缩文本内容
 @app.after_request
 def compress_response(response):
     accept_encoding = request.headers.get('Accept-Encoding', '').lower()
-    if 'gzip' in accept_encoding and response.status_code == 200:
+    if 'gzip' not in accept_encoding or response.status_code != 200:
+        return response
+    # 排除二进制文件（Excel、图片等）
+    content_type = response.content_type or ''
+    if any(x in content_type for x in ['octet-stream', 'excel', 'spreadsheet', 'image', 'pdf']):
+        return response
+    if 'attachment' in response.headers.get('Content-Disposition', ''):
+        return response
+    try:
         content = response.get_data()
-        gzip_response = Response(gzip.compress(content), content_type=response.content_type)
+        gzip_response = Response(gzip.compress(content), content_type=content_type)
         gzip_response.headers['Content-Encoding'] = 'gzip'
-        gzip_response.headers['Content-Length'] = len(gzip_response.get_data())
+        gzip_response.headers['Vary'] = 'Accept-Encoding'
         return gzip_response
-    return response
+    except:
+        return response
 
 # Render.com环境变量或本地文件
 EXCEL_FILE = os.environ.get('EXCEL_FILE', os.path.expanduser('~/Desktop/26年NC台账勿删.xlsx'))
