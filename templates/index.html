@@ -1581,9 +1581,6 @@ function renderCharts(){
 
 function renderChartsCore(){
     try {
-        var ecCanvas = document.getElementById('exceptionChart');
-        var rcCanvas = document.getElementById('responsibilityChart');
-        
         // 饼图 - 异常分布
         var ec = {};
         for(var i=0; i<allData.length; i++){
@@ -1592,34 +1589,14 @@ function renderChartsCore(){
         }
         
         var ecCanvas = document.getElementById('exceptionChart');
-        if(ecCanvas && typeof Chart !== 'undefined' && ecCanvas.getContext){
+        if(ecCanvas && typeof Chart !== 'undefined'){
+            ecCanvas.width = ecCanvas.parentElement.offsetWidth || 300;
+            ecCanvas.height = 160;
+            try{ ecChart.destroy(); }catch(e){}
             ecChart = new Chart(ecCanvas.getContext('2d'), {
                 type: 'doughnut',
-                data: { 
-                    labels: Object.keys(ec), 
-                    datasets: [{ 
-                        data: Object.values(ec), 
-                        backgroundColor: chartColors, 
-                        borderWidth: 2, 
-                        borderColor: '#fff' 
-                    }] 
-                },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false,
-                    animation: { duration: 500 },
-                    plugins: { 
-                        legend: { 
-                            position: 'bottom', 
-                            labels: { 
-                                boxWidth: 12, 
-                                padding: 10, 
-                                color: '#1c1c1e',
-                                font: { size: 12 }
-                            } 
-                        } 
-                    }
-                }
+                data: { labels: Object.keys(ec), datasets: [{ data: Object.values(ec), backgroundColor: ['#7854f4','#007aff','#34c759','#ff9500','#ff3b30'], borderWidth: 2, borderColor: '#fff' }] },
+                options: { responsive: false, maintainAspectRatio: false, animation: false, legend: { position: 'bottom', labels: { boxWidth: 10, padding: 6, font: { size: 10 } } } }
             });
         }
         
@@ -1631,41 +1608,17 @@ function renderChartsCore(){
         }
         
         var rcCanvas = document.getElementById('responsibilityChart');
-        if(rcCanvas && typeof Chart !== 'undefined' && rcCanvas.getContext){
+        if(rcCanvas && typeof Chart !== 'undefined'){
+            rcCanvas.width = rcCanvas.parentElement.offsetWidth || 300;
+            rcCanvas.height = 160;
+            try{ rcChart.destroy(); }catch(e){}
             rcChart = new Chart(rcCanvas.getContext('2d'), {
                 type: 'bar',
-                data: { 
-                    labels: Object.keys(rc), 
-                    datasets: [{ 
-                        label: '数量', 
-                        data: Object.values(rc), 
-                        backgroundColor: 'rgba(120,86,254,0.7)', 
-                        borderRadius: 6,
-                        barThickness: 30
-                    }] 
-                },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false,
-                    animation: { duration: 500 },
-                    plugins: { legend: { display: false } }, 
-                    scales: { 
-                        y: { 
-                            beginAtZero: true, 
-                            grid: { color: 'rgba(0,0,0,0.05)' }, 
-                            ticks: { color: '#8e8e93', font: { size: 11 } } 
-                        }, 
-                        x: { 
-                            grid: { display: false }, 
-                            ticks: { color: '#8e8e93', font: { size: 11 } } 
-                        } 
-                    } 
-                }
+                data: { labels: Object.keys(rc), datasets: [{ data: Object.values(rc), backgroundColor: '#7854f4', borderRadius: 4 }] },
+                options: { responsive: false, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { font: { size: 10 } } }, x: { ticks: { font: { size: 10 } } } } }
             });
         }
-    } catch(e) {
-        console.error('图表渲染失败:', e);
-    }
+    } catch(e) { console.error('图表渲染失败:', e); }
 }
 
 // Modal Functions
