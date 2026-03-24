@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NC台账管理系统</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js">
 
 // 未回款弹窗
 var selectedUnpaid = [];
@@ -1602,25 +1602,19 @@ function renderChartsCore(){
                     responsive: false, 
                     maintainAspectRatio: false, 
                     animation: { duration: 200 },
-                    hover: { mode: 'index', intersect: false },
                     plugins: { 
-                        legend: { position: 'bottom', labels: { boxWidth: 10, padding: 6, font: { size: 10 }, usePointStyle: true, pointStyle: 'circle' } },
+                        legend: { position: 'bottom', labels: { boxWidth: 10, padding: 6, font: { size: 10 }, usePointStyle: true } },
                         tooltip: {
                             backgroundColor: 'rgba(30,30,30,0.9)',
                             titleFont: { size: 13, weight: 'bold' },
                             bodyFont: { size: 12 },
                             padding: 12,
                             cornerRadius: 8,
-                            displayColors: true,
                             callbacks: {
-                                title: function(items) { return items[0].label; },
                                 label: function(context) {
-                                    var value = context.raw || 0;
+                                    var value = context.parsed || 0;
                                     var pct = Math.round(value/total*100);
-                                    return ' ' + value + ' 条 (' + pct + '%)';
-                                },
-                                afterLabel: function(context) {
-                                    return '占总异常 ' + Math.round(context.raw/total*100) + '%';
+                                    return context.label + ': ' + value + ' 条 (' + pct + '%)';
                                 }
                             }
                         }
@@ -1643,12 +1637,11 @@ function renderChartsCore(){
             try{ rcChart.destroy(); }catch(e){}
             rcChart = new Chart(rcCanvas.getContext('2d'), {
                 type: 'bar',
-                data: { labels: Object.keys(rc), datasets: [{ label: '数量', data: Object.values(rc), backgroundColor: ['#7854f4','#007aff','#34c759','#ff9500','#ff3b30','#5856d6','#af52de','#00c7be','#ff6b6b','#4ecdc4'], hoverBackgroundColor: 'rgba(120,86,244,0.9)', borderRadius: 6, borderSkipped: false }] },
+                data: { labels: Object.keys(rc), datasets: [{ label: '数量', data: Object.values(rc), backgroundColor: ['#7854f4','#007aff','#34c759','#ff9500','#ff3b30','#5856d6','#af52de','#00c7be','#ff6b6b','#4ecdc4'], hoverBackgroundColor: 'rgba(120,86,244,0.9)', borderRadius: 6 }] },
                 options: { 
                     responsive: false, 
                     maintainAspectRatio: false, 
                     animation: { duration: 200 },
-                    hover: { mode: 'index', intersect: false, axis: 'x' },
                     plugins: { 
                         legend: { display: false },
                         tooltip: {
@@ -1661,15 +1654,15 @@ function renderChartsCore(){
                             callbacks: {
                                 title: function(items) { return '责任方: ' + items[0].label; },
                                 label: function(context) {
-                                    var value = context.raw || 0;
+                                    var value = context.parsed.y || 0;
                                     var pct = Math.round(value/total*100);
-                                    return ' 数量: ' + value + ' 条 (' + pct + '%)';
+                                    return '数量: ' + value + ' 条 (' + pct + '%)';
                                 }
                             }
                         }
                     }, 
                     scales: { 
-                        y: { beginAtZero: true, ticks: { font: { size: 10 }, stepSize: 1 }, grid: { color: 'rgba(0,0,0,0.05)' } }, 
+                        y: { beginAtZero: true, ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.05)' } }, 
                         x: { ticks: { font: { size: 10 }, maxRotation: 45 }, grid: { display: false } } 
                     }
                 }
