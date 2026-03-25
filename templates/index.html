@@ -1949,6 +1949,22 @@ async function calculateShared(){
                 html += '</div>';
             }
             document.getElementById('sharedTable').innerHTML = html;
+            // 显示被剔除的单责记录
+            if(result.excluded_count > 0 && result.excluded_list && result.excluded_list.length > 0){
+                var excludedHtml = '<div style="margin-top:16px;padding:14px;background:rgba(255,59,48,0.08);border-radius:12px;border:1px solid rgba(255,59,48,0.2);">';
+                excludedHtml += '<div style="font-weight:600;color:#ff3b30;margin-bottom:10px;">已自动剔除 ' + result.excluded_count + ' 条单责任人记录（不参与公摊）：</div>';
+                excludedHtml += '<div style="max-height:150px;overflow-y:auto;">';
+                for(var e=0; e<result.excluded_list.length; e++){
+                    var ex = result.excluded_list[e];
+                    excludedHtml += '<div style="font-size:12px;color:#666;padding:4px 0;border-bottom:1px dashed rgba(0,0,0,0.1);">';
+                    excludedHtml += '<span style="color:#ff3b30;font-weight:600;">' + ex.responsibility + '</span>';
+                    excludedHtml += ' | ' + ex.date + ' | ' + (ex.package||'-').substring(0,20) + ' | ' + ex.amount + '元';
+                    excludedHtml += '</div>';
+                }
+                excludedHtml += '</div></div>';
+                document.getElementById('sharedTable').innerHTML += excludedHtml;
+            }
+            
             document.getElementById('sharedEmpty').style.display = 'none';
             showToast('计算完成！');
         } else { showToast(result.error || '计算失败', 'error'); }

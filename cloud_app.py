@@ -395,13 +395,30 @@ def calculate_shared_expense():
                 # 无法识别班次，归入全部
                 pass
         
-        # 被排除的责任人名单
-        exclude_list = [name.strip() for name in exclude_responsibility.split(',') if name.strip()]
+        # 自动识别单责任人（具体人名）- 包含以下特征的视为单责：
+        # 1. 责任方只包含一个具体人名（如：张景莉、吴光辉）
+        # 2. 不包含"共责"、"NC"、"验货"、"卸车"等共同责任关键词
+        single_resp_keywords = ['共责', 'NC', '验货', '卸车', '发货组', '接货仓', '分拣机', '传送带', '滑槽', '进港', '拨货', '无人', 'T20', '模组', '全仓', '撞', '烂', '挤', '污染', '错分', '被']
         
-        # 筛选时间范围内的破损买赔数据（且责任方不是具体人名）
+        def is_single_responsibility(resp):
+            """判断是否为单责任人（具体人名），返回True表示单责需排除"""
+            if not resp or resp == '':
+                return False
+            resp_upper = resp.upper()
+            # 如果包含"共责"字样，说明是多责，不排除
+            if '共责' in resp:
+                return False
+            # 如果包含共同责任关键词，说明是多责，不排除
+            for kw in single_resp_keywords:
+                if kw in resp:
+                    return False
+            # 否则视为单责，需要排除
+            return True
+        
+        # 筛选时间范围内的破损买赔数据
         nc_data = load_data()
         damaged_items = []
-        excluded_items = []  # 被剔除的记录
+        excluded_items = []  # 被剔除的单责记录
         keyword_list = [k.strip() for k in keywords.split(',') if k.strip()]
         
         for item in nc_data:
@@ -413,23 +430,17 @@ def calculate_shared_expense():
             is_damaged = any(keyword in exception_type for keyword in keyword_list) if keyword_list else True
             is_in_range = start_date <= item_date <= end_date
             
-            # 检查责任方是否是需要公摊的类别（不是具体人名）
-            # 需要公摊的类别: NC, 验货, 卸车, 共责, 其他 等
-            # 排除的人名: 具体的员工名字
-            is_shared = False
             if is_damaged and is_in_range and item.get('金额'):
-                # 如果责任方匹配排除名单，则不计入公摊
-                should_exclude = any(ex_name in responsibility for ex_name in exclude_list) if exclude_list else False
-                if not should_exclude:
-                    is_shared = True
-                    damaged_items.append(item)
-                else:
+                # 自动识别单责任人
+                if is_single_responsibility(responsibility):
                     excluded_items.append({
                         'date': item_date,
                         'package': item.get('包裹号', ''),
                         'responsibility': responsibility,
                         'amount': float(item.get('金额', 0) or 0)
                     })
+                else:
+                    damaged_items.append(item)
         
         # 按日期分组计算
         results = {}
