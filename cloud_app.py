@@ -65,6 +65,58 @@ def load_data():
     
     return []
 
+
+
+# ==================== 操作日志功能 ====================
+
+LOG_FILE = '/tmp/operation_logs.json'
+MAX_LOGS = 500  # 最多保留500条日志
+
+def add_log(action, detail, user='system'):
+    """添加操作日志"""
+    try:
+        logs = []
+        if os.path.exists(LOG_FILE):
+            with open(LOG_FILE, 'r') as f:
+                logs = json.load(f)
+        
+        log_entry = {
+            'time': datetime.now().isoformat(),
+            'action': action,
+            'detail': detail,
+            'user': user,
+            'ip': request.remote_addr if request else 'local'
+        }
+        
+        logs.insert(0, log_entry)
+        
+        # 限制日志数量
+        if len(logs) > MAX_LOGS:
+            logs = logs[:MAX_LOGS]
+        
+        with open(LOG_FILE, 'w') as f:
+            json.dump(logs, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f'日志记录失败: {e}')
+
+def get_logs(limit=100):
+    """获取操作日志"""
+    try:
+        if os.path.exists(LOG_FILE):
+            with open(LOG_FILE, 'r') as f:
+                logs = json.load(f)
+                return logs[:limit]
+    except:
+        pass
+    return []
+
+@app.route('/api/logs')
+def api_logs():
+    """获取操作日志API"""
+    limit = request.args.get('limit', 100, type=int)
+    logs = get_logs(limit)
+    return jsonify({'success': True, 'logs': logs})
+
 def save_data(data):
     """保存数据到临时文件"""
     try:
@@ -164,6 +216,7 @@ def update_data(index):
     data = load_data()
     if 0 <= index < len(data):
         data[index] = request.json
+        add_log('更新数据', f'索引{index}, 包裹号: {data[index].get("包裹号", "")}')
         save_data(data)
         sync_to_github(data)
         return jsonify({'success': True})
@@ -173,7 +226,9 @@ def update_data(index):
 def delete_data(index):
     data = load_data()
     if 0 <= index < len(data):
+        pkg = data[index].get('包裹号', '')
         data.pop(index)
+        add_log('删除数据', f'包裹号: {pkg}')
         save_data(data)
         sync_to_github(data)
         return jsonify({'success': True})
@@ -305,6 +360,7 @@ def import_confirm():
         
         save_data(final_data)
         sync_to_github(final_data)
+        add_log('导入数据', f'共{len(final_data)}条, 新增{added_count}条, 替换{replaced_count}条')
         
         return jsonify({
             'success': True,
@@ -387,6 +443,7 @@ def import_excel():
         # 保存
         save_data(final_data)
         sync_to_github(final_data)
+        add_log('导入数据', f'共{len(final_data)}条, 新增{added_count}条, 替换{replaced_count}条')
         
         return jsonify({
             'success': True,
