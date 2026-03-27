@@ -8,3 +8,13 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
+
+  - type: cron
+    name: nc-account-sync
+    runtime: python
+    schedule: "0 */6 * * *"  # 每6小时执行一次
+    buildCommand: pip install requests
+    startCommand: "curl -X POST https://nc-account-system.onrender.com/api/schedule-sync"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0

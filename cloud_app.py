@@ -761,6 +761,66 @@ def export_template():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+
+
+# ==================== 定时同步功能 ====================
+
+# 存储上次同步时间
+LAST_SYNC_FILE = '/tmp/last_sync_time.json'
+
+def get_last_sync_time():
+    """获取上次同步时间"""
+    try:
+        if os.path.exists(LAST_SYNC_FILE):
+            with open(LAST_SYNC_FILE, 'r') as f:
+                return json.load(f).get('last_sync', '')
+    except:
+        pass
+    return ''
+
+def save_last_sync_time():
+    """保存同步时间"""
+    try:
+        with open(LAST_SYNC_FILE, 'w') as f:
+            json.dump({'last_sync': datetime.now().isoformat()}, f)
+    except:
+        pass
+
+@app.route('/api/sync-status')
+def sync_status():
+    """获取同步状态"""
+    return jsonify({
+        'last_sync': get_last_sync_time(),
+        'data_count': len(load_data()),
+        'server_time': datetime.now().isoformat()
+    })
+
+@app.route('/api/manual-sync', methods=['POST'])
+def manual_sync():
+    """手动触发同步"""
+    try:
+        data = load_data()
+        success = sync_to_github(data)
+        if success:
+            save_last_sync_time()
+            return jsonify({'success': True, 'message': '同步成功', 'data_count': len(data)})
+        else:
+            return jsonify({'success': False, 'error': '同步失败，请检查GITHUB_TOKEN配置'}), 500
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/schedule-sync', methods=['POST'])
+def schedule_sync():
+    """设置定时同步（需要外部cron或Render的cron job调用）"""
+    try:
+        data = load_data()
+        sync_to_github(data)
+        save_last_sync_time()
+        return jsonify({'success': True, 'synced_at': datetime.now().isoformat()})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
