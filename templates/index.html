@@ -2342,10 +2342,16 @@ function renderRanking(){
     // 取TOP10
     list = list.slice(0, 10);
     
+    // 如果没有数据，显示提示
+    if(list.length === 0){
+        document.getElementById('rankingList').innerHTML = '<div style="text-align:center;color:#8e8e93;padding:20px;">暂无数据</div>';
+        return;
+    }
+    
     // 渲染
     var html = '';
     var colors = ['#ff9500','#ff3b30','#007aff','#34c759','#7854f4','#af52de','#ff6b6b','#4ecdc4','#45b7d1','#96ceb4'];
-    var maxValue = type === 'count' ? list[0].count : list[0].amount;
+    var maxValue = type === 'count' ? (list[0] ? list[0].count : 1) : (list[0] ? list[0].amount : 1);
     
     for(var i=0; i<list.length; i++){
         var item = list[i];
