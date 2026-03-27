@@ -2829,18 +2829,7 @@ function detectAnomalies(){
             });
         }
         
-        // 异常2: 金额为0但有空字段
-        if(amt === 0 && pkg){
-            anomalies.push({
-                type: '金额为空',
-                icon: '⚠️',
-                color: '#ff9500',
-                item: item,
-                detail: '包裹号 ' + pkg.substring(0,20) + ' 金额为0或空'
-            });
-        }
-        
-        // 异常3: 包裹号+日期重复
+        // 异常2: 包裹号+日期重复
         if(pkg && date){
             if(pkgDates[key] !== undefined){
                 anomalies.push({
@@ -2855,7 +2844,7 @@ function detectAnomalies(){
             }
         }
         
-        // 异常4: 关键字段为空
+        // 异常3: 关键字段为空
         var missingFields = [];
         if(!pkg) missingFields.push('包裹号');
         if(!date) missingFields.push('日期');
@@ -2870,7 +2859,7 @@ function detectAnomalies(){
             });
         }
         
-        // 异常5: 责任方为空
+        // 异常4: 责任方为空
         if(!str(item['责任方'] || '').trim() && pkg){
             anomalies.push({
                 type: '责任方未填写',
