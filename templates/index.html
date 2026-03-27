@@ -941,7 +941,11 @@ function markUnpaidSelected(){
         </div>
         
         <!-- Charts -->
-        <div class="charts-row">
+        <div class="charts-row" style="flex-wrap:wrap;">
+            <div class="card chart-card" style="flex:2;min-width:300px;">
+                <div class="chart-title"><i class="bi bi-graph-up" style="color:#ff9500"></i> 破损金额趋势</div>
+                <div class="chart-container"><canvas id="trendChart"></canvas></div>
+            </div>
             <div class="card chart-card">
                 <div class="chart-title"><i class="bi bi-pie-chart-fill" style="color:#7854f4"></i> 异常分布</div>
                 <div class="chart-container"><canvas id="exceptionChart"></canvas></div>
@@ -1412,7 +1416,7 @@ function markUnpaidSelected(){
 </script>
     <script>
 var allData=[], filteredData=[], currentPage=1, editingIndex=-1, selectedBatch=[];
-var ecChart=null, rcChart=null;
+var ecChart=null, rcChart=null, trendChart=null;
 var chartColors=['#7854f4','#007aff','#34c759','#ff9500','#ff3b30','#5856d6','#af52de','#00c7be'];
 
 document.addEventListener('DOMContentLoaded', function(){
@@ -1558,25 +1562,92 @@ function goPage(page){
 function renderCharts(){
     try {
         // 确保Canvas元素存在
+        var trendCanvas = document.getElementById('trendChart');
         var ecCanvas = document.getElementById('exceptionChart');
         var rcCanvas = document.getElementById('responsibilityChart');
         
-        if(!ecCanvas || !rcCanvas){
-            console.log('Canvas元素未找到');
-            return;
-        }
-        
         // 销毁旧图表
+        if(trendChart){ try{ trendChart.destroy(); }catch(e){} trendChart = null; }
         if(ecChart){ try{ ecChart.destroy(); }catch(e){} ecChart = null; }
         if(rcChart){ try{ rcChart.destroy(); }catch(e){} rcChart = null; }
         
         // 等待DOM就绪
         setTimeout(function(){
+            renderTrendChart();
             renderChartsCore();
         }, 50);
     } catch(e) {
         console.error('图表渲染失败:', e);
     }
+}
+
+function renderTrendChart(){
+    try {
+        var trendCanvas = document.getElementById('trendChart');
+        if(!trendCanvas || typeof Chart === 'undefined') return;
+        
+        // 按日期统计破损金额
+        var dailyData = {};
+        for(var i=0; i<allData.length; i++){
+            var date = allData[i]['日期'] || '';
+            var amt = parseFloat(allData[i]['金额']) || 0;
+            if(date){
+                dailyData[date] = (dailyData[date] || 0) + amt;
+            }
+        }
+        
+        // 按日期排序，取最近30天
+        var dates = Object.keys(dailyData).sort();
+        if(dates.length > 30){
+            dates = dates.slice(-30);
+        }
+        
+        var values = dates.map(function(d){ return dailyData[d]; });
+        
+        trendCanvas.width = trendCanvas.parentElement.offsetWidth || 400;
+        trendCanvas.height = 160;
+        
+        trendChart = new Chart(trendCanvas.getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: dates.map(function(d){ return d.substring(5); }),
+                datasets: [{
+                    label: '破损金额',
+                    data: values,
+                    borderColor: '#ff9500',
+                    backgroundColor: 'rgba(255,149,0,0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 3,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: '#ff9500'
+                }]
+            },
+            options: {
+                responsive: false,
+                maintainAspectRatio: false,
+                animation: { duration: 200 },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(30,30,30,0.9)',
+                        titleFont: { size: 13 },
+                        bodyFont: { size: 12 },
+                        padding: 10,
+                        cornerRadius: 8,
+                        callbacks: {
+                            title: function(items) { return dates[items[0].dataIndex]; },
+                            label: function(context) { return '金额: ' + (context.parsed.y || 0).toFixed(2) + ' 元'; }
+                        }
+                    }
+                },
+                scales: {
+                    y: { beginAtZero: true, ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.05)' } },
+                    x: { ticks: { font: { size: 9 }, maxRotation: 45 }, grid: { display: false } }
+                }
+            }
+        });
+    } catch(e) { console.error('趋势图渲染失败:', e); }
 }
 
 function renderChartsCore(){
