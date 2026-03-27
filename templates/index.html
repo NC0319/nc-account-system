@@ -548,6 +548,38 @@ function markUnpaidSelected(){
         .chart-canvas { max-height: 160px; }
         
         /* Toolbar */
+        /* 导入拖拽区域 */
+        .import-drop-zone {
+            border: 2px dashed rgba(120,86,254,0.3);
+            border-radius: 16px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            background: rgba(120,86,254,0.02);
+        }
+        .import-drop-zone:hover, .import-drop-zone.dragover {
+            border-color: #7854f4;
+            background: rgba(120,86,254,0.08);
+        }
+        .import-drop-zone .icon {
+            font-size: 48px;
+            color: #7854f4;
+            margin-bottom: 12px;
+        }
+        .import-progress {
+            height: 6px;
+            background: rgba(0,0,0,0.05);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 16px;
+        }
+        .import-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #7854f4, #007aff);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+        
         .toolbar {
             padding: 16px 20px;
             margin-bottom: 16px;
@@ -994,8 +1026,7 @@ function markUnpaidSelected(){
             <button class="action-btn secondary" onclick="clearFilters()">✕ 清除</button>
             <button class="action-btn primary" onclick="openAddModal()">✚ 添加</button>
             <button class="action-btn green" onclick="exportData()">⬇ 导出</button>
-            <button class="action-btn secondary" onclick="document.getElementById('importFile').click()">⬆ 导入</button>
-            <input type="file" id="importFile" accept=".xlsx,.xls" style="display:none" onchange="importExcel(this)">
+            <button class="action-btn secondary" onclick="openImportModal()">⬆ 导入</button>
             
             <button class="action-btn secondary" onclick="openSharedModal()">📊 公摊计算</button>
         </div>
@@ -1302,6 +1333,39 @@ function markUnpaidSelected(){
         </div>
     </div>
 
+    <!-- 导入 Modal -->
+    <div class="modal-overlay" id="importModal">
+        <div class="modal-box" style="max-width:500px;">
+            <div class="modal-header" style="background:linear-gradient(135deg,#7854f4,#007aff);color:white;">
+                <h3 style="color:white;">⬆ 导入数据</h3>
+                <button class="modal-close" onclick="closeImportModal()" style="background:rgba(255,255,255,0.3);color:white;">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="import-drop-zone" id="dropZone" onclick="document.getElementById('importFileInput').click()">
+                    <div class="icon">📁</div>
+                    <div style="font-size:16px;font-weight:600;color:#1c1c1e;margin-bottom:8px;">拖拽文件到此处</div>
+                    <div style="font-size:13px;color:#8e8e93;">或点击选择文件（支持 .xlsx, .xls）</div>
+                    <input type="file" id="importFileInput" accept=".xlsx,.xls" style="display:none" onchange="handleImportFile(this)">
+                </div>
+                <div id="importPreview" style="display:none;margin-top:16px;">
+                    <div style="font-weight:600;margin-bottom:8px;">📋 预览（前5条）</div>
+                    <div id="importPreviewTable" style="max-height:200px;overflow-y:auto;font-size:12px;background:rgba(0,0,0,0.02);border-radius:8px;padding:10px;"></div>
+                </div>
+                <div id="importProgress" style="display:none;">
+                    <div style="font-size:13px;color:#8e8e93;margin-bottom:8px;">正在导入...</div>
+                    <div class="import-progress">
+                        <div class="import-progress-bar" id="importProgressBar" style="width:0%"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <span id="importInfo" style="margin-right:auto;color:#8e8e93;font-size:13px;"></span>
+                <button class="btn-cancel" onclick="closeImportModal()">取消</button>
+                <button class="btn-confirm" id="importConfirmBtn" onclick="confirmImport()" disabled>确认导入</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast -->
     <div class="toast-container" id="toastContainer"></div>
     
@@ -1596,6 +1660,133 @@ function renderCharts(){
 
 
 
+
+
+// 导入功能
+var importFileData = null;
+var importFileName = '';
+
+function openImportModal(){
+    importFileData = null;
+    importFileName = '';
+    document.getElementById('importFileInput').value = '';
+    document.getElementById('importPreview').style.display = 'none';
+    document.getElementById('importProgress').style.display = 'none';
+    document.getElementById('importInfo').textContent = '';
+    document.getElementById('importConfirmBtn').disabled = true;
+    document.getElementById('dropZone').classList.remove('dragover');
+    document.getElementById('importModal').classList.add('show');
+    
+    // 绑定拖拽事件
+    var dropZone = document.getElementById('dropZone');
+    dropZone.ondragover = function(e){ e.preventDefault(); this.classList.add('dragover'); };
+    dropZone.ondragleave = function(e){ this.classList.remove('dragover'); };
+    dropZone.ondrop = function(e){
+        e.preventDefault();
+        this.classList.remove('dragover');
+        var files = e.dataTransfer.files;
+        if(files.length > 0){
+            handleImportFile({ files: files });
+        }
+    };
+}
+
+function closeImportModal(){ document.getElementById('importModal').classList.remove('show'); }
+
+function handleImportFile(input){
+    var file = input.files[0];
+    if(!file) return;
+    
+    importFileName = file.name;
+    var ext = file.name.split('.').pop().toLowerCase();
+    if(!['xlsx', 'xls'].includes(ext)){
+        showToast('请选择 Excel 文件（.xlsx 或 .xls）', 'error');
+        return;
+    }
+    
+    document.getElementById('importInfo').textContent = '正在读取 ' + file.name + '...';
+    
+    // 读取文件预览
+    var reader = new FileReader();
+    reader.onload = function(e){
+        importFileData = e.target.result;
+        previewImportData();
+    };
+    reader.readAsDataURL(file);
+}
+
+function previewImportData(){
+    if(!importFileData) return;
+    
+    // 发送到后端预览
+    fetch('/api/import-preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileData: importFileData, fileName: importFileName })
+    }).then(function(r){ return r.json(); })
+      .then(function(result){
+          if(result.success){
+              var previewHtml = '';
+              var rows = result.preview || [];
+              for(var i=0; i<Math.min(5, rows.length); i++){
+                  var row = rows[i];
+                  previewHtml += '<div style="padding:6px 0;border-bottom:1px solid rgba(0,0,0,0.05);">';
+                  previewHtml += '<span style="color:#7854f4;font-weight:600;">' + (row['日期']||'-') + '</span> ';
+                  previewHtml += '<span>' + (row['包裹号']||'-').substring(0,20) + '</span> ';
+                  previewHtml += '<span style="color:#ff9500;">' + (row['金额']||'-') + '元</span>';
+                  previewHtml += '</div>';
+              }
+              document.getElementById('importPreviewTable').innerHTML = previewHtml;
+              document.getElementById('importPreview').style.display = 'block';
+              document.getElementById('importInfo').textContent = '共 ' + result.total + ' 条数据，预计新增 ' + result.added + ' 条，替换 ' + result.replaced + ' 条';
+              document.getElementById('importConfirmBtn').disabled = false;
+          } else {
+              showToast(result.error || '预览失败', 'error');
+              document.getElementById('importInfo').textContent = result.error || '读取失败';
+          }
+      }).catch(function(e){
+          showToast('预览失败', 'error');
+      });
+}
+
+function confirmImport(){
+    if(!importFileData) return;
+    
+    document.getElementById('importConfirmBtn').disabled = true;
+    document.getElementById('importProgress').style.display = 'block';
+    document.getElementById('importProgressBar').style.width = '30%';
+    
+    fetch('/api/import-confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileData: importFileData, fileName: importFileName })
+    }).then(function(r){ return r.json(); })
+      .then(function(result){
+          document.getElementById('importProgressBar').style.width = '100%';
+          setTimeout(function(){
+              if(result.success){
+                  showToast('导入成功！新增 ' + result.added + ' 条，替换 ' + result.replaced + ' 条');
+                  closeImportModal();
+                  loadData();
+              } else {
+                  showToast(result.error || '导入失败', 'error');
+                  document.getElementById('importConfirmBtn').disabled = false;
+                  document.getElementById('importProgress').style.display = 'none';
+              }
+          }, 500);
+      }).catch(function(e){
+          showToast('导入失败', 'error');
+          document.getElementById('importConfirmBtn').disabled = false;
+          document.getElementById('importProgress').style.display = 'none';
+      });
+}
+
+async function importExcel(input){
+    openImportModal();
+    if(input.files && input.files[0]){
+        handleImportFile(input);
+    }
+}
 function renderRanking(){
     var type = document.getElementById('rankType').value;
     var stats = {};

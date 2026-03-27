@@ -188,6 +188,133 @@ def export_excel():
     df.to_excel(excel_path, index=False)
     return send_file(excel_path, as_attachment=True)
 
+
+
+@app.route('/api/import-preview', methods=['POST'])
+def import_preview():
+    """预览导入数据"""
+    try:
+        data = request.get_json()
+        file_data = data.get('fileData', '')
+        file_name = data.get('fileName', '')
+        
+        if not file_data:
+            return jsonify({'success': False, 'error': '没有文件数据'}), 400
+        
+        # 解码Base64数据
+        if ',' in file_data:
+            file_data = file_data.split(',')[1]
+        file_bytes = base64.b64decode(file_data)
+        
+        # 读取Excel
+        df = pd.read_excel(io.BytesIO(file_bytes))
+        df['日期'] = pd.to_datetime(df['日期']).dt.strftime('%Y-%m-%d')
+        df = df.fillna('')
+        df = df[df['包裹号'].notna() & (df['包裹号'] != '')]
+        
+        # 转换数据
+        for col in df.columns:
+            df[col] = df[col].apply(lambda x: '' if pd.isna(x) or str(x) == 'nan' else str(x))
+        
+        new_data = df.to_dict('records')
+        
+        # 获取现有数据
+        existing_data = load_data()
+        existing_keys = set()
+        for item in existing_data:
+            key = (str(item.get('日期', '')).strip(), str(item.get('包裹号', '')).strip())
+            existing_keys.add(key)
+        
+        # 计算新增和替换数量
+        added = 0
+        replaced = 0
+        for item in new_data:
+            key = (str(item.get('日期', '')).strip(), str(item.get('包裹号', '')).strip())
+            if key in existing_keys:
+                replaced += 1
+            else:
+                added += 1
+        
+        return jsonify({
+            'success': True,
+            'total': len(new_data),
+            'added': added,
+            'replaced': replaced,
+            'preview': new_data[:5]
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/import-confirm', methods=['POST'])
+def import_confirm():
+    """确认导入数据"""
+    try:
+        data = request.get_json()
+        file_data = data.get('fileData', '')
+        
+        if not file_data:
+            return jsonify({'success': False, 'error': '没有文件数据'}), 400
+        
+        # 解码Base64数据
+        if ',' in file_data:
+            file_data = file_data.split(',')[1]
+        file_bytes = base64.b64decode(file_data)
+        
+        # 读取Excel
+        df = pd.read_excel(io.BytesIO(file_bytes))
+        df['日期'] = pd.to_datetime(df['日期']).dt.strftime('%Y-%m-%d')
+        df = df.fillna('')
+        df = df[df['包裹号'].notna() & (df['包裹号'] != '')]
+        
+        for col in df.columns:
+            df[col] = df[col].apply(lambda x: '' if pd.isna(x) or str(x) == 'nan' else str(x))
+        
+        new_data = df.to_dict('records')
+        
+        # 合并数据
+        existing_data = load_data()
+        
+        def count_filled_fields(item):
+            return sum(1 for v in item.values() if str(v).strip() not in ['', 'nan', 'None'])
+        
+        def pick_more_detailed(item_a, item_b):
+            if count_filled_fields(item_b) >= count_filled_fields(item_a):
+                return item_b
+            return item_a
+        
+        merged = {}
+        for item in existing_data:
+            key = (str(item.get('日期', '')).strip(), str(item.get('包裹号', '')).strip())
+            if key[1]:
+                merged[key] = item
+        
+        replaced_count = 0
+        added_count = 0
+        for item in new_data:
+            key = (str(item.get('日期', '')).strip(), str(item.get('包裹号', '')).strip())
+            if key[1]:
+                if key in merged:
+                    merged[key] = pick_more_detailed(merged[key], item)
+                    replaced_count += 1
+                else:
+                    merged[key] = item
+                    added_count += 1
+        
+        final_data = list(merged.values())
+        final_data.sort(key=lambda x: x.get('日期', ''), reverse=True)
+        
+        save_data(final_data)
+        sync_to_github(final_data)
+        
+        return jsonify({
+            'success': True,
+            'total': len(final_data),
+            'added': added_count,
+            'replaced': replaced_count
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/import', methods=['POST'])
 def import_excel():
     """导入Excel文件，支持重复数据替换"""
