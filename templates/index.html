@@ -1418,9 +1418,39 @@ function downloadBackup(filename){
                 <button class="modal-close" onclick="closeSettings()">✕</button>
             </div>
             <div class="modal-body">
+                <!-- 数据同步 -->
+                <div class="setting-item" style="flex-direction:column;align-items:stretch;">
+                    <h4 style="margin:0 0 8px 0;">🔄 数据同步</h4>
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                        <span style="font-size:13px;color:#8e8e93;">上次同步: <span id="lastSyncTime">-</span></span>
+                        <button class="action-btn primary" onclick="manualSync()" style="padding:6px 12px;font-size:12px;">立即同步</button>
+                    </div>
+                </div>
+                
+                <!-- 操作日志 -->
+                <div class="setting-item" style="flex-direction:column;align-items:stretch;">
+                    <h4 style="margin:0 0 8px 0;">📜 操作日志</h4>
+                    <div id="logsListInSettings" style="max-height:150px;overflow-y:auto;font-size:12px;background:rgba(0,0,0,0.02);border-radius:8px;padding:8px;">
+                        <div style="text-align:center;color:#8e8e93;padding:10px;">加载中...</div>
+                    </div>
+                </div>
+                
+                <!-- 数据备份 -->
+                <div class="setting-item" style="flex-direction:column;align-items:stretch;">
+                    <h4 style="margin:0 0 8px 0;">💾 数据备份</h4>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                        <span style="font-size:13px;color:#8e8e93;">自动备份：每天凌晨2点</span>
+                        <button class="action-btn secondary" onclick="createBackupNow()" style="padding:6px 12px;font-size:12px;">立即备份</button>
+                    </div>
+                    <div id="backupList" style="max-height:120px;overflow-y:auto;font-size:12px;background:rgba(0,0,0,0.02);border-radius:8px;padding:8px;">
+                        <div style="text-align:center;color:#8e8e93;padding:10px;">加载中...</div>
+                    </div>
+                </div>
+                
+                <!-- 主题颜色 -->
                 <div class="setting-item">
                     <div class="setting-info">
-                        <h4>背景颜色</h4>
+                        <h4>🎨 主题颜色</h4>
                         <p>选择喜欢的配色方案</p>
                     </div>
                     <select class="setting-select" id="colorScheme" onchange="changeColor(this.value)">
@@ -1432,9 +1462,11 @@ function downloadBackup(filename){
                         <option value="dark">暗夜模式</option>
                     </select>
                 </div>
+                
+                <!-- 动画效果 -->
                 <div class="setting-item">
                     <div class="setting-info">
-                        <h4>动画效果</h4>
+                        <h4>✨ 动画效果</h4>
                         <p>开启/关闭背景动画</p>
                     </div>
                     <label class="toggle">
@@ -1442,9 +1474,11 @@ function downloadBackup(filename){
                         <span class="toggle-slider"></span>
                     </label>
                 </div>
+                
+                <!-- 重置设置 -->
                 <div class="setting-item">
                     <div class="setting-info">
-                        <h4>重置设置</h4>
+                        <h4>🔄 重置设置</h4>
                         <p>恢复默认设置</p>
                     </div>
                     <button class="action-btn secondary" onclick="resetSettings()">重置</button>
