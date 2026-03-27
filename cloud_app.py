@@ -711,6 +711,56 @@ def export_shared_expense():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # Render.com 需要
+
+
+@app.route('/api/export-template', methods=['POST'])
+def export_template():
+    """按模板导出数据"""
+    try:
+        req = request.get_json()
+        export_type = req.get('type', 'all')
+        data = req.get('data', [])
+        
+        if not data:
+            return jsonify({'success': False, 'error': '没有数据'}), 400
+        
+        df = pd.DataFrame(data)
+        
+        # 根据导出类型设置列名
+        if export_type == 'by-resp':
+            # 责任方汇总
+            columns = ['责任方', '数量', '金额']
+            df = df[columns] if all(c in df.columns for c in columns) else df
+        else:
+            # 其他类型保持原列
+            preferred_columns = ['日期', '班次', '包裹号', '商品详情', '异常情况', '金额', '责任方', '处理方式', '路由', '处理人', '回款情况']
+            existing_cols = [c for c in preferred_columns if c in df.columns]
+            df = df[existing_cols] if existing_cols else df
+        
+        # 创建Excel
+        excel_path = '/tmp/nc_export.xlsx'
+        with pd.ExcelWriter(excel_path, engine='openpyxl') as writer:
+            df.to_excel(writer, index=False, sheet_name='数据')
+            
+            # 获取工作表并设置列宽
+            ws = writer.sheets['数据']
+            for col in ws.columns:
+                max_length = 0
+                column = col[0].column_letter
+                for cell in col:
+                    try:
+                        if len(str(cell.value)) > max_length:
+                            max_length = len(str(cell.value))
+                    except:
+                        pass
+                adjusted_width = min(max_length + 2, 50)
+                ws.column_dimensions[column].width = adjusted_width
+        
+        return send_file(excel_path, as_attachment=True, download_name=f'{export_type}_{datetime.now().strftime("%Y%m%d")}.xlsx')
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)

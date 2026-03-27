@@ -1025,7 +1025,7 @@ function markUnpaidSelected(){
             </select>
             <button class="action-btn secondary" onclick="clearFilters()">✕ 清除</button>
             <button class="action-btn primary" onclick="openAddModal()">✚ 添加</button>
-            <button class="action-btn green" onclick="exportData()">⬇ 导出</button>
+            <button class="action-btn green" onclick="openExportModal()">⬇ 导出</button>
             <button class="action-btn secondary" onclick="openImportModal()">⬆ 导入</button>
             
             <button class="action-btn secondary" onclick="openSharedModal()">📊 公摊计算</button>
@@ -1362,6 +1362,42 @@ function markUnpaidSelected(){
                 <span id="importInfo" style="margin-right:auto;color:#8e8e93;font-size:13px;"></span>
                 <button class="btn-cancel" onclick="closeImportModal()">取消</button>
                 <button class="btn-confirm" id="importConfirmBtn" onclick="confirmImport()" disabled>确认导入</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 导出 Modal -->
+    <div class="modal-overlay" id="exportModal">
+        <div class="modal-box" style="max-width:450px;">
+            <div class="modal-header" style="background:linear-gradient(135deg,#34c759,#30d158);color:white;">
+                <h3 style="color:white;">⬇ 导出数据</h3>
+                <button class="modal-close" onclick="closeExportModal()" style="background:rgba(255,255,255,0.3);color:white;">✕</button>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom:16px;">
+                    <label style="font-size:13px;color:#8e8e93;display:block;margin-bottom:8px;">选择导出模板</label>
+                    <select id="exportType" style="width:100%;padding:12px;border-radius:10px;border:1px solid rgba(0,0,0,0.1);font-size:14px;">
+                        <option value="all">全部数据</option>
+                        <option value="month">本月报表</option>
+                        <option value="week">本周报表</option>
+                        <option value="unpaid">未回款明细</option>
+                        <option value="paid">已回款明细</option>
+                        <option value="by-resp">按责任方汇总</option>
+                    </select>
+                </div>
+                <div style="margin-bottom:16px;" id="exportDateRange" style="display:none;">
+                    <label style="font-size:13px;color:#8e8e93;display:block;margin-bottom:8px;">日期范围</label>
+                    <div style="display:flex;gap:10px;">
+                        <input type="date" id="exportStartDate" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,0.1);">
+                        <span style="line-height:40px;color:#8e8e93;">至</span>
+                        <input type="date" id="exportEndDate" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,0.1);">
+                    </div>
+                </div>
+                <div id="exportStats" style="padding:12px;background:rgba(0,0,0,0.02);border-radius:10px;font-size:13px;color:#8e8e93;"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeExportModal()">取消</button>
+                <button class="btn-confirm" style="background:#34c759;" onclick="doExport()">导出Excel</button>
             </div>
         </div>
     </div>
@@ -2186,9 +2222,120 @@ function resetSettings(){
 }
 
 // Import/Export
-function exportData(){
+
+
+// 导出功能
+function openExportModal(){
+    var now = new Date();
+    document.getElementById('exportStartDate').value = now.toISOString().split('T')[0];
+    document.getElementById('exportEndDate').value = now.toISOString().split('T')[0];
+    updateExportStats();
+    document.getElementById('exportModal').classList.add('show');
+}
+
+function closeExportModal(){ document.getElementById('exportModal').classList.remove('show'); }
+
+document.getElementById('exportType') && document.getElementById('exportType').addEventListener('change', updateExportStats);
+
+function updateExportStats(){
+    var type = document.getElementById('exportType').value;
+    var filtered = getExportData(type);
+    var total = filtered.length;
+    var amount = 0;
+    for(var i=0; i<filtered.length; i++){
+        amount += parseFloat(filtered[i]['金额']) || 0;
+    }
+    document.getElementById('exportStats').innerHTML = 
+        '共 <b>' + total + '</b> 条数据，金额合计 <b>' + amount.toFixed(2) + '</b> 元';
+}
+
+function getExportData(type){
+    var now = new Date();
+    var year = now.getFullYear();
+    var month = String(now.getMonth() + 1).padStart(2, '0');
+    var day = String(now.getDate()).padStart(2, '0');
+    var weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - now.getDay());
+    
+    if(type === 'all'){
+        return allData;
+    } else if(type === 'month'){
+        var monthPrefix = year + '-' + month;
+        return allData.filter(function(item){
+            return (item['日期'] || '').startsWith(monthPrefix);
+        });
+    } else if(type === 'week'){
+        var weekStartStr = weekStart.toISOString().split('T')[0];
+        return allData.filter(function(item){
+            return (item['日期'] || '') >= weekStartStr;
+        });
+    } else if(type === 'unpaid'){
+        return allData.filter(function(item){
+            var v = item['回款情况'] || '';
+            return v !== '√' && v !== '✔' && v !== '已回款';
+        });
+    } else if(type === 'paid'){
+        return allData.filter(function(item){
+            var v = item['回款情况'] || '';
+            return v === '√' || v === '✔' || v === '已回款';
+        });
+    } else if(type === 'by-resp'){
+        // 按责任方汇总
+        var stats = {};
+        for(var i=0; i<allData.length; i++){
+            var resp = allData[i]['责任方'] || '未记录';
+            var amt = parseFloat(allData[i]['金额']) || 0;
+            if(!stats[resp]){
+                stats[resp] = { 责任方: resp, 数量: 0, 金额: 0 };
+            }
+            stats[resp].数量++;
+            stats[resp].金额 += amt;
+        }
+        return Object.values(stats).sort(function(a,b){ return b.金额 - a.金额; });
+    }
+    return allData;
+}
+
+function doExport(){
+    var type = document.getElementById('exportType').value;
+    var data = getExportData(type);
+    
+    if(data.length === 0){
+        showToast('没有数据可导出', 'error');
+        return;
+    }
+    
     showToast('正在导出...');
-    window.location.href = '/api/export';
+    
+    fetch('/api/export-template', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: type, data: data })
+    }).then(function(r){ return r.blob(); })
+      .then(function(blob){
+          var url = window.URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url;
+          var typeNames = {
+              'all': '全部数据',
+              'month': '本月报表',
+              'week': '本周报表',
+              'unpaid': '未回款明细',
+              'paid': '已回款明细',
+              'by-resp': '责任方汇总'
+          };
+          a.download = typeNames[type] + '_' + new Date().toISOString().split('T')[0] + '.xlsx';
+          a.click();
+          window.URL.revokeObjectURL(url);
+          closeExportModal();
+          showToast('导出成功！');
+      }).catch(function(e){
+          showToast('导出失败', 'error');
+      });
+}
+
+function exportData(){
+    openExportModal();
 }
 
 async function importExcel(input){
