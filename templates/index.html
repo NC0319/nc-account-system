@@ -256,6 +256,19 @@ function restoreBackup(filename){
 function downloadBackup(filename){
     window.location.href = '/api/download-backup/' + filename;
 }
+
+
+function jumpToEdit(idx){
+    if(idx < 0){
+        showToast('无法定位该记录', 'error');
+        return;
+    }
+    closeAnomalyModal();
+    // 找到该索引对应的数据并打开编辑弹窗
+    setTimeout(function(){
+        openEditModal(idx);
+    }, 300);
+}
 </script>
     <script>
         // 确保 Chart.js 加载完成
@@ -513,6 +526,19 @@ function restoreBackup(filename){
 
 function downloadBackup(filename){
     window.location.href = '/api/download-backup/' + filename;
+}
+
+
+function jumpToEdit(idx){
+    if(idx < 0){
+        showToast('无法定位该记录', 'error');
+        return;
+    }
+    closeAnomalyModal();
+    // 找到该索引对应的数据并打开编辑弹窗
+    setTimeout(function(){
+        openEditModal(idx);
+    }, 300);
 }
 </script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -1974,6 +2000,19 @@ function restoreBackup(filename){
 function downloadBackup(filename){
     window.location.href = '/api/download-backup/' + filename;
 }
+
+
+function jumpToEdit(idx){
+    if(idx < 0){
+        showToast('无法定位该记录', 'error');
+        return;
+    }
+    closeAnomalyModal();
+    // 找到该索引对应的数据并打开编辑弹窗
+    setTimeout(function(){
+        openEditModal(idx);
+    }, 300);
+}
 </script>
     <script>
 var allData=[], filteredData=[], currentPage=1, editingIndex=-1, selectedBatch=[];
@@ -2797,7 +2836,7 @@ function detectAnomalies(){
     var anomalies = [];
     var amounts = [];
     
-    // 1. 收集金额数据计算统计值
+    // 1. 收集金额数据计算统计值（只统计有金额的数据）
     for(var i=0; i<allData.length; i++){
         var amt = parseFloat(allData[i]['金额']) || 0;
         if(amt > 0) amounts.push(amt);
@@ -2817,14 +2856,16 @@ function detectAnomalies(){
         var pkg = str(item['包裹号'] || '').trim();
         var date = str(item['日期'] || '').trim();
         var key = pkg + '|' + date;
+        var idx = item.__idx || i;  // 获取真实索引
         
-        // 异常1: 金额异常大（超过平均值+3倍标准差）
+        // 异常1: 金额异常大（超过平均值+3倍标准差，仅检测有金额的数据）
         if(amt > 0 && avg > 0 && stdDev > 0 && amt > avg + 3 * stdDev){
             anomalies.push({
                 type: '金额异常大',
                 icon: '💰',
                 color: '#ff3b30',
                 item: item,
+                idx: idx,
                 detail: '金额 ' + amt.toFixed(2) + ' 元，超过正常范围（平均 ' + avg.toFixed(2) + ' ± ' + (3*stdDev).toFixed(2) + '）'
             });
         }
@@ -2837,35 +2878,22 @@ function detectAnomalies(){
                     icon: '📋',
                     color: '#007aff',
                     item: item,
-                    detail: '包裹号+日期与第 ' + (pkgDates[key]+1) + ' 条重复'
+                    idx: idx,
+                    detail: '包裹号+日期与另一条重复'
                 });
             } else {
                 pkgDates[key] = i;
             }
         }
         
-        // 异常3: 关键字段为空
-        var missingFields = [];
-        if(!pkg) missingFields.push('包裹号');
-        if(!date) missingFields.push('日期');
-        if(amt === 0) missingFields.push('金额');
-        if(missingFields.length > 0 && pkg){  // 有包裹号但缺其他字段
-            anomalies.push({
-                type: '字段缺失',
-                icon: '📝',
-                color: '#8e8e93',
-                item: item,
-                detail: '缺少: ' + missingFields.join(', ')
-            });
-        }
-        
-        // 异常4: 责任方为空
+        // 异常3: 责任方为空（但有包裹号）
         if(!str(item['责任方'] || '').trim() && pkg){
             anomalies.push({
                 type: '责任方未填写',
                 icon: '👤',
                 color: '#af52de',
                 item: item,
+                idx: idx,
                 detail: '包裹号 ' + pkg.substring(0,20) + ' 未填写责任方'
             });
         }
@@ -2892,10 +2920,14 @@ function detectAnomalies(){
         
         html += '<div style="display:flex;flex-direction:column;gap:8px;">';
         for(var a of anomalies){
-            html += '<div style="padding:12px;background:' + a.color + '08;border-left:3px solid ' + a.color + ';border-radius:8px;">';
-            html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">';
+            var idx = a.idx !== undefined ? a.idx : -1;
+            html += '<div style="padding:12px;background:' + a.color + '08;border-left:3px solid ' + a.color + ';border-radius:8px;cursor:pointer;transition:all 0.2s;" onclick="jumpToEdit(' + idx + ')" onmouseover="this.style.background='' + a.color + '15'" onmouseout="this.style.background='' + a.color + '08'">';
+            html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">';
+            html += '<div style="display:flex;align-items:center;gap:8px;">';
             html += '<span style="font-size:16px;">' + a.icon + '</span>';
             html += '<span style="font-weight:600;color:' + a.color + ';">' + a.type + '</span>';
+            html += '</div>';
+            html += '<span style="font-size:11px;color:#007aff;">点击修改 →</span>';
             html += '</div>';
             html += '<div style="font-size:12px;color:#666;">' + a.detail + '</div>';
             html += '</div>';
@@ -3306,6 +3338,19 @@ function restoreBackup(filename){
 
 function downloadBackup(filename){
     window.location.href = '/api/download-backup/' + filename;
+}
+
+
+function jumpToEdit(idx){
+    if(idx < 0){
+        showToast('无法定位该记录', 'error');
+        return;
+    }
+    closeAnomalyModal();
+    // 找到该索引对应的数据并打开编辑弹窗
+    setTimeout(function(){
+        openEditModal(idx);
+    }, 300);
 }
 </script>
 </body>
