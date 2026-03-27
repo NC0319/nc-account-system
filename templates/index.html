@@ -159,19 +159,14 @@ setTimeout(loadSyncStatus, 1000);
 
 
 // 操作日志功能
-function openLogsModal(){
-    loadLogs();
-    document.getElementById('logsModal').classList.add('show');
-}
 
-function closeLogsModal(){ document.getElementById('logsModal').classList.remove('show'); }
 
 function loadLogs(){
-    fetch('/api/logs?limit=100')
+    fetch('/api/logs?limit=50')
         .then(function(r){ return r.json(); })
         .then(function(result){
             if(result.success && result.logs.length > 0){
-                var html = '<div style="display:flex;flex-direction:column;gap:8px;">';
+                var html = '<div style="display:flex;flex-direction:column;gap:6px;">';
                 var actionColors = {
                     '添加数据': '#34c759',
                     '更新数据': '#007aff',
@@ -184,22 +179,20 @@ function loadLogs(){
                     var log = result.logs[i];
                     var color = actionColors[log.action] || '#8e8e93';
                     var time = new Date(log.time);
-                    var timeStr = time.toLocaleString('zh-CN');
+                    var timeStr = time.toLocaleString('zh-CN', {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
                     
-                    html += '<div style="padding:12px;background:rgba(0,0,0,0.02);border-radius:10px;border-left:3px solid ' + color + ';">';
-                    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">';
-                    html += '<span style="font-weight:600;color:' + color + ';">' + log.action + '</span>';
-                    html += '<span style="font-size:12px;color:#8e8e93;">' + timeStr + '</span>';
+                    html += '<div style="padding:8px;background:' + color + '10;border-radius:8px;border-left:3px solid ' + color + ';">';
+                    html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+                    html += '<span style="font-weight:600;font-size:12px;color:' + color + ';">' + log.action + '</span>';
+                    html += '<span style="font-size:11px;color:#8e8e93;">' + timeStr + '</span>';
                     html += '</div>';
-                    html += '<div style="font-size:13px;color:#666;">' + log.detail + '</div>';
+                    html += '<div style="font-size:11px;color:#666;margin-top:4px;">' + log.detail + '</div>';
                     html += '</div>';
                 }
                 html += '</div>';
-                document.getElementById('logsList').innerHTML = html;
-                document.getElementById('logsCount').textContent = '共 ' + result.logs.length + ' 条记录';
+                document.getElementById('logsListInSettings').innerHTML = html;
             } else {
-                document.getElementById('logsList').innerHTML = '<div style="text-align:center;padding:60px;color:#8e8e93;">暂无操作记录</div>';
-                document.getElementById('logsCount').textContent = '暂无记录';
+                document.getElementById('logsListInSettings').innerHTML = '<div style="text-align:center;color:#8e8e93;padding:20px;">暂无操作记录</div>';
             }
         });
 }
@@ -424,19 +417,14 @@ setTimeout(loadSyncStatus, 1000);
 
 
 // 操作日志功能
-function openLogsModal(){
-    loadLogs();
-    document.getElementById('logsModal').classList.add('show');
-}
 
-function closeLogsModal(){ document.getElementById('logsModal').classList.remove('show'); }
 
 function loadLogs(){
-    fetch('/api/logs?limit=100')
+    fetch('/api/logs?limit=50')
         .then(function(r){ return r.json(); })
         .then(function(result){
             if(result.success && result.logs.length > 0){
-                var html = '<div style="display:flex;flex-direction:column;gap:8px;">';
+                var html = '<div style="display:flex;flex-direction:column;gap:6px;">';
                 var actionColors = {
                     '添加数据': '#34c759',
                     '更新数据': '#007aff',
@@ -449,22 +437,20 @@ function loadLogs(){
                     var log = result.logs[i];
                     var color = actionColors[log.action] || '#8e8e93';
                     var time = new Date(log.time);
-                    var timeStr = time.toLocaleString('zh-CN');
+                    var timeStr = time.toLocaleString('zh-CN', {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
                     
-                    html += '<div style="padding:12px;background:rgba(0,0,0,0.02);border-radius:10px;border-left:3px solid ' + color + ';">';
-                    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">';
-                    html += '<span style="font-weight:600;color:' + color + ';">' + log.action + '</span>';
-                    html += '<span style="font-size:12px;color:#8e8e93;">' + timeStr + '</span>';
+                    html += '<div style="padding:8px;background:' + color + '10;border-radius:8px;border-left:3px solid ' + color + ';">';
+                    html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+                    html += '<span style="font-weight:600;font-size:12px;color:' + color + ';">' + log.action + '</span>';
+                    html += '<span style="font-size:11px;color:#8e8e93;">' + timeStr + '</span>';
                     html += '</div>';
-                    html += '<div style="font-size:13px;color:#666;">' + log.detail + '</div>';
+                    html += '<div style="font-size:11px;color:#666;margin-top:4px;">' + log.detail + '</div>';
                     html += '</div>';
                 }
                 html += '</div>';
-                document.getElementById('logsList').innerHTML = html;
-                document.getElementById('logsCount').textContent = '共 ' + result.logs.length + ' 条记录';
+                document.getElementById('logsListInSettings').innerHTML = html;
             } else {
-                document.getElementById('logsList').innerHTML = '<div style="text-align:center;padding:60px;color:#8e8e93;">暂无操作记录</div>';
-                document.getElementById('logsCount').textContent = '暂无记录';
+                document.getElementById('logsListInSettings').innerHTML = '<div style="text-align:center;color:#8e8e93;padding:20px;">暂无操作记录</div>';
             }
         });
 }
@@ -1306,7 +1292,6 @@ function downloadBackup(filename){
             <button class="action-btn green" onclick="openExportModal()">⬇ 导出</button>
             <button class="action-btn secondary" onclick="openImportModal()">⬆ 导入</button>
             
-            <button class="action-btn secondary" onclick="openLogsModal()">📜 操作日志</button>
             <button class="action-btn secondary" onclick="openAnomalyModal()">🔍 异常检测</button>
             <button class="action-btn secondary" onclick="openSharedModal()">📊 公摊计算</button>
         </div>
@@ -1699,22 +1684,6 @@ function downloadBackup(filename){
         </div>
     </div>
 
-    <!-- 操作日志 Modal -->
-    <div class="modal-overlay" id="logsModal">
-        <div class="modal-box" style="max-width:800px;">
-            <div class="modal-header" style="background:linear-gradient(135deg,#5856d6,#af52de);color:white;">
-                <h3 style="color:white;">📜 操作日志</h3>
-                <button class="modal-close" onclick="closeLogsModal()" style="background:rgba(255,255,255,0.3);color:white;">✕</button>
-            </div>
-            <div class="modal-body">
-                <div id="logsList" style="max-height:450px;overflow-y:auto;"></div>
-            </div>
-            <div class="modal-footer">
-                <span id="logsCount" style="margin-right:auto;color:#8e8e93;"></span>
-                <button class="btn-cancel" onclick="closeLogsModal()">关闭</button>
-            </div>
-        </div>
-    </div>
 
     <!-- Toast -->
     <div class="toast-container" id="toastContainer"></div>
@@ -1874,19 +1843,14 @@ setTimeout(loadSyncStatus, 1000);
 
 
 // 操作日志功能
-function openLogsModal(){
-    loadLogs();
-    document.getElementById('logsModal').classList.add('show');
-}
 
-function closeLogsModal(){ document.getElementById('logsModal').classList.remove('show'); }
 
 function loadLogs(){
-    fetch('/api/logs?limit=100')
+    fetch('/api/logs?limit=50')
         .then(function(r){ return r.json(); })
         .then(function(result){
             if(result.success && result.logs.length > 0){
-                var html = '<div style="display:flex;flex-direction:column;gap:8px;">';
+                var html = '<div style="display:flex;flex-direction:column;gap:6px;">';
                 var actionColors = {
                     '添加数据': '#34c759',
                     '更新数据': '#007aff',
@@ -1899,22 +1863,20 @@ function loadLogs(){
                     var log = result.logs[i];
                     var color = actionColors[log.action] || '#8e8e93';
                     var time = new Date(log.time);
-                    var timeStr = time.toLocaleString('zh-CN');
+                    var timeStr = time.toLocaleString('zh-CN', {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
                     
-                    html += '<div style="padding:12px;background:rgba(0,0,0,0.02);border-radius:10px;border-left:3px solid ' + color + ';">';
-                    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">';
-                    html += '<span style="font-weight:600;color:' + color + ';">' + log.action + '</span>';
-                    html += '<span style="font-size:12px;color:#8e8e93;">' + timeStr + '</span>';
+                    html += '<div style="padding:8px;background:' + color + '10;border-radius:8px;border-left:3px solid ' + color + ';">';
+                    html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+                    html += '<span style="font-weight:600;font-size:12px;color:' + color + ';">' + log.action + '</span>';
+                    html += '<span style="font-size:11px;color:#8e8e93;">' + timeStr + '</span>';
                     html += '</div>';
-                    html += '<div style="font-size:13px;color:#666;">' + log.detail + '</div>';
+                    html += '<div style="font-size:11px;color:#666;margin-top:4px;">' + log.detail + '</div>';
                     html += '</div>';
                 }
                 html += '</div>';
-                document.getElementById('logsList').innerHTML = html;
-                document.getElementById('logsCount').textContent = '共 ' + result.logs.length + ' 条记录';
+                document.getElementById('logsListInSettings').innerHTML = html;
             } else {
-                document.getElementById('logsList').innerHTML = '<div style="text-align:center;padding:60px;color:#8e8e93;">暂无操作记录</div>';
-                document.getElementById('logsCount').textContent = '暂无记录';
+                document.getElementById('logsListInSettings').innerHTML = '<div style="text-align:center;color:#8e8e93;padding:20px;">暂无操作记录</div>';
             }
         });
 }
@@ -3225,19 +3187,14 @@ setTimeout(loadSyncStatus, 1000);
 
 
 // 操作日志功能
-function openLogsModal(){
-    loadLogs();
-    document.getElementById('logsModal').classList.add('show');
-}
 
-function closeLogsModal(){ document.getElementById('logsModal').classList.remove('show'); }
 
 function loadLogs(){
-    fetch('/api/logs?limit=100')
+    fetch('/api/logs?limit=50')
         .then(function(r){ return r.json(); })
         .then(function(result){
             if(result.success && result.logs.length > 0){
-                var html = '<div style="display:flex;flex-direction:column;gap:8px;">';
+                var html = '<div style="display:flex;flex-direction:column;gap:6px;">';
                 var actionColors = {
                     '添加数据': '#34c759',
                     '更新数据': '#007aff',
@@ -3250,22 +3207,20 @@ function loadLogs(){
                     var log = result.logs[i];
                     var color = actionColors[log.action] || '#8e8e93';
                     var time = new Date(log.time);
-                    var timeStr = time.toLocaleString('zh-CN');
+                    var timeStr = time.toLocaleString('zh-CN', {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
                     
-                    html += '<div style="padding:12px;background:rgba(0,0,0,0.02);border-radius:10px;border-left:3px solid ' + color + ';">';
-                    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">';
-                    html += '<span style="font-weight:600;color:' + color + ';">' + log.action + '</span>';
-                    html += '<span style="font-size:12px;color:#8e8e93;">' + timeStr + '</span>';
+                    html += '<div style="padding:8px;background:' + color + '10;border-radius:8px;border-left:3px solid ' + color + ';">';
+                    html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+                    html += '<span style="font-weight:600;font-size:12px;color:' + color + ';">' + log.action + '</span>';
+                    html += '<span style="font-size:11px;color:#8e8e93;">' + timeStr + '</span>';
                     html += '</div>';
-                    html += '<div style="font-size:13px;color:#666;">' + log.detail + '</div>';
+                    html += '<div style="font-size:11px;color:#666;margin-top:4px;">' + log.detail + '</div>';
                     html += '</div>';
                 }
                 html += '</div>';
-                document.getElementById('logsList').innerHTML = html;
-                document.getElementById('logsCount').textContent = '共 ' + result.logs.length + ' 条记录';
+                document.getElementById('logsListInSettings').innerHTML = html;
             } else {
-                document.getElementById('logsList').innerHTML = '<div style="text-align:center;padding:60px;color:#8e8e93;">暂无操作记录</div>';
-                document.getElementById('logsCount').textContent = '暂无记录';
+                document.getElementById('logsListInSettings').innerHTML = '<div style="text-align:center;color:#8e8e93;padding:20px;">暂无操作记录</div>';
             }
         });
 }
