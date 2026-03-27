@@ -878,6 +878,121 @@ def schedule_sync():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+
+
+# ==================== 自动备份功能 ====================
+
+BACKUP_DIR = '/tmp/backups'
+MAX_BACKUPS = 30  # 保留最近30天备份
+
+def ensure_backup_dir():
+    """确保备份目录存在"""
+    if not os.path.exists(BACKUP_DIR):
+        os.makedirs(BACKUP_DIR)
+
+def create_backup():
+    """创建数据备份"""
+    try:
+        ensure_backup_dir()
+        
+        data = load_data()
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        backup_file = os.path.join(BACKUP_DIR, f'backup_{timestamp}.json')
+        
+        with open(backup_file, 'w', encoding='utf-8') as f:
+            json.dump({
+                'timestamp': datetime.now().isoformat(),
+                'data_count': len(data),
+                'data': data
+            }, f, ensure_ascii=False, indent=2)
+        
+        # 清理旧备份（保留最近30天）
+        clean_old_backups()
+        
+        add_log('自动备份', f'备份成功: {len(data)}条数据')
+        return True
+    except Exception as e:
+        print(f'备份失败: {e}')
+        return False
+
+def clean_old_backups():
+    """清理旧备份"""
+    try:
+        ensure_backup_dir()
+        files = sorted([f for f in os.listdir(BACKUP_DIR) if f.startswith('backup_')])
+        
+        while len(files) > MAX_BACKUPS:
+            old_file = os.path.join(BACKUP_DIR, files[0])
+            os.remove(old_file)
+            files.pop(0)
+    except Exception as e:
+        print(f'清理旧备份失败: {e}')
+
+def get_backup_list():
+    """获取备份列表"""
+    try:
+        ensure_backup_dir()
+        files = sorted([f for f in os.listdir(BACKUP_DIR) if f.startswith('backup_')], reverse=True)
+        
+        backups = []
+        for f in files:
+            filepath = os.path.join(BACKUP_DIR, f)
+            stat = os.stat(filepath)
+            backups.append({
+                'filename': f,
+                'size': stat.st_size,
+                'time': datetime.fromtimestamp(stat.st_mtime).isoformat()
+            })
+        return backups
+    except:
+        return []
+
+@app.route('/api/backups')
+def api_backups():
+    """获取备份列表"""
+    backups = get_backup_list()
+    return jsonify({'success': True, 'backups': backups})
+
+@app.route('/api/backup-now', methods=['POST'])
+def api_backup_now():
+    """立即创建备份"""
+    success = create_backup()
+    if success:
+        return jsonify({'success': True, 'message': '备份成功'})
+    return jsonify({'success': False, 'error': '备份失败'}), 500
+
+@app.route('/api/restore-backup/<filename>', methods=['POST'])
+def api_restore_backup(filename):
+    """恢复备份"""
+    try:
+        filepath = os.path.join(BACKUP_DIR, filename)
+        if not os.path.exists(filepath):
+            return jsonify({'success': False, 'error': '备份文件不存在'}), 404
+        
+        with open(filepath, 'r') as f:
+            backup_data = json.load(f)
+        
+        data = backup_data.get('data', [])
+        save_data(data)
+        sync_to_github(data)
+        add_log('恢复备份', f'从 {filename} 恢复 {len(data)} 条数据')
+        
+        return jsonify({'success': True, 'message': f'已恢复 {len(data)} 条数据'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/download-backup/<filename>')
+def api_download_backup(filename):
+    """下载备份文件"""
+    try:
+        filepath = os.path.join(BACKUP_DIR, filename)
+        if not os.path.exists(filepath):
+            return jsonify({'success': False, 'error': '文件不存在'}), 404
+        return send_file(filepath, as_attachment=True, download_name=filename)
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)

@@ -10,11 +10,11 @@ services:
         value: 3.11.0
 
   - type: cron
-    name: nc-account-sync
+    name: nc-account-backup
     runtime: python
-    schedule: "0 */6 * * *"  # 每6小时执行一次
+    schedule: "0 2 * * *"  # 每天凌晨2点执行
     buildCommand: pip install requests
-    startCommand: "curl -X POST https://nc-account-system.onrender.com/api/schedule-sync"
+    startCommand: "curl -X POST https://nc-account-system.onrender.com/api/backup-now"
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0

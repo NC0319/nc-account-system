@@ -203,6 +203,66 @@ function loadLogs(){
             }
         });
 }
+
+
+// 备份功能
+function loadBackups(){
+    fetch('/api/backups')
+        .then(function(r){ return r.json(); })
+        .then(function(result){
+            if(result.success && result.backups.length > 0){
+                var html = '';
+                for(var i=0; i<result.backups.length; i++){
+                    var b = result.backups[i];
+                    var time = new Date(b.time);
+                    var size = (b.size / 1024).toFixed(1);
+                    html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:rgba(0,0,0,0.02);border-radius:6px;margin-bottom:4px;">';
+                    html += '<div><div style="font-weight:600;">' + time.toLocaleString('zh-CN') + '</div>';
+                    html += '<div style="color:#8e8e93;">' + size + ' KB</div></div>';
+                    html += '<div style="display:flex;gap:4px;">';
+                    html += '<button onclick="restoreBackup(\'' + b.filename + '\')" style="padding:4px 8px;font-size:11px;background:#007aff;color:white;border:none;border-radius:4px;cursor:pointer;">恢复</button>';
+                    html += '<button onclick="downloadBackup(\'' + b.filename + '\')" style="padding:4px 8px;font-size:11px;background:#8e8e93;color:white;border:none;border-radius:4px;cursor:pointer;">下载</button>';
+                    html += '</div></div>';
+                }
+                document.getElementById('backupList').innerHTML = html;
+            } else {
+                document.getElementById('backupList').innerHTML = '<div style="text-align:center;color:#8e8e93;padding:20px;">暂无备份</div>';
+            }
+        });
+}
+
+function createBackupNow(){
+    showToast('正在备份...');
+    fetch('/api/backup-now', { method: 'POST' })
+        .then(function(r){ return r.json(); })
+        .then(function(result){
+            if(result.success){
+                showToast('备份成功！');
+                loadBackups();
+            } else {
+                showToast('备份失败', 'error');
+            }
+        });
+}
+
+function restoreBackup(filename){
+    if(!confirm('确定要恢复此备份吗？当前数据将被覆盖。')) return;
+    showToast('正在恢复...');
+    fetch('/api/restore-backup/' + filename, { method: 'POST' })
+        .then(function(r){ return r.json(); })
+        .then(function(result){
+            if(result.success){
+                showToast(result.message);
+                loadData();
+            } else {
+                showToast('恢复失败: ' + result.error, 'error');
+            }
+        });
+}
+
+function downloadBackup(filename){
+    window.location.href = '/api/download-backup/' + filename;
+}
 </script>
     <script>
         // 确保 Chart.js 加载完成
@@ -407,6 +467,66 @@ function loadLogs(){
                 document.getElementById('logsCount').textContent = '暂无记录';
             }
         });
+}
+
+
+// 备份功能
+function loadBackups(){
+    fetch('/api/backups')
+        .then(function(r){ return r.json(); })
+        .then(function(result){
+            if(result.success && result.backups.length > 0){
+                var html = '';
+                for(var i=0; i<result.backups.length; i++){
+                    var b = result.backups[i];
+                    var time = new Date(b.time);
+                    var size = (b.size / 1024).toFixed(1);
+                    html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:rgba(0,0,0,0.02);border-radius:6px;margin-bottom:4px;">';
+                    html += '<div><div style="font-weight:600;">' + time.toLocaleString('zh-CN') + '</div>';
+                    html += '<div style="color:#8e8e93;">' + size + ' KB</div></div>';
+                    html += '<div style="display:flex;gap:4px;">';
+                    html += '<button onclick="restoreBackup(\'' + b.filename + '\')" style="padding:4px 8px;font-size:11px;background:#007aff;color:white;border:none;border-radius:4px;cursor:pointer;">恢复</button>';
+                    html += '<button onclick="downloadBackup(\'' + b.filename + '\')" style="padding:4px 8px;font-size:11px;background:#8e8e93;color:white;border:none;border-radius:4px;cursor:pointer;">下载</button>';
+                    html += '</div></div>';
+                }
+                document.getElementById('backupList').innerHTML = html;
+            } else {
+                document.getElementById('backupList').innerHTML = '<div style="text-align:center;color:#8e8e93;padding:20px;">暂无备份</div>';
+            }
+        });
+}
+
+function createBackupNow(){
+    showToast('正在备份...');
+    fetch('/api/backup-now', { method: 'POST' })
+        .then(function(r){ return r.json(); })
+        .then(function(result){
+            if(result.success){
+                showToast('备份成功！');
+                loadBackups();
+            } else {
+                showToast('备份失败', 'error');
+            }
+        });
+}
+
+function restoreBackup(filename){
+    if(!confirm('确定要恢复此备份吗？当前数据将被覆盖。')) return;
+    showToast('正在恢复...');
+    fetch('/api/restore-backup/' + filename, { method: 'POST' })
+        .then(function(r){ return r.json(); })
+        .then(function(result){
+            if(result.success){
+                showToast(result.message);
+                loadData();
+            } else {
+                showToast('恢复失败: ' + result.error, 'error');
+            }
+        });
+}
+
+function downloadBackup(filename){
+    window.location.href = '/api/download-backup/' + filename;
 }
 </script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -1798,6 +1918,66 @@ function loadLogs(){
             }
         });
 }
+
+
+// 备份功能
+function loadBackups(){
+    fetch('/api/backups')
+        .then(function(r){ return r.json(); })
+        .then(function(result){
+            if(result.success && result.backups.length > 0){
+                var html = '';
+                for(var i=0; i<result.backups.length; i++){
+                    var b = result.backups[i];
+                    var time = new Date(b.time);
+                    var size = (b.size / 1024).toFixed(1);
+                    html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:rgba(0,0,0,0.02);border-radius:6px;margin-bottom:4px;">';
+                    html += '<div><div style="font-weight:600;">' + time.toLocaleString('zh-CN') + '</div>';
+                    html += '<div style="color:#8e8e93;">' + size + ' KB</div></div>';
+                    html += '<div style="display:flex;gap:4px;">';
+                    html += '<button onclick="restoreBackup(\'' + b.filename + '\')" style="padding:4px 8px;font-size:11px;background:#007aff;color:white;border:none;border-radius:4px;cursor:pointer;">恢复</button>';
+                    html += '<button onclick="downloadBackup(\'' + b.filename + '\')" style="padding:4px 8px;font-size:11px;background:#8e8e93;color:white;border:none;border-radius:4px;cursor:pointer;">下载</button>';
+                    html += '</div></div>';
+                }
+                document.getElementById('backupList').innerHTML = html;
+            } else {
+                document.getElementById('backupList').innerHTML = '<div style="text-align:center;color:#8e8e93;padding:20px;">暂无备份</div>';
+            }
+        });
+}
+
+function createBackupNow(){
+    showToast('正在备份...');
+    fetch('/api/backup-now', { method: 'POST' })
+        .then(function(r){ return r.json(); })
+        .then(function(result){
+            if(result.success){
+                showToast('备份成功！');
+                loadBackups();
+            } else {
+                showToast('备份失败', 'error');
+            }
+        });
+}
+
+function restoreBackup(filename){
+    if(!confirm('确定要恢复此备份吗？当前数据将被覆盖。')) return;
+    showToast('正在恢复...');
+    fetch('/api/restore-backup/' + filename, { method: 'POST' })
+        .then(function(r){ return r.json(); })
+        .then(function(result){
+            if(result.success){
+                showToast(result.message);
+                loadData();
+            } else {
+                showToast('恢复失败: ' + result.error, 'error');
+            }
+        });
+}
+
+function downloadBackup(filename){
+    window.location.href = '/api/download-backup/' + filename;
+}
 </script>
     <script>
 var allData=[], filteredData=[], currentPage=1, editingIndex=-1, selectedBatch=[];
@@ -3088,6 +3268,66 @@ function loadLogs(){
                 document.getElementById('logsCount').textContent = '暂无记录';
             }
         });
+}
+
+
+// 备份功能
+function loadBackups(){
+    fetch('/api/backups')
+        .then(function(r){ return r.json(); })
+        .then(function(result){
+            if(result.success && result.backups.length > 0){
+                var html = '';
+                for(var i=0; i<result.backups.length; i++){
+                    var b = result.backups[i];
+                    var time = new Date(b.time);
+                    var size = (b.size / 1024).toFixed(1);
+                    html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:rgba(0,0,0,0.02);border-radius:6px;margin-bottom:4px;">';
+                    html += '<div><div style="font-weight:600;">' + time.toLocaleString('zh-CN') + '</div>';
+                    html += '<div style="color:#8e8e93;">' + size + ' KB</div></div>';
+                    html += '<div style="display:flex;gap:4px;">';
+                    html += '<button onclick="restoreBackup(\'' + b.filename + '\')" style="padding:4px 8px;font-size:11px;background:#007aff;color:white;border:none;border-radius:4px;cursor:pointer;">恢复</button>';
+                    html += '<button onclick="downloadBackup(\'' + b.filename + '\')" style="padding:4px 8px;font-size:11px;background:#8e8e93;color:white;border:none;border-radius:4px;cursor:pointer;">下载</button>';
+                    html += '</div></div>';
+                }
+                document.getElementById('backupList').innerHTML = html;
+            } else {
+                document.getElementById('backupList').innerHTML = '<div style="text-align:center;color:#8e8e93;padding:20px;">暂无备份</div>';
+            }
+        });
+}
+
+function createBackupNow(){
+    showToast('正在备份...');
+    fetch('/api/backup-now', { method: 'POST' })
+        .then(function(r){ return r.json(); })
+        .then(function(result){
+            if(result.success){
+                showToast('备份成功！');
+                loadBackups();
+            } else {
+                showToast('备份失败', 'error');
+            }
+        });
+}
+
+function restoreBackup(filename){
+    if(!confirm('确定要恢复此备份吗？当前数据将被覆盖。')) return;
+    showToast('正在恢复...');
+    fetch('/api/restore-backup/' + filename, { method: 'POST' })
+        .then(function(r){ return r.json(); })
+        .then(function(result){
+            if(result.success){
+                showToast(result.message);
+                loadData();
+            } else {
+                showToast('恢复失败: ' + result.error, 'error');
+            }
+        });
+}
+
+function downloadBackup(filename){
+    window.location.href = '/api/download-backup/' + filename;
 }
 </script>
 </body>
