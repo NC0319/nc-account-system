@@ -1028,6 +1028,7 @@ function markUnpaidSelected(){
             <button class="action-btn green" onclick="openExportModal()">⬇ 导出</button>
             <button class="action-btn secondary" onclick="openImportModal()">⬆ 导入</button>
             
+            <button class="action-btn secondary" onclick="openAnomalyModal()">🔍 异常检测</button>
             <button class="action-btn secondary" onclick="openSharedModal()">📊 公摊计算</button>
         </div>
         
@@ -1398,6 +1399,23 @@ function markUnpaidSelected(){
             <div class="modal-footer">
                 <button class="btn-cancel" onclick="closeExportModal()">取消</button>
                 <button class="btn-confirm" style="background:#34c759;" onclick="doExport()">导出Excel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 异常检测 Modal -->
+    <div class="modal-overlay" id="anomalyModal">
+        <div class="modal-box" style="max-width:700px;">
+            <div class="modal-header" style="background:linear-gradient(135deg,#ff3b30,#ff9500);color:white;">
+                <h3 style="color:white;">🔍 智能异常检测</h3>
+                <button class="modal-close" onclick="closeAnomalyModal()" style="background:rgba(255,255,255,0.3);color:white;">✕</button>
+            </div>
+            <div class="modal-body">
+                <div id="anomalyResults" style="max-height:450px;overflow-y:auto;"></div>
+            </div>
+            <div class="modal-footer">
+                <span id="anomalyCount" style="margin-right:auto;color:#ff3b30;font-weight:600;"></span>
+                <button class="btn-cancel" onclick="closeAnomalyModal()">关闭</button>
             </div>
         </div>
     </div>
@@ -2334,6 +2352,143 @@ function doExport(){
       });
 }
 
+
+
+// 智能异常检测
+function openAnomalyModal(){
+    detectAnomalies();
+    document.getElementById('anomalyModal').classList.add('show');
+}
+
+function closeAnomalyModal(){ document.getElementById('anomalyModal').classList.remove('show'); }
+
+function detectAnomalies(){
+    var anomalies = [];
+    var amounts = [];
+    
+    // 1. 收集金额数据计算统计值
+    for(var i=0; i<allData.length; i++){
+        var amt = parseFloat(allData[i]['金额']) || 0;
+        if(amt > 0) amounts.push(amt);
+    }
+    
+    // 计算平均值和标准差
+    var avg = amounts.length > 0 ? amounts.reduce(function(a,b){return a+b;}, 0) / amounts.length : 0;
+    var variance = amounts.length > 0 ? amounts.reduce(function(a,b){return a + Math.pow(b - avg, 2);}, 0) / amounts.length : 0;
+    var stdDev = Math.sqrt(variance);
+    
+    // 2. 检测各类异常
+    var pkgDates = {}; // 包裹号+日期 -> 索引
+    
+    for(var i=0; i<allData.length; i++){
+        var item = allData[i];
+        var amt = parseFloat(item['金额']) || 0;
+        var pkg = str(item['包裹号'] || '').trim();
+        var date = str(item['日期'] || '').trim();
+        var key = pkg + '|' + date;
+        
+        // 异常1: 金额异常大（超过平均值+3倍标准差）
+        if(amt > 0 && avg > 0 && stdDev > 0 && amt > avg + 3 * stdDev){
+            anomalies.push({
+                type: '金额异常大',
+                icon: '💰',
+                color: '#ff3b30',
+                item: item,
+                detail: '金额 ' + amt.toFixed(2) + ' 元，超过正常范围（平均 ' + avg.toFixed(2) + ' ± ' + (3*stdDev).toFixed(2) + '）'
+            });
+        }
+        
+        // 异常2: 金额为0但有空字段
+        if(amt === 0 && pkg){
+            anomalies.push({
+                type: '金额为空',
+                icon: '⚠️',
+                color: '#ff9500',
+                item: item,
+                detail: '包裹号 ' + pkg.substring(0,20) + ' 金额为0或空'
+            });
+        }
+        
+        // 异常3: 包裹号+日期重复
+        if(pkg && date){
+            if(pkgDates[key] !== undefined){
+                anomalies.push({
+                    type: '数据重复',
+                    icon: '📋',
+                    color: '#007aff',
+                    item: item,
+                    detail: '包裹号+日期与第 ' + (pkgDates[key]+1) + ' 条重复'
+                });
+            } else {
+                pkgDates[key] = i;
+            }
+        }
+        
+        // 异常4: 关键字段为空
+        var missingFields = [];
+        if(!pkg) missingFields.push('包裹号');
+        if(!date) missingFields.push('日期');
+        if(amt === 0) missingFields.push('金额');
+        if(missingFields.length > 0 && pkg){  // 有包裹号但缺其他字段
+            anomalies.push({
+                type: '字段缺失',
+                icon: '📝',
+                color: '#8e8e93',
+                item: item,
+                detail: '缺少: ' + missingFields.join(', ')
+            });
+        }
+        
+        // 异常5: 责任方为空
+        if(!str(item['责任方'] || '').trim() && pkg){
+            anomalies.push({
+                type: '责任方未填写',
+                icon: '👤',
+                color: '#af52de',
+                item: item,
+                detail: '包裹号 ' + pkg.substring(0,20) + ' 未填写责任方'
+            });
+        }
+    }
+    
+    // 渲染结果
+    var html = '';
+    if(anomalies.length === 0){
+        html = '<div style="text-align:center;padding:60px;color:#34c759;"><div style="font-size:48px;margin-bottom:16px;">✅</div><div style="font-size:18px;font-weight:600;">未发现异常数据</div></div>';
+        document.getElementById('anomalyCount').textContent = '数据正常';
+    } else {
+        // 按类型分组
+        var groups = {};
+        for(var a of anomalies){
+            if(!groups[a.type]) groups[a.type] = [];
+            groups[a.type].push(a);
+        }
+        
+        html = '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">';
+        for(var type in groups){
+            html += '<span style="padding:6px 12px;background:' + groups[type][0].color + '15;color:' + groups[type][0].color + ';border-radius:20px;font-size:13px;font-weight:600;">' + type + ' (' + groups[type].length + ')</span>';
+        }
+        html += '</div>';
+        
+        html += '<div style="display:flex;flex-direction:column;gap:8px;">';
+        for(var a of anomalies){
+            html += '<div style="padding:12px;background:' + a.color + '08;border-left:3px solid ' + a.color + ';border-radius:8px;">';
+            html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">';
+            html += '<span style="font-size:16px;">' + a.icon + '</span>';
+            html += '<span style="font-weight:600;color:' + a.color + ';">' + a.type + '</span>';
+            html += '</div>';
+            html += '<div style="font-size:12px;color:#666;">' + a.detail + '</div>';
+            html += '</div>';
+        }
+        html += '</div>';
+        
+        document.getElementById('anomalyCount').textContent = '发现 ' + anomalies.length + ' 项异常';
+    }
+    
+    document.getElementById('anomalyResults').innerHTML = html;
+}
+
+function str(v){ return v ? String(v) : ''; }
 function exportData(){
     openExportModal();
 }
