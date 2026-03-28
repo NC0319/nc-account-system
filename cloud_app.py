@@ -881,6 +881,10 @@ def sync_status():
 @app.route('/api/manual-sync', methods=['POST'])
 def manual_sync():
     """手动触发同步"""
+    token = os.environ.get('GITHUB_TOKEN')
+    if not token:
+        return jsonify({'success': False, 'error': '未配置GITHUB_TOKEN，无法同步到GitHub'}), 500
+    
     try:
         data = load_data()
         success = sync_to_github(data)
@@ -888,7 +892,7 @@ def manual_sync():
             save_last_sync_time()
             return jsonify({'success': True, 'message': '同步成功', 'data_count': len(data)})
         else:
-            return jsonify({'success': False, 'error': '同步失败，请检查GITHUB_TOKEN配置'}), 500
+            return jsonify({'success': False, 'error': '同步失败，请检查GITHUB_TOKEN权限'}), 500
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 

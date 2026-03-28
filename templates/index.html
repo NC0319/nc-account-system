@@ -139,7 +139,13 @@ function loadSyncStatus(){
         .then(function(result){
             if(result.last_sync){
                 var d = new Date(result.last_sync);
-                document.getElementById('lastSyncTime').textContent = d.toLocaleString('zh-CN');
+                var timeStr = d.getFullYear() + '-' + 
+                    String(d.getMonth() + 1).padStart(2, '0') + '-' + 
+                    String(d.getDate()).padStart(2, '0') + ' ' + 
+                    String(d.getHours()).padStart(2, '0') + ':' + 
+                    String(d.getMinutes()).padStart(2, '0') + ':' + 
+                    String(d.getSeconds()).padStart(2, '0');
+                document.getElementById('lastSyncTime').textContent = timeStr;
             }
         });
 }
@@ -1618,7 +1624,13 @@ function loadSyncStatus(){
         .then(function(result){
             if(result.last_sync){
                 var d = new Date(result.last_sync);
-                document.getElementById('lastSyncTime').textContent = d.toLocaleString('zh-CN');
+                var timeStr = d.getFullYear() + '-' + 
+                    String(d.getMonth() + 1).padStart(2, '0') + '-' + 
+                    String(d.getDate()).padStart(2, '0') + ' ' + 
+                    String(d.getHours()).padStart(2, '0') + ':' + 
+                    String(d.getMinutes()).padStart(2, '0') + ':' + 
+                    String(d.getSeconds()).padStart(2, '0');
+                document.getElementById('lastSyncTime').textContent = timeStr;
             }
         });
 }
@@ -2978,7 +2990,13 @@ function loadSyncStatus(){
         .then(function(result){
             if(result.last_sync){
                 var d = new Date(result.last_sync);
-                document.getElementById('lastSyncTime').textContent = d.toLocaleString('zh-CN');
+                var timeStr = d.getFullYear() + '-' + 
+                    String(d.getMonth() + 1).padStart(2, '0') + '-' + 
+                    String(d.getDate()).padStart(2, '0') + ' ' + 
+                    String(d.getHours()).padStart(2, '0') + ':' + 
+                    String(d.getMinutes()).padStart(2, '0') + ':' + 
+                    String(d.getSeconds()).padStart(2, '0');
+                document.getElementById('lastSyncTime').textContent = timeStr;
             }
         });
 }
