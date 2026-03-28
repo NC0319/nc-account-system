@@ -2050,11 +2050,15 @@ async function loadData(){
         raw.sort(function(a,b){ return (b['日期']||'').localeCompare(a['日期']||''); });
         allData = raw;
         filteredData = allData.slice();
-        updateStats();
-        renderTable();
-        renderRanking();
-        renderCharts();
+        
+        // 逐个调用渲染函数，每个都有错误保护
+        try { updateStats(); } catch(e) { console.error('updateStats错误:', e); }
+        try { renderTable(); } catch(e) { console.error('renderTable错误:', e); }
+        try { renderRanking(); } catch(e) { console.error('renderRanking错误:', e); }
+        try { renderCharts(); } catch(e) { console.error('renderCharts错误:', e); }
+        
     } catch(e) {
+        console.error('数据加载失败:', e);
         showToast('数据加载失败', 'error');
     } finally {
         hideLoading();
