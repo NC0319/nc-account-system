@@ -2941,7 +2941,7 @@ function detectAnomalies(){
         html += '<div style="display:flex;flex-direction:column;gap:8px;">';
         for(var a of anomalies){
             var idx = a.idx !== undefined ? a.idx : -1;
-            html += '<div style="padding:12px;background:' + a.color + '08;border-left:3px solid ' + a.color + ';border-radius:8px;cursor:pointer;transition:all 0.2s;" onclick="jumpToEdit(' + idx + ')" onmouseover="this.style.background='' + a.color + '15'" onmouseout="this.style.background='' + a.color + '08'">';
+            html += '<div style="padding:12px;background:' + a.color + '08;border-left:3px solid ' + a.color + ';border-radius:8px;cursor:pointer;transition:all 0.2s;" onclick="jumpToEdit(' + idx + ')" onmouseover="this.style.background=\'' + a.color + '15\'" onmouseout="this.style.background=\'' + a.color + '08\'">';
             html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">';
             html += '<div style="display:flex;align-items:center;gap:8px;">';
             html += '<span style="font-size:16px;">' + a.icon + '</span>';
