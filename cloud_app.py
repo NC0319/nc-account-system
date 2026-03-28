@@ -120,6 +120,32 @@ def api_logs():
     logs = get_logs(limit)
     return jsonify({'success': True, 'logs': logs})
 
+@app.route('/api/logs/export')
+def export_logs():
+    """导出操作日志"""
+    try:
+        logs = get_logs(MAX_LOGS)
+        # 生成CSV内容
+        csv_content = '时间,操作,详情,用户,IP\n'
+        for log in logs:
+            time_str = log.get('time', '').replace('T', ' ').split('.')[0]
+            action = log.get('action', '')
+            detail = log.get('detail', '').replace('"', '""')
+            user = log.get('user', 'system')
+            ip = log.get('ip', '')
+            csv_content += f'"{time_str}","{action}","{detail}","{user}","{ip}"\n'
+        
+        # 生成文件名
+        filename = f'操作日志_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+        return send_file(
+            io.BytesIO(csv_content.encode('utf-8-sig')),
+            mimetype='text/csv',
+            as_attachment=True,
+            download_name=filename
+        )
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 def save_data(data):
     """保存数据到临时文件"""
     try:

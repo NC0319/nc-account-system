@@ -4,13 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NC台账管理系统</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
-    <script>
-        // 确保 Chart.js 加载完成
-        window.addEventListener('load', function() {
-            console.log('Page loaded, Chart.js ready');
-        });
-    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js">
 
 // 未回款弹窗
 var selectedUnpaid = [];
@@ -165,10 +159,7 @@ setTimeout(loadSyncStatus, 1000);
 
 
 // 操作日志功能
-function exportLogs(){
-    showToast('正在导出日志...');
-    window.location.href = '/api/logs/export';
-}
+
 
 function loadLogs(){
     fetch('/api/logs?limit=50')
@@ -279,6 +270,7 @@ function jumpToEdit(idx){
     }, 300);
 }
 </script>
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.min.css">
     <style>
@@ -1193,10 +1185,7 @@ function jumpToEdit(idx){
                 
                 <!-- 操作日志 -->
                 <div class="setting-item" style="flex-direction:column;align-items:stretch;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                        <h4 style="margin:0;">📜 操作日志</h4>
-                        <button class="action-btn secondary" onclick="exportLogs()" style="padding:6px 12px;font-size:12px;">📥 导出日志</button>
-                    </div>
+                    <h4 style="margin:0 0 8px 0;">📜 操作日志</h4>
                     <div id="logsListInSettings" style="max-height:150px;overflow-y:auto;font-size:12px;background:rgba(0,0,0,0.02);border-radius:8px;padding:8px;">
                         <div style="text-align:center;color:#8e8e93;padding:10px;">加载中...</div>
                     </div>
@@ -1761,22 +1750,12 @@ var ecChart=null, rcChart=null, trendChart=null;
 var chartColors=['#7854f4','#007aff','#34c759','#ff9500','#ff3b30','#5856d6','#af52de','#00c7be'];
 
 document.addEventListener('DOMContentLoaded', function(){
-    console.log('=== 页面加载开始 ===');
-    console.log('loadingOverlay:', document.getElementById('loadingOverlay'));
-    
-    try {
-        var savedSize = localStorage.getItem('pageSize') || '20';
-        document.getElementById('pageSize').value = savedSize;
-        var savedColor = localStorage.getItem('colorScheme') || 'purple';
-        if(savedColor !== 'purple') changeColor(savedColor);
-        document.getElementById('animToggle').checked = localStorage.getItem('animation') !== 'false';
-        console.log('初始化完成，开始加载数据...');
-        loadData();
-    } catch(e) {
-        console.error('初始化错误:', e);
-        var overlay = document.getElementById('loadingOverlay');
-        if(overlay) overlay.style.display = 'none';
-    }
+    var savedSize = localStorage.getItem('pageSize') || '20';
+    document.getElementById('pageSize').value = savedSize;
+    var savedColor = localStorage.getItem('colorScheme') || 'purple';
+    if(savedColor !== 'purple') changeColor(savedColor);
+    document.getElementById('animToggle').checked = localStorage.getItem('animation') !== 'false';
+    loadData();
 });
 
 function showLoading(){ document.getElementById('loadingOverlay').style.display = 'flex'; }
@@ -1801,15 +1780,11 @@ async function loadData(){
         raw.sort(function(a,b){ return (b['日期']||'').localeCompare(a['日期']||''); });
         allData = raw;
         filteredData = allData.slice();
-        
-        // 逐个调用渲染函数，每个都有错误保护
-        try { updateStats(); } catch(e) { console.error('updateStats错误:', e); }
-        try { renderTable(); } catch(e) { console.error('renderTable错误:', e); }
-        try { renderRanking(); } catch(e) { console.error('renderRanking错误:', e); }
-        try { renderCharts(); } catch(e) { console.error('renderCharts错误:', e); }
-        
+        updateStats();
+        renderTable();
+        renderRanking();
+        renderCharts();
     } catch(e) {
-        console.error('数据加载失败:', e);
         showToast('数据加载失败', 'error');
     } finally {
         hideLoading();
@@ -2358,7 +2333,6 @@ function submitData(){
             closeDataModal();
             showToast(editingIndex >= 0 ? '更新成功！' : '添加成功！');
             loadData();
-            loadLogs(); // 刷新操作日志
         } else {
             showToast('操作失败', 'error');
         }
@@ -2370,7 +2344,7 @@ async function deleteData(idx){
     if(!confirm('确定删除这条记录？')) return;
     try{
         var r = await fetch('/api/data/' + idx, { method: 'DELETE' });
-        if(r.ok){ showToast('删除成功！'); loadData(); loadLogs(); }
+        if(r.ok){ showToast('删除成功！'); loadData(); }
         else { showToast('删除失败', 'error'); }
     } catch(e){ showToast('删除失败', 'error'); }
 }
@@ -2683,7 +2657,7 @@ function detectAnomalies(){
         html += '<div style="display:flex;flex-direction:column;gap:8px;">';
         for(var a of anomalies){
             var idx = a.idx !== undefined ? a.idx : -1;
-            html += '<div style="padding:12px;background:' + a.color + '08;border-left:3px solid ' + a.color + ';border-radius:8px;cursor:pointer;transition:all 0.2s;" onclick="jumpToEdit(' + idx + ')" onmouseover="this.style.background=\'' + a.color + '15\'" onmouseout="this.style.background=\'' + a.color + '08\'">';
+            html += '<div style="padding:12px;background:' + a.color + '08;border-left:3px solid ' + a.color + ';border-radius:8px;cursor:pointer;transition:all 0.2s;" onclick="jumpToEdit(' + idx + ')" onmouseover="this.style.background='' + a.color + '15'" onmouseout="this.style.background='' + a.color + '08'">';
             html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">';
             html += '<div style="display:flex;align-items:center;gap:8px;">';
             html += '<span style="font-size:16px;">' + a.icon + '</span>';
@@ -3113,24 +3087,6 @@ function jumpToEdit(idx){
     setTimeout(function(){
         openEditModal(idx);
     }, 300);
-}
-</script>
-
-<script>
-// 全局错误捕获 - 确保页面不会卡住
-window.onerror = function(msg, url, line) {
-    console.error('错误:', msg, '行:', line);
-    var overlay = document.getElementById('loadingOverlay');
-    if(overlay) overlay.style.display = 'none';
-    return false;
-};
-
-// 确保 hideLoading 总是可用
-if(typeof hideLoading !== 'function') {
-    window.hideLoading = function() {
-        var overlay = document.getElementById('loadingOverlay');
-        if(overlay) overlay.style.display = 'none';
-    };
 }
 </script>
 </body>
