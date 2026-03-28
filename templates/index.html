@@ -2020,12 +2020,22 @@ var ecChart=null, rcChart=null, trendChart=null;
 var chartColors=['#7854f4','#007aff','#34c759','#ff9500','#ff3b30','#5856d6','#af52de','#00c7be'];
 
 document.addEventListener('DOMContentLoaded', function(){
-    var savedSize = localStorage.getItem('pageSize') || '20';
-    document.getElementById('pageSize').value = savedSize;
-    var savedColor = localStorage.getItem('colorScheme') || 'purple';
-    if(savedColor !== 'purple') changeColor(savedColor);
-    document.getElementById('animToggle').checked = localStorage.getItem('animation') !== 'false';
-    loadData();
+    console.log('=== 页面加载开始 ===');
+    console.log('loadingOverlay:', document.getElementById('loadingOverlay'));
+    
+    try {
+        var savedSize = localStorage.getItem('pageSize') || '20';
+        document.getElementById('pageSize').value = savedSize;
+        var savedColor = localStorage.getItem('colorScheme') || 'purple';
+        if(savedColor !== 'purple') changeColor(savedColor);
+        document.getElementById('animToggle').checked = localStorage.getItem('animation') !== 'false';
+        console.log('初始化完成，开始加载数据...');
+        loadData();
+    } catch(e) {
+        console.error('初始化错误:', e);
+        var overlay = document.getElementById('loadingOverlay');
+        if(overlay) overlay.style.display = 'none';
+    }
 });
 
 function showLoading(){ document.getElementById('loadingOverlay').style.display = 'flex'; }
