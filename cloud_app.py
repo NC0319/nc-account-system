@@ -10,6 +10,8 @@ from datetime import datetime
 from flask import Flask, render_template, jsonify, request, send_file, Response
 import gzip
 import base64
+import io
+import hashlib
 import pandas as pd
 
 app = Flask(__name__)
@@ -134,8 +136,6 @@ def save_data(data):
 
 def sync_to_github(data):
     """同步数据到GitHub（需要配置GITHUB_TOKEN环境变量）"""
-    import hashlib
-    
     token = os.environ.get('GITHUB_TOKEN')
     if not token:
         return False
