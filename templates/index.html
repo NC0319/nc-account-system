@@ -2352,6 +2352,7 @@ function submitData(){
             closeDataModal();
             showToast(editingIndex >= 0 ? '更新成功！' : '添加成功！');
             loadData();
+            loadLogs(); // 刷新操作日志
         } else {
             showToast('操作失败', 'error');
         }
@@ -2363,7 +2364,7 @@ async function deleteData(idx){
     if(!confirm('确定删除这条记录？')) return;
     try{
         var r = await fetch('/api/data/' + idx, { method: 'DELETE' });
-        if(r.ok){ showToast('删除成功！'); loadData(); }
+        if(r.ok){ showToast('删除成功！'); loadData(); loadLogs(); }
         else { showToast('删除失败', 'error'); }
     } catch(e){ showToast('删除失败', 'error'); }
 }
