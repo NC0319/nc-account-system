@@ -2768,6 +2768,8 @@ function showScheduleFileName(input){
 var sharedResultData = null;
 
 async function calculateShared(){
+    console.log('=== calculateShared 被调用 ===');
+    console.log('scheduleFile:', document.getElementById('scheduleFile'));
     var startDate = document.getElementById('sharedStartDate').value;
     var endDate = document.getElementById('sharedEndDate').value;
     var scheduleFile = document.getElementById('scheduleFile').files[0];
