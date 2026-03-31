@@ -500,6 +500,7 @@ def batch_mark_paid():
 @app.route('/api/calculate-shared', methods=['POST'])
 def calculate_shared_expense():
     """计算公摊金额"""
+    import traceback
     try:
         # 处理 FormData 格式
         schedule_file = request.files.get('schedule')
