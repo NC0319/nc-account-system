@@ -771,39 +771,60 @@ def export_shared_expense():
         
         result_df = pd.DataFrame(rows)
         
-        # 创建白班明细和夜班明细DataFrame
-        day_rows = []
-        night_rows = []
+        # 创建白班明细和夜班明细（按人名分组）
+        # 先收集所有日期
+        all_dates = sorted(daily_details.keys())
         
-        for date in sorted(daily_details.keys()):
+        # 白班明细：按人名分组
+        day_person_details = {}  # {人名: {日期: 金额}}
+        for date in all_dates:
             info = daily_details[date]
             day_persons = info.get('day_persons', [])
-            night_persons = info.get('night_persons', [])
-            all_persons = info.get('person_list', [])
             per_person = info['per_person']
             total = info['total']
+            day_count = len(day_persons)
             
-            # 白班明细
             for person in day_persons:
-                day_rows.append({
-                    '日期': date,
-                    '姓名': person,
-                    '当天破损总额': total,
-                    '当天白班人数': len(day_persons),
-                    '个人公摊金额': per_person
-                })
-            
-            # 夜班明细
-            for person in night_persons:
-                night_rows.append({
-                    '日期': date,
-                    '姓名': person,
-                    '当天破损总额': total,
-                    '当天夜班人数': len(night_persons),
-                    '个人公摊金额': per_person
-                })
+                if person not in day_person_details:
+                    day_person_details[person] = {'总公摊': 0, '天数': 0}
+                day_person_details[person][date] = per_person
+                day_person_details[person]['总公摊'] += per_person
+                day_person_details[person]['天数'] += 1
         
+        # 构建白班DataFrame
+        day_rows = []
+        for person, details in sorted(day_person_details.items(), key=lambda x: -x[1]['总公摊']):
+            row = {'姓名': person, '总公摊': round(details['总公摊'], 2), '天数': details['天数']}
+            for date in all_dates:
+                if date in details:
+                    row[date] = details[date]
+            day_rows.append(row)
         day_df = pd.DataFrame(day_rows)
+        
+        # 夜班明细：按人名分组
+        night_person_details = {}
+        for date in all_dates:
+            info = daily_details[date]
+            night_persons = info.get('night_persons', [])
+            per_person = info['per_person']
+            total = info['total']
+            night_count = len(night_persons)
+            
+            for person in night_persons:
+                if person not in night_person_details:
+                    night_person_details[person] = {'总公摊': 0, '天数': 0}
+                night_person_details[person][date] = per_person
+                night_person_details[person]['总公摊'] += per_person
+                night_person_details[person]['天数'] += 1
+        
+        # 构建夜班DataFrame
+        night_rows = []
+        for person, details in sorted(night_person_details.items(), key=lambda x: -x[1]['总公摊']):
+            row = {'姓名': person, '总公摊': round(details['总公摊'], 2), '天数': details['天数']}
+            for date in all_dates:
+                if date in details:
+                    row[date] = details[date]
+            night_rows.append(row)
         night_df = pd.DataFrame(night_rows)
         
         # 被剔除的记录
