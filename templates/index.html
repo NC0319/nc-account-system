@@ -2782,7 +2782,7 @@ async function calculateShared(){
     formData.append('schedule', scheduleFile);
     formData.append('start_date', startDate);
     formData.append('end_date', endDate);
-    formData.append('keywords', document.getElementById('damageKeywords').value || '破损,买赔,赔');
+    formData.append('keywords', '破损,买赔,赔');
     formData.append('exclude_resp', document.getElementById('excludeResp').value || '');
     
     try{
