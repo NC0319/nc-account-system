@@ -511,23 +511,37 @@ def calculate_shared_expense():
         if not start_date or not end_date:
             return jsonify({'success': False, 'error': '请设置起止日期'}), 400
         
-        # 读取排班数据：优先用上传的排班文件，没有则从台账数据提取
-        if schedule_file:
-            schedule_df = pd.read_excel(schedule_file)
-            schedule_df['日期'] = pd.to_datetime(schedule_df['日期']).dt.strftime('%Y-%m-%d')
-        else:
-            # 从台账数据中提取排班信息
-            nc_data_raw = load_data()
-            schedule_records = []
-            for item in nc_data_raw:
-                item_date = str(item.get('日期', '')).strip()
-                person = str(item.get('处理人', '')).strip()
-                shift = str(item.get('班次', '')).strip()
-                if item_date and person and person not in ['', 'nan']:
-                    schedule_records.append({'日期': item_date, '处理人': person, '班次': shift})
-            if not schedule_records:
-                return jsonify({'success': False, 'error': '台账数据中没有排班信息，请上传排班文件'}), 400
-            schedule_df = pd.DataFrame(schedule_records)
+        # 读取排班数据
+        if not schedule_file:
+            return jsonify({'success': False, 'error': '请上传排班文件'}), 400
+        
+        schedule_df = pd.read_excel(schedule_file)
+        schedule_df['日期'] = pd.to_datetime(schedule_df['日期']).dt.strftime('%Y-%m-%d')
+        
+        # 自动识别列名（兼容不同格式）
+        # 姓名列
+        name_col = None
+        for c in ['姓名', '人员', '处理人', '名字', 'name']:
+            if c in schedule_df.columns:
+                name_col = c
+                break
+        # 班次列
+        shift_col_name = None
+        for c in ['班次名称', '班次', '班型', '排班', 'shift']:
+            if c in schedule_df.columns:
+                shift_col_name = c
+                break
+        # 打卡时间列（判断是否实际出勤）
+        clock_col_name = None
+        for c in ['实际上班时间', '上班打卡', '打卡时间', '签到时间']:
+            if c in schedule_df.columns:
+                clock_col_name = c
+                break
+        
+        if not name_col:
+            return jsonify({'success': False, 'error': f'排班文件缺少姓名列，当前列名: {list(schedule_df.columns)}'}), 400
+        if not shift_col_name:
+            return jsonify({'success': False, 'error': f'排班文件缺少班次列，当前列名: {list(schedule_df.columns)}'}), 400
         
         # 班次识别函数
         def classify_shift(shift_str, clock_time=None):
@@ -565,47 +579,26 @@ def calculate_shared_expense():
 
         # 构建排班字典: {日期: {'day': [白班人员], 'night': [夜班人员], 'all': [全部人员]}}
         schedule = {}
-        # 检测排班文件是否有班次列和打卡时间列
-        shift_col = None
-        clock_col = None
-        for col in schedule_df.columns:
-            col_str = str(col)
-            if '班次' in col_str or '班型' in col_str or '排班' in col_str:
-                shift_col = col
-            if '打卡' in col_str or '时间' in col_str or 'Clock' in col_str:
-                clock_col = col
         
-        # 如果没找到打卡列，尝试常见列名
-        if not clock_col:
-            for col in ['上班打卡', '打卡时间', 'ClockIn', 'clock_in', '签到']:
-                if col in schedule_df.columns:
-                    clock_col = col
-                    break
-
+        # 使用打卡文件的实际列名
+        name_col = name_col  # 已在前面设置
+        shift_col = shift_col_name  # 已在前面设置
+        clock_col = clock_col_name  # 已在前面设置
+        
         for _, row in schedule_df.iterrows():
             date = str(row.get('日期', '')).strip()
-            person = str(row.get('处理人', row.get('人员', row.get('姓名', '')))).strip()
-            if not date or not person or person in ['', 'nan']:
+            person = str(row.get(name_col, '')).strip() if name_col else ''
+            if not date or not person or person in ['', 'nan', 'None']:
                 continue
             if date not in schedule:
                 schedule[date] = {'day': [], 'night': [], 'all': []}
 
-            # 获取打卡时间
+            # 获取打卡时间（判断是否实际出勤）
             clock_time = row.get(clock_col) if clock_col else None
             
             # 识别班次
-            shift_type = None
-            if shift_col:
-                shift_val = str(row.get(shift_col, '')).strip()
-                shift_type = classify_shift(shift_val, clock_time)
-            else:
-                # 没有班次列，尝试从其他字段识别
-                for col in schedule_df.columns:
-                    val = str(row.get(col, '')).strip()
-                    t = classify_shift(val, clock_time)
-                    if t:
-                        shift_type = t
-                        break
+            shift_val = str(row.get(shift_col, '')).strip() if shift_col else ''
+            shift_type = classify_shift(shift_val, clock_time)
 
             # 跳过休息的人
             if shift_type == 'rest':
