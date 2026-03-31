@@ -519,6 +519,14 @@ def calculate_shared_expense():
         schedule_df = pd.read_excel(schedule_file)
         schedule_df['日期'] = pd.to_datetime(schedule_df['日期']).dt.strftime('%Y-%m-%d')
         
+        # 剔除非全日制合同工
+        if '用工性质' in schedule_df.columns:
+            before_count = len(schedule_df)
+            schedule_df = schedule_df[schedule_df['用工性质'] != '非全日制劳动合同工']
+            excluded_workers = before_count - len(schedule_df)
+            if excluded_workers > 0:
+                print(f'已剔除 {excluded_workers} 条非全日制合同工记录')
+        
         # 自动识别列名（兼容不同格式）
         # 姓名列
         name_col = None
