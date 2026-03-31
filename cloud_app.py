@@ -771,8 +771,10 @@ def export_shared_expense():
         
         result_df = pd.DataFrame(rows)
         
-        # 创建每日明细DataFrame（白班/夜班分开，每人一行）
-        detail_rows = []
+        # 创建白班明细和夜班明细DataFrame
+        day_rows = []
+        night_rows = []
+        
         for date in sorted(daily_details.keys()):
             info = daily_details[date]
             day_persons = info.get('day_persons', [])
@@ -781,38 +783,28 @@ def export_shared_expense():
             per_person = info['per_person']
             total = info['total']
             
-            if day_persons or night_persons:
-                # 有白班/夜班区分
-                for person in day_persons:
-                    detail_rows.append({
-                        '日期': date,
-                        '班次': '白班',
-                        '姓名': person,
-                        '当天破损总额': total,
-                        '当天上班人数': len(all_persons),
-                        '个人公摊金额': per_person
-                    })
-                for person in night_persons:
-                    detail_rows.append({
-                        '日期': date,
-                        '班次': '夜班',
-                        '姓名': person,
-                        '当天破损总额': total,
-                        '当天上班人数': len(all_persons),
-                        '个人公摊金额': per_person
-                    })
-            else:
-                # 无班次区分
-                for person in all_persons:
-                    detail_rows.append({
-                        '日期': date,
-                        '班次': '-',
-                        '姓名': person,
-                        '当天破损总额': total,
-                        '当天上班人数': len(all_persons),
-                        '个人公摊金额': per_person
-                    })
-        detail_df = pd.DataFrame(detail_rows)
+            # 白班明细
+            for person in day_persons:
+                day_rows.append({
+                    '日期': date,
+                    '姓名': person,
+                    '当天破损总额': total,
+                    '当天白班人数': len(day_persons),
+                    '个人公摊金额': per_person
+                })
+            
+            # 夜班明细
+            for person in night_persons:
+                night_rows.append({
+                    '日期': date,
+                    '姓名': person,
+                    '当天破损总额': total,
+                    '当天夜班人数': len(night_persons),
+                    '个人公摊金额': per_person
+                })
+        
+        day_df = pd.DataFrame(day_rows)
+        night_df = pd.DataFrame(night_rows)
         
         # 被剔除的记录
         excluded_df = pd.DataFrame(excluded_list) if excluded_list else pd.DataFrame()
@@ -822,8 +814,10 @@ def export_shared_expense():
         with pd.ExcelWriter(excel_path, engine='openpyxl') as writer:
             if not result_df.empty:
                 result_df.to_excel(writer, index=False, sheet_name='公摊汇总')
-            if not detail_df.empty:
-                detail_df.to_excel(writer, index=False, sheet_name='每人每日明细')
+            if not day_df.empty:
+                day_df.to_excel(writer, index=False, sheet_name='白班明细')
+            if not night_df.empty:
+                night_df.to_excel(writer, index=False, sheet_name='夜班明细')
             if not excluded_df.empty:
                 excluded_df.to_excel(writer, index=False, sheet_name='已剔除记录')
         
