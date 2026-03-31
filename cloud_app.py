@@ -626,22 +626,23 @@ def calculate_shared_expense():
         # 自动识别单责任人（具体人名）- 包含以下特征的视为单责：
         # 1. 责任方只包含一个具体人名（如：张景莉、吴光辉）
         # 2. 不包含"共责"、"NC"、"验货"、"卸车"等共同责任关键词
-        single_resp_keywords = ['共责', 'NC', '验货', '卸车', '发货组', '接货仓', '分拣机', '传送带', '滑槽', '进港', '拨货', '无人', 'T20', '模组', '全仓', '撞', '烂', '挤', '污染', '错分', '被']
+        # 从排班文件中提取所有真实人名
+        all_persons_in_schedule = set()
+        for date_info in schedule.values():
+            for p in date_info.get('day', []):
+                all_persons_in_schedule.add(p)
+            for p in date_info.get('night', []):
+                all_persons_in_schedule.add(p)
         
         def is_single_responsibility(resp):
-            """判断是否为单责任人（具体人名），返回True表示单责需排除"""
+            """判断是否为单责任人（排班文件中的真实人名），返回True表示单责需排除"""
             if not resp or resp == '':
                 return False
-            resp_upper = resp.upper()
-            # 如果包含"共责"字样，说明是多责，不排除
-            if '共责' in resp:
-                return False
-            # 如果包含共同责任关键词，说明是多责，不排除
-            for kw in single_resp_keywords:
-                if kw in resp:
-                    return False
-            # 否则视为单责，需要排除
-            return True
+            # 如果责任方就是排班文件中的某个真实人名，则视为单责剔除
+            if resp in all_persons_in_schedule:
+                return True
+            # 否则不剔除（未拦截、NC、共责等都参与公摊）
+            return False
         
         # 筛选时间范围内的破损买赔数据
         nc_data = load_data()
