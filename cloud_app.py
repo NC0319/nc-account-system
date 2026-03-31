@@ -506,17 +506,28 @@ def calculate_shared_expense():
         start_date = request.form.get('start_date', '')
         end_date = request.form.get('end_date', '')
         keywords = request.form.get('keywords', '破损,买赔,赔')
-        exclude_responsibility = request.form.get('exclude_resp', '张三,李四,王五')  # 排除的具体人名
-        
-        if not schedule_file:
-            return jsonify({'success': False, 'error': '请上传排班文件'}), 400
+        exclude_responsibility = request.form.get('exclude_resp', '')
         
         if not start_date or not end_date:
             return jsonify({'success': False, 'error': '请设置起止日期'}), 400
         
-        # 读取排班数据
-        schedule_df = pd.read_excel(schedule_file)
-        schedule_df['日期'] = pd.to_datetime(schedule_df['日期']).dt.strftime('%Y-%m-%d')
+        # 读取排班数据：优先用上传的排班文件，没有则从台账数据提取
+        if schedule_file:
+            schedule_df = pd.read_excel(schedule_file)
+            schedule_df['日期'] = pd.to_datetime(schedule_df['日期']).dt.strftime('%Y-%m-%d')
+        else:
+            # 从台账数据中提取排班信息
+            nc_data_raw = load_data()
+            schedule_records = []
+            for item in nc_data_raw:
+                item_date = str(item.get('日期', '')).strip()
+                person = str(item.get('处理人', '')).strip()
+                shift = str(item.get('班次', '')).strip()
+                if item_date and person and person not in ['', 'nan']:
+                    schedule_records.append({'日期': item_date, '处理人': person, '班次': shift})
+            if not schedule_records:
+                return jsonify({'success': False, 'error': '台账数据中没有排班信息，请上传排班文件'}), 400
+            schedule_df = pd.DataFrame(schedule_records)
         
         # 班次识别函数
         def classify_shift(shift_str, clock_time=None):
