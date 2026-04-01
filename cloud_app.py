@@ -501,6 +501,7 @@ def batch_mark_paid():
 def calculate_shared_expense():
     """计算公摊金额"""
     import traceback
+    print("=== 开始计算公摊 ===")
     try:
         # 处理 FormData 格式
         schedule_file = request.files.get('schedule')
@@ -658,6 +659,9 @@ def calculate_shared_expense():
         excluded_items = []  # 被剔除的单责记录
         keyword_list = [k.strip() for k in keywords.split(',') if k.strip()]
         
+        print(f"台账数据: {len(nc_data)} 条")
+        print(f"关键词: {keyword_list}")
+        
         for item in nc_data:
             item_date = str(item.get('日期', '')).strip()
             exception_type = str(item.get('异常情况', ''))
@@ -666,8 +670,12 @@ def calculate_shared_expense():
             # 识别破损买赔相关单子
             is_damaged = any(keyword in exception_type for keyword in keyword_list) if keyword_list else True
             is_in_range = start_date <= item_date <= end_date
+            has_amount = item.get('金额') is not None and item.get('金额') != ''
             
-            if is_damaged and is_in_range and item.get('金额'):
+            if is_damaged and is_in_range and has_amount:
+                amount = float(item.get('金额', 0) or 0)
+                if amount > 0:
+                    damaged_items.append(item)
                 # 自动识别单责任人
                 if is_single_responsibility(responsibility):
                     excluded_items.append({
@@ -682,6 +690,9 @@ def calculate_shared_expense():
         # 按日期分组计算
         results = {}
         daily_details = {}
+        
+        print(f"破损条目: {len(damaged_items)} 条")
+        print(f"排除条目: {len(excluded_items)} 条")
         
         # 按日期和班次统计破损金额（白班和夜班分开计算！）
         daily_damage = {}  # {date: {'day': 金额, 'night': 金额}}
