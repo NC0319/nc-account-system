@@ -514,11 +514,25 @@ def calculate_shared_expense():
         if not start_date or not end_date:
             return jsonify({'success': False, 'error': '请设置起止日期'}), 400
         
-        # 读取排班数据
-        if not schedule_file:
-            return jsonify({'success': False, 'error': '请上传排班文件'}), 400
-        
-        schedule_df = pd.read_excel(schedule_file)
+        # 读取排班数据（如果不上传，则从台账的处理人字段提取）
+        if schedule_file:
+            schedule_df = pd.read_excel(schedule_file)
+        else:
+            # 从台账的处理人字段提取人员名单
+            nc_data_for_schedule = load_data()
+            fake_data = []
+            for item in nc_data_for_schedule:
+                date = str(item.get('日期', '')).strip()
+                person = str(item.get('处理人', '')).strip()
+                shift = str(item.get('班次', '')).strip()
+                if date and person and person not in ['', 'nan']:
+                    fake_data.append({
+                        '日期': date,
+                        '姓名': person,
+                        '班次名称': '白班' if '白' in shift else ('夜班' if '夜' in shift else shift)
+                    })
+            schedule_df = pd.DataFrame(fake_data)
+            print(f"未上传排班文件，从台账提取 {len(schedule_df)} 条人员记录")
         schedule_df['日期'] = pd.to_datetime(schedule_df['日期']).dt.strftime('%Y-%m-%d')
         
         # 剔除非全日制合同工
