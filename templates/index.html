@@ -1340,7 +1340,7 @@ function jumpToEdit(idx){
                             </div>
                         </div>
                     </div>
-                    <div id="sharedTable" style="max-height:250px;overflow-y:auto;"></div>
+                    <div id="sharedTable" style="max-height:420px;overflow-y:auto;"></div>
                     <div id="sharedEmpty" style="padding:20px;text-align:center;color:#8e8e93;">点击"开始计算"获取结果</div>
                 </div>
             </div>
@@ -2757,6 +2757,24 @@ function openSharedModal(){
     document.getElementById('sharedModal').classList.add('show');
 }
 
+function switchSharedTab(tab){
+    document.getElementById('sharedTabDaily').style.display = tab==='daily' ? 'block' : 'none';
+    document.getElementById('sharedTabPerson').style.display = tab==='person' ? 'block' : 'none';
+    var excEl = document.getElementById('sharedTabExcluded');
+    if(excEl) excEl.style.display = tab==='excluded' ? 'block' : 'none';
+    var tabs = ['tabDaily','tabPerson','tabExcluded'];
+    var names = ['daily','person','excluded'];
+    for(var i=0;i<tabs.length;i++){
+        var el = document.getElementById(tabs[i]);
+        if(!el) continue;
+        if(names[i]===tab){
+            el.style.color='#7854f4'; el.style.borderBottomColor='#7854f4';
+        } else {
+            el.style.color='#8e8e93'; el.style.borderBottomColor='transparent';
+        }
+    }
+}
+
 function closeSharedModal(){
     document.getElementById('sharedModal').classList.remove('show');
 }
@@ -2797,43 +2815,108 @@ async function calculateShared(){
             document.getElementById('sharedStats').style.display = 'block';
             document.getElementById('exportSharedBtn').style.display = 'inline-flex';
             
-            var html = '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
-            html += '<thead><tr style="background:linear-gradient(135deg,#7854f4,#5c3dde);color:white;"><th style="padding:12px 10px;text-align:left;">序号</th><th style="padding:12px 10px;text-align:left;">姓名</th><th style="padding:12px 10px;text-align:right;">总公摊金额</th><th style="padding:12px 10px;text-align:center;">涉及天数</th><th style="padding:12px 10px;text-align:left;">日期明细</th></tr></thead><tbody>';
+            // ===== 新版结果展示 =====
+            var html = '';
+
+            // Tab切换按钮
+            html += '<div style="display:flex;gap:8px;margin-bottom:16px;border-bottom:2px solid rgba(120,84,244,0.15);padding-bottom:0;">';
+            html += '<button onclick="switchSharedTab(\'daily\')" id="tabDaily" style="padding:8px 18px;border:none;background:none;font-size:13px;font-weight:600;color:#7854f4;border-bottom:2px solid #7854f4;margin-bottom:-2px;cursor:pointer;">📅 按日期明细</button>';
+            html += '<button onclick="switchSharedTab(\'person\')" id="tabPerson" style="padding:8px 18px;border:none;background:none;font-size:13px;font-weight:600;color:#8e8e93;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;">👤 按人员汇总</button>';
+            if(result.excluded_count > 0){
+                html += '<button onclick="switchSharedTab(\'excluded\')" id="tabExcluded" style="padding:8px 18px;border:none;background:none;font-size:13px;font-weight:600;color:#8e8e93;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;">🚫 已剔除('+result.excluded_count+')</button>';
+            }
+            html += '</div>';
+
+            // ===== Tab1: 按日期明细 =====
+            html += '<div id="sharedTabDaily">';
+            var dailyDetails = result.daily_details || {};
+            var sortedKeys = Object.keys(dailyDetails).sort();
+            if(sortedKeys.length === 0){
+                html += '<div style="text-align:center;color:#8e8e93;padding:30px;">暂无数据</div>';
+            } else {
+                html += '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
+                html += '<thead><tr style="background:linear-gradient(135deg,#7854f4,#5c3dde);color:white;">';
+                html += '<th style="padding:10px 8px;text-align:left;white-space:nowrap;">日期</th>';
+                html += '<th style="padding:10px 8px;text-align:center;white-space:nowrap;">班次</th>';
+                html += '<th style="padding:10px 8px;text-align:right;white-space:nowrap;">破损金额</th>';
+                html += '<th style="padding:10px 8px;text-align:center;white-space:nowrap;">人数</th>';
+                html += '<th style="padding:10px 8px;text-align:right;white-space:nowrap;">每人公摊</th>';
+                html += '<th style="padding:10px 8px;text-align:left;">参与人员</th>';
+                html += '</tr></thead><tbody>';
+                var rowIdx = 0;
+                for(var ki=0; ki<sortedKeys.length; ki++){
+                    var key = sortedKeys[ki];
+                    var d = dailyDetails[key];
+                    var isDay = d.shift_label === '白班';
+                    var shiftColor = isDay ? '#ff9500' : '#5c3dde';
+                    var shiftBg = isDay ? 'rgba(255,149,0,0.12)' : 'rgba(92,61,222,0.12)';
+                    var rowBg = rowIdx%2===0 ? 'rgba(0,0,0,0.015)' : 'rgba(0,0,0,0)';
+                    var persons = (d.person_list||[]).join('、');
+                    html += '<tr style="background:'+rowBg+';border-bottom:1px solid rgba(0,0,0,0.06);">';
+                    html += '<td style="padding:10px 8px;font-weight:600;white-space:nowrap;">'+key.replace('_白班','').replace('_夜班','')+'</td>';
+                    html += '<td style="padding:10px 8px;text-align:center;"><span style="background:'+shiftBg+';color:'+shiftColor+';padding:2px 10px;border-radius:20px;font-size:12px;font-weight:600;">'+d.shift_label+'</span></td>';
+                    html += '<td style="padding:10px 8px;text-align:right;font-weight:700;color:#ff3b30;">'+d.total+'元</td>';
+                    html += '<td style="padding:10px 8px;text-align:center;color:#007aff;font-weight:600;">'+d.people+'人</td>';
+                    html += '<td style="padding:10px 8px;text-align:right;font-weight:700;color:#34c759;font-size:14px;">'+d.per_person+'元</td>';
+                    html += '<td style="padding:10px 8px;font-size:11px;color:#555;max-width:200px;word-break:break-all;">'+persons+'</td>';
+                    html += '</tr>';
+                    rowIdx++;
+                }
+                html += '</tbody></table>';
+            }
+            html += '</div>';
+
+            // ===== Tab2: 按人员汇总 =====
+            html += '<div id="sharedTabPerson" style="display:none;">';
+            html += '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
+            html += '<thead><tr style="background:linear-gradient(135deg,#007aff,#0055cc);color:white;">';
+            html += '<th style="padding:10px 8px;text-align:left;">序号</th>';
+            html += '<th style="padding:10px 8px;text-align:left;">姓名</th>';
+            html += '<th style="padding:10px 8px;text-align:right;">总公摊金额</th>';
+            html += '<th style="padding:10px 8px;text-align:center;">天数</th>';
+            html += '<th style="padding:10px 8px;text-align:left;">每日明细</th>';
+            html += '</tr></thead><tbody>';
             for(var i=0; i<result.summary.length; i++){
                 var item = result.summary[i];
-                var dates = item.details.map(function(d){ return d.date+'('+d.amount+'元)'; }).join('<br>');
-                var bg = i%2===0 ? 'rgba(0,0,0,0.02)' : 'rgba(0,0,0,0)';
-                html += '<tr style="background:'+bg+';border-bottom:1px solid rgba(0,0,0,0.05);"><td style="padding:12px 10px;color:#8e8e93;">'+(i+1)+'</td><td style="padding:12px 10px;font-weight:600;">'+item.person+'</td><td style="padding:12px 10px;text-align:right;font-weight:700;color:#ff9500;font-size:15px;">'+item.total+'元</td><td style="padding:12px 10px;text-align:center;color:#007aff;">'+item.details.length+'天</td><td style="padding:12px 10px;font-size:12px;color:#666;line-height:1.6;">'+dates+'</td></tr>';
+                var bg = i%2===0 ? 'rgba(0,0,0,0.015)' : 'rgba(0,0,0,0)';
+                var detailStr = item.details.map(function(d){
+                    var icon = d.shift==='白班' ? '☀️' : '🌙';
+                    return icon+d.date.substring(5)+'('+d.amount+')';
+                }).join(' ');
+                html += '<tr style="background:'+bg+';border-bottom:1px solid rgba(0,0,0,0.06);">';
+                html += '<td style="padding:10px 8px;color:#8e8e93;font-size:12px;">'+(i+1)+'</td>';
+                html += '<td style="padding:10px 8px;font-weight:700;font-size:14px;">'+item.person+'</td>';
+                html += '<td style="padding:10px 8px;text-align:right;font-weight:700;color:#ff9500;font-size:16px;">'+item.total+'<span style="font-size:11px;color:#8e8e93;">元</span></td>';
+                html += '<td style="padding:10px 8px;text-align:center;color:#007aff;font-weight:600;">'+item.details.length+'天</td>';
+                html += '<td style="padding:10px 8px;font-size:11px;color:#666;line-height:1.8;">'+detailStr+'</td>';
+                html += '</tr>';
             }
             html += '</tbody></table>';
-            
+            html += '</div>';
+
+            // ===== Tab3: 已剔除 =====
             if(result.excluded_count > 0){
-                html += '<div style="margin-top:20px;padding:16px;background:rgba(255,149,0,0.08);border-radius:12px;border:1px solid rgba(255,149,0,0.2);"><div style="font-weight:600;color:#ff9500;margin-bottom:12px;font-size:14px;">已剔除 '+result.excluded_count+' 条记录（责任人非班次人员）：</div>';
-                for(var j=0; j<result.excluded_list.length; j++){
-                    var ex = result.excluded_list[j];
-                    html += '<div style="font-size:12px;color:#666;padding:4px 0;border-bottom:1px dashed rgba(0,0,0,0.1);">'+ex.date+' | '+ex.package+' | 责任人: <span style="color:#ff9500;">'+ex.responsibility+'</span> | '+ex.amount+'元</div>';
-                }
-                html += '</div>';
-            }
-            document.getElementById('sharedTable').innerHTML = html;
-            // 显示被剔除的单责记录
-            if(result.excluded_count > 0 && result.excluded_list && result.excluded_list.length > 0){
-                var excludedHtml = '<div style="margin-top:16px;padding:14px;background:rgba(255,59,48,0.08);border-radius:12px;border:1px solid rgba(255,59,48,0.2);">';
-                excludedHtml += '<div style="font-weight:600;color:#ff3b30;margin-bottom:10px;">已自动剔除 ' + result.excluded_count + ' 条单责任人记录（不参与公摊）：</div>';
-                excludedHtml += '<div style="max-height:150px;overflow-y:auto;">';
+                html += '<div id="sharedTabExcluded" style="display:none;">';
+                html += '<div style="padding:10px 14px;background:rgba(255,59,48,0.08);border-radius:10px;margin-bottom:12px;font-size:13px;color:#ff3b30;">以下记录责任人为排班人员，已自动剔除，不参与公摊</div>';
+                html += '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
+                html += '<thead><tr style="background:rgba(255,59,48,0.15);"><th style="padding:8px;text-align:left;">日期</th><th style="padding:8px;text-align:left;">包裹号</th><th style="padding:8px;text-align:left;">责任人</th><th style="padding:8px;text-align:right;">金额</th></tr></thead><tbody>';
                 for(var e=0; e<result.excluded_list.length; e++){
                     var ex = result.excluded_list[e];
-                    excludedHtml += '<div style="font-size:12px;color:#666;padding:4px 0;border-bottom:1px dashed rgba(0,0,0,0.1);">';
-                    excludedHtml += '<span style="color:#ff3b30;font-weight:600;">' + ex.responsibility + '</span>';
-                    excludedHtml += ' | ' + ex.date + ' | ' + (ex.package||'-').substring(0,20) + ' | ' + ex.amount + '元';
-                    excludedHtml += '</div>';
+                    var ebg = e%2===0 ? 'rgba(255,59,48,0.03)' : 'rgba(0,0,0,0)';
+                    html += '<tr style="background:'+ebg+';border-bottom:1px solid rgba(0,0,0,0.05);">';
+                    html += '<td style="padding:8px;white-space:nowrap;">'+ex.date+'</td>';
+                    html += '<td style="padding:8px;font-size:11px;color:#666;">'+(ex.package||'-').substring(0,25)+'</td>';
+                    html += '<td style="padding:8px;"><span style="color:#ff3b30;font-weight:600;">'+ex.responsibility+'</span></td>';
+                    html += '<td style="padding:8px;text-align:right;font-weight:600;">'+ex.amount+'元</td>';
+                    html += '</tr>';
                 }
-                excludedHtml += '</div></div>';
-                document.getElementById('sharedTable').innerHTML += excludedHtml;
+                html += '</tbody></table>';
+                html += '</div>';
             }
-            
+
+            document.getElementById('sharedTable').innerHTML = html;
             document.getElementById('sharedEmpty').style.display = 'none';
-            showToast('计算完成！');
+            showToast('计算完成！共'+result.people_count+'人参与公摊');
         } else { showToast(result.error || '计算失败', 'error'); }
     } catch(e){ showToast('计算失败', 'error'); }
 }
