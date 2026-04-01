@@ -797,7 +797,7 @@ def calculate_shared_expense():
             'success': True,
             'start_date': start_date,
             'end_date': end_date,
-            'total_damaged': round(sum(daily_damage.values()), 2),
+            'total_damaged': round(sum(d['day'] + d['night'] for d in daily_damage.values()), 2),
             'days_count': len(daily_damage),
             'people_count': len(results),
             'grand_total': round(grand_total, 2),
