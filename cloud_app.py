@@ -851,17 +851,35 @@ def export_shared_expense():
         start_date = data.get('start_date', '')
         end_date = data.get('end_date', '')
         
-        # 创建结果DataFrame
+        # 预先按人名汇总白班/夜班金额
+        person_day_total = {}   # {人名: 白班合计}
+        person_night_total = {} # {人名: 夜班合计}
+        for key, info in daily_details.items():
+            per_person = info.get('per_person', 0)
+            if '白班' in key:
+                for p in info.get('day_persons', []):
+                    person_day_total[p] = round(person_day_total.get(p, 0) + per_person, 2)
+            elif '夜班' in key:
+                for p in info.get('night_persons', []):
+                    person_night_total[p] = round(person_night_total.get(p, 0) + per_person, 2)
+
+        # 创建结果DataFrame（含白班/夜班小计）
         rows = []
         for item in summary:
-            dates_str = ', '.join([d['date'] + '(' + str(d['amount']) + ')' for d in item['details']])
+            day_amt = person_day_total.get(item['person'], 0)
+            night_amt = person_night_total.get(item['person'], 0)
+            day_details_str  = ', '.join([d['date']+'('+str(d['amount'])+')' for d in item['details'] if d.get('shift')=='白班'])
+            night_details_str = ', '.join([d['date']+'('+str(d['amount'])+')' for d in item['details'] if d.get('shift')=='夜班'])
             rows.append({
                 '姓名': item['person'],
                 '总公摊金额': item['total'],
+                '白班合计': day_amt if day_amt else '',
+                '夜班合计': night_amt if night_amt else '',
                 '涉及天数': len(item['details']),
-                '明细': dates_str
+                '白班明细': day_details_str,
+                '夜班明细': night_details_str,
             })
-        
+
         result_df = pd.DataFrame(rows)
         
         # 创建白班明细和夜班明细（按人名分组）
