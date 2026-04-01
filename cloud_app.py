@@ -12,6 +12,7 @@ import gzip
 import base64
 import io
 import hashlib
+import numpy as np
 import pandas as pd
 
 app = Flask(__name__)
@@ -788,7 +789,7 @@ def calculate_shared_expense():
             'people_count': len(results),
             'grand_total': round(grand_total, 2),
             'summary': summary,
-            'daily_details': daily_details,
+            'daily_details': json.loads(json.dumps({k: {kk: (str(vv) if isinstance(vv, (np.integer, np.floating)) else list(vv) if isinstance(vv, (set, frozenset)) else (float(vv) if isinstance(vv, (int, float)) and not isinstance(vv, bool) else vv)) for kk, vv in v.items()} for k, v in daily_details.items()}, default=str)),
             'excluded_count': len(excluded_items),
             'excluded_list': excluded_items
         })
