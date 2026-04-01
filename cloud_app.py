@@ -683,51 +683,81 @@ def calculate_shared_expense():
         results = {}
         daily_details = {}
         
-        # 先按日期统计破损金额
-        daily_damage = {}
+        # 按日期和班次统计破损金额（白班和夜班分开计算！）
+        daily_damage = {}  # {date: {'day': 金额, 'night': 金额}}
         for item in damaged_items:
             date = item.get('日期', '')
+            shift = str(item.get('班次', '')).strip()
             amount = float(item.get('金额', 0) or 0)
-            daily_damage[date] = daily_damage.get(date, 0) + amount
+            
+            if date not in daily_damage:
+                daily_damage[date] = {'day': 0, 'night': 0}
+            
+            # 判断班次
+            if '白' in shift:
+                daily_damage[date]['day'] += amount
+            elif '夜' in shift:
+                daily_damage[date]['night'] += amount
+            else:
+                # 无法识别班次，按白班处理
+                daily_damage[date]['day'] += amount
         
-        # 计算每天每人公摊
-        for date, total_damage in daily_damage.items():
+        # 计算每天每人公摊（白班和夜班分开）
+        for date in sorted(daily_damage.keys()):
+            day_damage = daily_damage[date]
             day_info = schedule.get(date, {})
-            # 兼容旧格式（列表）和新格式（字典）
+            
+            # 获取白班和夜班人员
             if isinstance(day_info, list):
-                people = day_info
-                shift_label = ''
+                day_people = []
+                night_people = []
+                all_people = day_info
             else:
                 day_people = day_info.get('day', [])
                 night_people = day_info.get('night', [])
                 all_people = day_info.get('all', [])
-                # 有班次区分时用 all（白班+夜班合并），无班次时用 all
-                people = all_people if all_people else []
-                # 构建班次标签
-                labels = []
-                if day_people:
-                    labels.append('白班:' + ','.join(day_people))
-                if night_people:
-                    labels.append('夜班:' + ','.join(night_people))
-                shift_label = ' | '.join(labels) if labels else ''
-
-            if people:
-                per_person = total_damage / len(people)
-                daily_details[date] = {
-                    'total': round(total_damage, 2),
-                    'people': len(people),
+            
+            # 白班公摊
+            if day_people and day_damage['day'] > 0:
+                per_person = day_damage['day'] / len(day_people)
+                daily_details[date + '_白班'] = {
+                    'total': round(day_damage['day'], 2),
+                    'people': len(day_people),
                     'per_person': round(per_person, 2),
-                    'person_list': people,
-                    'shift_label': shift_label,
-                    'day_persons': day_people if not isinstance(day_info, list) else [],
-                    'night_persons': night_people if not isinstance(day_info, list) else []
+                    'person_list': day_people,
+                    'shift_label': '白班',
+                    'day_persons': day_people,
+                    'night_persons': []
                 }
-                for person in people:
+                for person in day_people:
                     if person not in results:
                         results[person] = {'total': 0, 'dates': []}
                     results[person]['total'] = round(results[person]['total'] + per_person, 2)
                     results[person]['dates'].append({
                         'date': date,
+                        'shift': '白班',
+                        'amount': round(per_person, 2)
+                    })
+            
+            # 夜班公摊
+            if night_people and day_damage['night'] > 0:
+                per_person = day_damage['night'] / len(night_people)
+                daily_details[date + '_夜班'] = {
+                    'total': round(day_damage['night'], 2),
+                    'people': len(night_people),
+                    'per_person': round(per_person, 2),
+                    'person_list': night_people,
+                    'shift_label': '夜班',
+                    'day_persons': [],
+                    'night_persons': night_people
+                }
+                for person in night_people:
+                    if person not in results:
+                        results[person] = {'total': 0, 'dates': []}
+                    results[person]['total'] = round(results[person]['total'] + per_person, 2)
+                    results[person]['dates'].append({
+                        'date': date,
+                        'shift': '夜班',
                         'amount': round(per_person, 2)
                     })
         
