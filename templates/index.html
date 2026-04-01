@@ -2819,11 +2819,16 @@ async function calculateShared(){
             var html = '';
 
             // Tab切换按钮
+            var halfList = result.half_list || [];
             html += '<div style="display:flex;gap:8px;margin-bottom:16px;border-bottom:2px solid rgba(120,84,244,0.15);padding-bottom:0;">';
             html += '<button onclick="switchSharedTab(\'daily\')" id="tabDaily" style="padding:8px 18px;border:none;background:none;font-size:13px;font-weight:600;color:#7854f4;border-bottom:2px solid #7854f4;margin-bottom:-2px;cursor:pointer;">📅 按日期明细</button>';
             html += '<button onclick="switchSharedTab(\'person\')" id="tabPerson" style="padding:8px 18px;border:none;background:none;font-size:13px;font-weight:600;color:#8e8e93;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;">👤 按人员汇总</button>';
-            if(result.excluded_count > 0){
-                html += '<button onclick="switchSharedTab(\'excluded\')" id="tabExcluded" style="padding:8px 18px;border:none;background:none;font-size:13px;font-weight:600;color:#8e8e93;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;">🚫 已剔除('+result.excluded_count+')</button>';
+            if(result.excluded_count > 0 || halfList.length > 0){
+                var excLabel = '🚫 剔除/半责';
+                if(result.excluded_count > 0) excLabel += '(剔'+result.excluded_count;
+                if(halfList.length > 0) excLabel += (result.excluded_count>0?'/':'(') + '半'+halfList.length;
+                excLabel += ')';
+                html += '<button onclick="switchSharedTab(\'excluded\')" id="tabExcluded" style="padding:8px 18px;border:none;background:none;font-size:13px;font-weight:600;color:#8e8e93;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;">'+excLabel+'</button>';
             }
             html += '</div>';
 
@@ -2894,23 +2899,47 @@ async function calculateShared(){
             html += '</tbody></table>';
             html += '</div>';
 
-            // ===== Tab3: 已剔除 =====
-            if(result.excluded_count > 0){
+            // ===== Tab3: 剔除/半责 =====
+            if(result.excluded_count > 0 || halfList.length > 0){
                 html += '<div id="sharedTabExcluded" style="display:none;">';
-                html += '<div style="padding:10px 14px;background:rgba(255,59,48,0.08);border-radius:10px;margin-bottom:12px;font-size:13px;color:#ff3b30;">以下记录责任人为排班人员，已自动剔除，不参与公摊</div>';
-                html += '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
-                html += '<thead><tr style="background:rgba(255,59,48,0.15);"><th style="padding:8px;text-align:left;">日期</th><th style="padding:8px;text-align:left;">包裹号</th><th style="padding:8px;text-align:left;">责任人</th><th style="padding:8px;text-align:right;">金额</th></tr></thead><tbody>';
-                for(var e=0; e<result.excluded_list.length; e++){
-                    var ex = result.excluded_list[e];
-                    var ebg = e%2===0 ? 'rgba(255,59,48,0.03)' : 'rgba(0,0,0,0)';
-                    html += '<tr style="background:'+ebg+';border-bottom:1px solid rgba(0,0,0,0.05);">';
-                    html += '<td style="padding:8px;white-space:nowrap;">'+ex.date+'</td>';
-                    html += '<td style="padding:8px;font-size:11px;color:#666;">'+(ex.package||'-').substring(0,25)+'</td>';
-                    html += '<td style="padding:8px;"><span style="color:#ff3b30;font-weight:600;">'+ex.responsibility+'</span></td>';
-                    html += '<td style="padding:8px;text-align:right;font-weight:600;">'+ex.amount+'元</td>';
-                    html += '</tr>';
+
+                // 半责部分
+                if(halfList.length > 0){
+                    html += '<div style="padding:10px 14px;background:rgba(255,149,0,0.08);border-radius:10px;margin-bottom:10px;font-size:13px;color:#ff9500;font-weight:600;">⚡ 半责记录（金额÷2后参与公摊，共'+halfList.length+'条）</div>';
+                    html += '<table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:16px;">';
+                    html += '<thead><tr style="background:rgba(255,149,0,0.15);"><th style="padding:8px;text-align:left;">日期</th><th style="padding:8px;text-align:left;">包裹号</th><th style="padding:8px;text-align:left;">责任方</th><th style="padding:8px;text-align:right;">原金额</th><th style="padding:8px;text-align:right;">公摊金额</th></tr></thead><tbody>';
+                    for(var h=0; h<halfList.length; h++){
+                        var hh = halfList[h];
+                        var hbg = h%2===0 ? 'rgba(255,149,0,0.03)' : 'rgba(0,0,0,0)';
+                        html += '<tr style="background:'+hbg+';border-bottom:1px solid rgba(0,0,0,0.05);">';
+                        html += '<td style="padding:8px;white-space:nowrap;">'+hh.date+'</td>';
+                        html += '<td style="padding:8px;font-size:11px;color:#666;">'+(hh.package||'-').substring(0,25)+'</td>';
+                        html += '<td style="padding:8px;"><span style="color:#ff9500;font-weight:600;">'+hh.responsibility+'</span></td>';
+                        html += '<td style="padding:8px;text-align:right;color:#8e8e93;text-decoration:line-through;">'+hh.original_amount+'元</td>';
+                        html += '<td style="padding:8px;text-align:right;font-weight:700;color:#34c759;">'+hh.half_amount+'元</td>';
+                        html += '</tr>';
+                    }
+                    html += '</tbody></table>';
                 }
-                html += '</tbody></table>';
+
+                // 剔除部分
+                if(result.excluded_count > 0){
+                    html += '<div style="padding:10px 14px;background:rgba(255,59,48,0.08);border-radius:10px;margin-bottom:10px;font-size:13px;color:#ff3b30;font-weight:600;">🚫 已剔除记录（不参与公摊，共'+result.excluded_count+'条）</div>';
+                    html += '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
+                    html += '<thead><tr style="background:rgba(255,59,48,0.15);"><th style="padding:8px;text-align:left;">日期</th><th style="padding:8px;text-align:left;">包裹号</th><th style="padding:8px;text-align:left;">责任方</th><th style="padding:8px;text-align:right;">金额</th></tr></thead><tbody>';
+                    for(var e=0; e<result.excluded_list.length; e++){
+                        var ex = result.excluded_list[e];
+                        var ebg = e%2===0 ? 'rgba(255,59,48,0.03)' : 'rgba(0,0,0,0)';
+                        html += '<tr style="background:'+ebg+';border-bottom:1px solid rgba(0,0,0,0.05);">';
+                        html += '<td style="padding:8px;white-space:nowrap;">'+ex.date+'</td>';
+                        html += '<td style="padding:8px;font-size:11px;color:#666;">'+(ex.package||'-').substring(0,25)+'</td>';
+                        html += '<td style="padding:8px;"><span style="color:#ff3b30;font-weight:600;">'+ex.responsibility+'</span></td>';
+                        html += '<td style="padding:8px;text-align:right;font-weight:600;">'+ex.amount+'元</td>';
+                        html += '</tr>';
+                    }
+                    html += '</tbody></table>';
+                }
+
                 html += '</div>';
             }
 

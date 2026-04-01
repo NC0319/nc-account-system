@@ -658,18 +658,37 @@ def calculate_shared_expense():
             for p in date_info.get('night', []):
                 all_persons_in_schedule.add(p)
         
-        def is_single_responsibility(resp):
-            """判断是否需要剔除：责任方中包含至少一个排班文件中的真实人名"""
+        def classify_responsibility(resp):
+            """
+            分析责任方，返回 (action, ratio)
+            action:
+              'exclude'  — 整条剔除（单人全责 或 两个真实人名共责）
+              'half'     — 金额减半后参与公摊（一个真实人名 + NC/共责等）
+              'include'  — 正常参与公摊
+            ratio: 参与公摊的金额比例（1.0 或 0.5）
+            """
             if not resp or resp == '':
-                return False
-            # 完全匹配：责任方就是某个真实人名
-            if resp in all_persons_in_schedule:
-                return True
-            # 部分匹配：责任方中包含真实人名（如"张三/李四"、"张三&NC"、"张三/NC共责"）
-            for person in all_persons_in_schedule:
-                if person in resp:
-                    return True
-            return False
+                return ('include', 1.0)
+
+            # 统计责任方中包含多少个排班真实人名
+            matched_persons = [p for p in all_persons_in_schedule if p in resp]
+            n = len(matched_persons)
+
+            if n == 0:
+                # 没有真实人名：未拦截、NC、卸车/NC共责 等 → 正常公摊
+                return ('include', 1.0)
+            elif n == 1:
+                # 恰好一个真实人名
+                person = matched_persons[0]
+                if resp == person:
+                    # 完全匹配：单人全责 → 剔除
+                    return ('exclude', 0.0)
+                else:
+                    # 含有其他内容（如"/NC共责"、"&NC"）→ 半责，金额÷2参与公摊
+                    return ('half', 0.5)
+            else:
+                # 两个及以上真实人名（如"张三&李四"）→ 剔除，但人员仍参与公摊
+                return ('exclude', 0.0)
         
         # 筛选时间范围内的破损买赔数据
         nc_data = load_data()
@@ -693,14 +712,21 @@ def calculate_shared_expense():
             if is_damaged and is_in_range and has_amount:
                 amount = float(item.get('金额', 0) or 0)
                 if amount > 0:
-                    # 自动识别单责任人
-                    if is_single_responsibility(responsibility):
+                    action, ratio = classify_responsibility(responsibility)
+                    if action == 'exclude':
                         excluded_items.append({
                             'date': item_date,
                             'package': item.get('包裹号', ''),
                             'responsibility': responsibility,
-                            'amount': float(item.get('金额', 0) or 0)
+                            'amount': amount
                         })
+                    elif action == 'half':
+                        # 金额减半后参与公摊
+                        half_item = dict(item)
+                        half_item['金额'] = round(amount * 0.5, 2)
+                        half_item['_original_amount'] = amount
+                        half_item['_half_note'] = f'{responsibility}（半责，原{amount}元÷2）'
+                        damaged_items.append(half_item)
                     else:
                         damaged_items.append(item)
         
@@ -807,7 +833,8 @@ def calculate_shared_expense():
             'summary': summary,
             'daily_details': json.loads(json.dumps({k: {kk: (str(vv) if isinstance(vv, (np.integer, np.floating)) else list(vv) if isinstance(vv, (set, frozenset)) else (float(vv) if isinstance(vv, (int, float)) and not isinstance(vv, bool) else vv)) for kk, vv in v.items()} for k, v in daily_details.items()}, default=str)),
             'excluded_count': len(excluded_items),
-            'excluded_list': excluded_items
+            'excluded_list': excluded_items,
+            'half_list': [{'date': str(i.get('日期','')), 'package': i.get('包裹号',''), 'responsibility': i.get('责任方',''), 'original_amount': i.get('_original_amount', i.get('金额',0)), 'half_amount': i.get('金额',0)} for i in damaged_items if i.get('_half_note')]
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
