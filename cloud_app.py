@@ -690,17 +690,16 @@ def calculate_shared_expense():
             if is_damaged and is_in_range and has_amount:
                 amount = float(item.get('金额', 0) or 0)
                 if amount > 0:
-                    damaged_items.append(item)
-                # 自动识别单责任人
-                if is_single_responsibility(responsibility):
-                    excluded_items.append({
-                        'date': item_date,
-                        'package': item.get('包裹号', ''),
-                        'responsibility': responsibility,
-                        'amount': float(item.get('金额', 0) or 0)
-                    })
-                else:
-                    damaged_items.append(item)
+                    # 自动识别单责任人
+                    if is_single_responsibility(responsibility):
+                        excluded_items.append({
+                            'date': item_date,
+                            'package': item.get('包裹号', ''),
+                            'responsibility': responsibility,
+                            'amount': float(item.get('金额', 0) or 0)
+                        })
+                    else:
+                        damaged_items.append(item)
         
         # 按日期分组计算
         results = {}
