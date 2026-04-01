@@ -659,13 +659,16 @@ def calculate_shared_expense():
                 all_persons_in_schedule.add(p)
         
         def is_single_responsibility(resp):
-            """判断是否为单责任人（排班文件中的真实人名），返回True表示单责需排除"""
+            """判断是否需要剔除：责任方中包含至少一个排班文件中的真实人名"""
             if not resp or resp == '':
                 return False
-            # 如果责任方就是排班文件中的某个真实人名，则视为单责剔除
+            # 完全匹配：责任方就是某个真实人名
             if resp in all_persons_in_schedule:
                 return True
-            # 否则不剔除（未拦截、NC、共责等都参与公摊）
+            # 部分匹配：责任方中包含真实人名（如"张三/李四"、"张三&NC"、"张三/NC共责"）
+            for person in all_persons_in_schedule:
+                if person in resp:
+                    return True
             return False
         
         # 筛选时间范围内的破损买赔数据
