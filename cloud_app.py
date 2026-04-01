@@ -810,17 +810,17 @@ def export_shared_expense():
         result_df = pd.DataFrame(rows)
         
         # 创建白班明细和夜班明细（按人名分组）
-        # 先收集所有日期
-        all_dates = sorted(daily_details.keys())
+        # 先按班次分开处理
+        day_details = {k: v for k, v in daily_details.items() if '白班' in k}
+        night_details = {k: v for k, v in daily_details.items() if '夜班' in k}
         
         # 白班明细：按人名分组
         day_person_details = {}  # {人名: {日期: 金额}}
-        for date in all_dates:
-            info = daily_details[date]
+        all_day_dates = sorted(day_details.keys())
+        for key, info in day_details.items():
+            date = key.replace('_白班', '')
             day_persons = info.get('day_persons', [])
             per_person = info['per_person']
-            total = info['total']
-            day_count = len(day_persons)
             
             for person in day_persons:
                 if person not in day_person_details:
@@ -833,20 +833,20 @@ def export_shared_expense():
         day_rows = []
         for person, details in sorted(day_person_details.items(), key=lambda x: -x[1]['总公摊']):
             row = {'姓名': person, '总公摊': round(details['总公摊'], 2), '天数': details['天数']}
-            for date in all_dates:
-                if date in details:
-                    row[date] = details[date]
+            for date in all_day_dates:
+                date_key = date.replace('_白班', '')
+                if date_key in details:
+                    row[date_key] = details[date_key]
             day_rows.append(row)
         day_df = pd.DataFrame(day_rows)
         
         # 夜班明细：按人名分组
         night_person_details = {}
-        for date in all_dates:
-            info = daily_details[date]
+        all_night_dates = sorted(night_details.keys())
+        for key, info in night_details.items():
+            date = key.replace('_夜班', '')
             night_persons = info.get('night_persons', [])
             per_person = info['per_person']
-            total = info['total']
-            night_count = len(night_persons)
             
             for person in night_persons:
                 if person not in night_person_details:
@@ -859,9 +859,10 @@ def export_shared_expense():
         night_rows = []
         for person, details in sorted(night_person_details.items(), key=lambda x: -x[1]['总公摊']):
             row = {'姓名': person, '总公摊': round(details['总公摊'], 2), '天数': details['天数']}
-            for date in all_dates:
-                if date in details:
-                    row[date] = details[date]
+            for date in all_night_dates:
+                date_key = date.replace('_夜班', '')
+                if date_key in details:
+                    row[date_key] = details[date_key]
             night_rows.append(row)
         night_df = pd.DataFrame(night_rows)
         
