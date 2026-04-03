@@ -1112,11 +1112,55 @@ function jumpToEdit(idx){
         .more-dropdown-item:hover { background:rgba(120,84,254,0.08);color:#7854f4; }
         .more-dropdown-divider { height:1px;background:rgba(0,0,0,0.1);margin:4px 0; }
         
-        /* 暗色模式下的下拉菜单 */
-        body.dark .more-dropdown { background: rgba(30,30,40,0.95) !important; }
-        body.dark .more-dropdown-item { color: #e5e5e7 !important; }
+        /* ===== 暗色模式全局适配 ===== */
+        body.dark .card, body.dark .stat-card { background: rgba(30,30,40,0.85) !important; color: #e5e5e7 !important; }
+        body.dark .header-title { color: #e5e5e7 !important; }
+        body.dark .stat-num { color: #e5e5e7 !important; }
+        body.dark .stat-label { color: #98989d !important; }
+        body.dark .chart-title { color: #e5e5e7 !important; }
+        body.dark .toolbar-btn-label { color: #e5e5e7 !important; }
+        body.dark .data-table th { background: rgba(60,60,70,0.8) !important; color: #e5e5e7 !important; }
+        body.dark .data-table td { color: #e5e5e7 !important; border-color: rgba(255,255,255,0.06) !important; }
+        body.dark .data-table tr:hover td { background: rgba(120,84,254,0.1) !important; }
+        body.dark .amount-cell { color: #ffb340 !important; }
+        body.dark .cell-truncate { color: #e5e5e7 !important; }
+        body.dark .search-box input { background: rgba(40,40,50,0.8) !important; color: #e5e5e7 !important; border-color: rgba(255,255,255,0.08) !important; }
+        body.dark .search-box input::placeholder { color: #98989d !important; }
+        body.dark .search-box i { color: #98989d !important; }
+        body.dark select { background: rgba(40,40,50,0.8) !important; color: #e5e5e7 !important; border-color: rgba(255,255,255,0.08) !important; }
+        body.dark .filter-label { color: #e5e5e7 !important; }
+        body.dark .page-info { color: #98989d !important; }
+        body.dark .page-btn { background: rgba(40,40,50,0.8) !important; color: #e5e5e7 !important; border-color: rgba(255,255,255,0.08) !important; }
+        body.dark .page-btn.active { background: #7854f4 !important; color: #fff !important; }
+        body.dark .page-btn:hover { background: rgba(120,84,254,0.3) !important; }
+        body.dark .modal-overlay { background: rgba(0,0,0,0.6) !important; }
+        body.dark .modal-box { background: rgba(30,30,40,0.95) !important; color: #e5e5e7 !important; }
+        body.dark .modal-header h3 { color: #e5e5e7 !important; }
+        body.dark .form-label { color: #e5e5e7 !important; }
+        body.dark .form-control { background: rgba(40,40,50,0.8) !important; color: #e5e5e7 !important; border-color: rgba(255,255,255,0.08) !important; }
+        body.dark .form-control::placeholder { color: #98989d !important; }
+        body.dark .setting-info h4 { color: #e5e5e7 !important; }
+        body.dark .setting-info p { color: #98989d !important; }
+        body.dark .action-btn { color: #e5e5e7 !important; background: rgba(40,40,50,0.6) !important; border-color: rgba(255,255,255,0.08) !important; }
+        body.dark .action-btn:hover { background: rgba(120,84,254,0.2) !important; }
+        body.dark .action-btn.primary { background: #7854f4 !important; color: #fff !important; }
+        body.dark .row-btn { color: #e5e5e7 !important; background: rgba(40,40,50,0.6) !important; }
+        body.dark .row-btn:hover { background: rgba(120,84,254,0.2) !important; }
+        body.dark .more-dropdown { background: rgba(30,30,40,0.95) !important; border: 1px solid rgba(255,255,255,0.08) !important; }
+        body.dark .more-dropdown-item { background: rgba(30,30,40,0.95) !important; color: #e5e5e7 !important; }
         body.dark .more-dropdown-item:hover { background: rgba(120,84,254,0.3) !important; color: #a78bfa !important; }
         body.dark .more-dropdown-divider { background: rgba(255,255,255,0.1) !important; }
+        body.dark .table-container { background: rgba(30,30,40,0.85) !important; }
+        body.dark .loading-text { color: #a78bfa !important; }
+        body.dark .toast { background: rgba(30,30,40,0.95) !important; color: #e5e5e7 !important; border-color: rgba(255,255,255,0.08) !important; }
+        body.dark .backup-item { background: rgba(40,40,50,0.6) !important; }
+        body.dark .backup-item span, body.dark .backup-item div { color: #e5e5e7 !important; }
+        body.dark [style*="color:#8e8e93"] { color: #98989d !important; }
+        body.dark [style*="color:#666"] { color: #b0b0b0 !important; }
+        body.dark [style*="color:#1c1c1e"] { color: #e5e5e7 !important; }
+        body.dark .chart-card { background: rgba(30,30,40,0.85) !important; }
+        body.dark [style*="background:rgba(0,0,0,0.02)"] { background: rgba(255,255,255,0.04) !important; }
+        body.dark [style*="background:rgba(0,0,0,0.05)"] { background: rgba(255,255,255,0.06) !important; }
         </style>
         
         <!-- Table -->
