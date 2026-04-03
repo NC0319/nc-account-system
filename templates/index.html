@@ -1084,7 +1084,7 @@ function jumpToEdit(idx){
             <!-- 更多操作下拉菜单 -->
             <div class="more-menu" style="position:relative;display:inline-block;">
                 <button class="action-btn secondary" onclick="toggleMoreMenu()" style="padding:8px 12px;">⋯ 更多 ▾</button>
-                <div id="moreMenuDropdown" class="more-dropdown" style="display:none;position:absolute;right:0;top:100%;background:white;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.15);z-index:100;min-width:160px;padding:8px 0;margin-top:4px;">
+                <div id="moreMenuDropdown" class="more-dropdown" style="display:none;position:absolute;right:0;top:100%;background:white;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.15);z-index:9999;min-width:160px;padding:8px 0;margin-top:4px;">
                     <button class="more-dropdown-item" onclick="openExportModal();toggleMoreMenu();">⬇ 导出Excel</button>
                     <button class="more-dropdown-item" onclick="openImportModal();toggleMoreMenu();">⬆ 导入数据</button>
                     <div class="more-dropdown-divider"></div>
