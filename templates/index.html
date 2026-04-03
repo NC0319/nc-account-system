@@ -1084,12 +1084,12 @@ function jumpToEdit(idx){
             <!-- 更多操作下拉菜单 -->
             <div class="more-menu" style="position:relative;display:inline-block;">
                 <button id="moreMenuBtn" class="action-btn secondary" style="padding:8px 12px;" onclick="toggleMoreMenu()">⋯ 更多 ▾</button>
-                <div id="moreMenuDropdown" class="more-dropdown" style="display:none;position:absolute;z-index:9999;min-width:160px;right:0;top:100%;margin-top:4px;padding:8px 0;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,0.2);background:#fff !important;">
-                    <button class="more-dropdown-item" onclick="openExportModal();document.getElementById('moreMenuDropdown').style.display='none';">⬇ 导出Excel</button>
-                    <button class="more-dropdown-item" onclick="openImportModal();document.getElementById('moreMenuDropdown').style.display='none';">⬆ 导入数据</button>
+                <div id="moreMenuDropdown" class="more-dropdown" style="visibility:hidden;position:absolute;z-index:9999;min-width:160px;right:0;top:100%;margin-top:4px;padding:8px 0;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,0.2);background:#fff !important;">
+                    <button class="more-dropdown-item" onclick="openExportModal();document.getElementById('moreMenuDropdown').style.visibility='hidden';">⬇ 导出Excel</button>
+                    <button class="more-dropdown-item" onclick="openImportModal();document.getElementById('moreMenuDropdown').style.visibility='hidden';">⬆ 导入数据</button>
                     <div class="more-dropdown-divider"></div>
-                    <button class="more-dropdown-item" onclick="openAnomalyModal();document.getElementById('moreMenuDropdown').style.display='none';">🔍 异常检测</button>
-                    <button class="more-dropdown-item" onclick="openSharedModal();document.getElementById('moreMenuDropdown').style.display='none';">📊 公摊计算</button>
+                    <button class="more-dropdown-item" onclick="openAnomalyModal();document.getElementById('moreMenuDropdown').style.visibility='hidden';">🔍 异常检测</button>
+                    <button class="more-dropdown-item" onclick="openSharedModal();document.getElementById('moreMenuDropdown').style.visibility='hidden';">📊 公摊计算</button>
                 </div>
             </div>
         </div>
@@ -1097,13 +1097,13 @@ function jumpToEdit(idx){
         <script>
         function toggleMoreMenu(){
             var m = document.getElementById('moreMenuDropdown');
-            m.style.display = (m.style.display === 'block') ? 'none' : 'block';
+            m.style.visibility = (m.style.visibility === 'visible') ? 'hidden' : 'visible';
         }
         // 点击其他地方关闭菜单
         document.addEventListener('click', function(e){
             var m = document.getElementById('moreMenuDropdown');
-            if(m.style.display === 'block' && !e.target.closest('.more-menu') && !e.target.closest('.more-dropdown')){
-                m.style.display = 'none';
+            if(m.style.visibility === 'visible' && !e.target.closest('.more-menu') && !e.target.closest('.more-dropdown')){
+                m.style.visibility = 'hidden';
             }
         });
         </script>
