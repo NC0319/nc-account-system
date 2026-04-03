@@ -967,6 +967,30 @@ function jumpToEdit(idx){
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 3px; }
+
+        /* ===== 响应式设计 ===== */
+        @media (max-width: 900px) {
+            .header-title { font-size: 24px !important; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            .stat-card { padding: 12px !important; }
+            .stat-num { font-size: 22px !important; }
+            .toolbar { flex-direction: column !important; align-items: stretch !important; }
+            .search-box, .filter-select { width: 100% !important; }
+            .action-btn { padding: 8px 12px !important; font-size: 12px !important; }
+            .more-dropdown { right: auto !important; left: 0 !important; }
+        }
+        @media (max-width: 600px) {
+            body { padding: 10px !important; }
+            .header { flex-direction: column; gap: 10px; align-items: flex-start !important; }
+            .stats-grid { grid-template-columns: 1fr 1fr !important; }
+            .stat-label { font-size: 11px !important; }
+            .chart-card { min-width: 100% !important; }
+            .charts-row { flex-direction: column !important; }
+            .table-scroll { overflow-x: auto; }
+            .data-table { min-width: 700px !important; font-size: 12px !important; }
+            .data-table th, .data-table td { padding: 8px 6px !important; }
+            .modal-box { width: 95% !important; max-height: 90vh !important; overflow-y: auto !important; }
+        }
     </style>
 </head>
 <body>
@@ -1035,36 +1059,57 @@ function jumpToEdit(idx){
         </div>
         
         <!-- Toolbar -->
-        <div class="card toolbar">
-            <div class="search-box">
+        <div class="card toolbar" style="flex-wrap:wrap;gap:10px;padding:12px 16px;">
+            <div class="search-box" style="flex:1;min-width:200px;">
                 <i class="bi bi-search"></i>
-                <input type="text" id="searchInput" placeholder="搜索包裹号、商品、处理人...">
+                <input type="text" id="searchInput" placeholder="搜索包裹号、商品、处理人..." style="width:100%;">
             </div>
-            <select class="filter-select" id="filterMonth">
+            <select class="filter-select" id="filterMonth" style="width:auto;min-width:110px;">
                 <option value="">全部月份</option>
                 <option value="2026-01">2026年1月</option>
                 <option value="2026-02">2026年2月</option>
                 <option value="2026-03">2026年3月</option>
             </select>
-            <select class="filter-select" id="filterShift">
+            <select class="filter-select" id="filterShift" style="width:auto;min-width:90px;">
                 <option value="">全部班次</option>
                 <option value="白班">白班</option>
                 <option value="夜班">夜班</option>
             </select>
-            <select class="filter-select" id="filterResp">
+            <select class="filter-select" id="filterResp" style="width:auto;min-width:120px;">
                 <option value="">全部责任方</option>
-                <option value="NC">NC</option>
-                <option value="验货">验货</option>
-                <option value="卸车/NC共责">卸车/NC共责</option>
             </select>
-            <button class="action-btn secondary" onclick="clearFilters()">✕ 清除</button>
-            <button class="action-btn primary" onclick="openAddModal()">✚ 添加</button>
-            <button class="action-btn green" onclick="openExportModal()">⬇ 导出</button>
-            <button class="action-btn secondary" onclick="openImportModal()">⬆ 导入</button>
+            <button class="action-btn secondary" onclick="clearFilters()" style="padding:8px 12px;">✕ 清除</button>
+            <button class="action-btn primary" onclick="openAddModal()" style="padding:8px 16px;">✚ 添加</button>
             
-            <button class="action-btn secondary" onclick="openAnomalyModal()">🔍 异常检测</button>
-            <button class="action-btn secondary" onclick="openSharedModal()">📊 公摊计算</button>
+            <!-- 更多操作下拉菜单 -->
+            <div class="more-menu" style="position:relative;display:inline-block;">
+                <button class="action-btn secondary" onclick="toggleMoreMenu()" style="padding:8px 12px;">⋯ 更多 ▾</button>
+                <div id="moreMenuDropdown" class="more-dropdown" style="display:none;position:absolute;right:0;top:100%;background:white;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.15);z-index:100;min-width:160px;padding:8px 0;margin-top:4px;">
+                    <button class="more-dropdown-item" onclick="openExportModal();toggleMoreMenu();">⬇ 导出Excel</button>
+                    <button class="more-dropdown-item" onclick="openImportModal();toggleMoreMenu();">⬆ 导入数据</button>
+                    <div class="more-dropdown-divider"></div>
+                    <button class="more-dropdown-item" onclick="openAnomalyModal();toggleMoreMenu();">🔍 异常检测</button>
+                    <button class="more-dropdown-item" onclick="openSharedModal();toggleMoreMenu();">📊 公摊计算</button>
+                </div>
+            </div>
         </div>
+        
+        <script>
+        function toggleMoreMenu(){
+            var m = document.getElementById('moreMenuDropdown');
+            m.style.display = m.style.display === 'none' ? 'block' : 'none';
+        }
+        document.addEventListener('click', function(e){
+            if(!e.target.closest('.more-menu')){
+                document.getElementById('moreMenuDropdown').style.display = 'none';
+            }
+        });
+        </script>
+        <style>
+        .more-dropdown-item { display:block;width:100%;padding:10px 16px;text-align:left;background:none;border:none;font-size:13px;cursor:pointer;color:#333; }
+        .more-dropdown-item:hover { background:rgba(120,84,254,0.08);color:#7854f4; }
+        .more-dropdown-divider { height:1px;background:rgba(0,0,0,0.1);margin:4px 0; }
+        </style>
         
         <!-- Table -->
         <div class="card table-container">
@@ -1895,7 +1940,7 @@ function renderTable(){
         html += '<td class="amount-cell">' + (item['金额']||'-') + '</td>';
         html += '<td>' + (item['责任方']||'-') + '</td>';
         html += '<td>' + (item['路由']||'-') + '</td>';
-        html += '<td><span class="tag ' + (item['回款情况']==='√'?'tag-paid':'tag-unpaid') + '">' + (item['回款情况']==='√'?'√':'-') + '</span></td>';
+        html += '<td><span class="tag ' + (item['回款情况']==='√'?'tag-paid':'tag-unpaid') + '" onclick="togglePaidQuick('+idx+')" title="点击切换回款状态" style="cursor:pointer;">' + (item['回款情况']==='√'?'✓':'-') + '</span></td>';
         html += '<td><button class="row-btn edit" onclick="openEditModal('+idx+')">✏️</button><button class="row-btn delete" onclick="deleteData('+idx+')">🗑️</button></td></tr>';
     }
     tbody.innerHTML = html;
@@ -2387,6 +2432,24 @@ async function deleteData(idx){
     } catch(e){ showToast('删除失败', 'error'); }
 }
 
+// 快速切换回款状态
+async function togglePaidQuick(idx){
+    var item = allData[idx];
+    var current = item['回款情况'] || '';
+    var newVal = (current === '√') ? '' : '√';
+    try{
+        var r = await fetch('/api/data/' + idx, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({'回款情况': newVal})
+        });
+        if(r.ok){
+            showToast(newVal === '√' ? '已标记回款 ✓' : '已取消回款');
+            loadData(); loadLogs();
+        } else { showToast('操作失败', 'error'); }
+    } catch(e){ showToast('操作失败', 'error'); }
+}
+
 // Batch Modal
 function openBatchModal(){
     selectedBatch = [];
@@ -2461,16 +2524,39 @@ function closeSettings(){
 function changeColor(scheme){
     localStorage.setItem('colorScheme', scheme);
     var colors = {
-        purple: 'linear-gradient(135deg, #e8e4f0 0%, #d4cce8 25%, #c9bfe0 50%, #b8aed0 75%, #a89bc4 100%)',
-        blue: 'linear-gradient(135deg, #e8f0f8 0%, #c8dff0 25%, #a8c8e8 50%, #88b0d8 75%, #6898c8 100%)',
-        green: 'linear-gradient(135deg, #e8f5f0 0%, #c8e8d8 25%, #a8dcc0 50%, #88c8a8 75%, #68b890 100%)',
-        pink: 'linear-gradient(135deg, #f8e8f0 0%, #f0c8d8 25%, #e8a8c0 50%, #d888a8 75%, #c86890 100%)',
-        orange: 'linear-gradient(135deg, #f8f0e8 0%, #f0dcc8 25%, #e8c8a8 50%, #d8b088 75%, #c89868 100%)',
-        dark: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 25%, #1a1a2e 50%, #0f3460 75%, #1a1a2e 100%)'
+        purple: { bg: 'linear-gradient(135deg, #e8e4f0 0%, #d4cce8 25%, #c9bfe0 50%, #b8aed0 75%, #a89bc4 100%)', card: 'rgba(255,255,255,0.72)', text: '#1c1c1e', textSec: '#8e8e93', border: 'rgba(0,0,0,0.08)' },
+        blue: { bg: 'linear-gradient(135deg, #e8f0f8 0%, #c8dff0 25%, #a8c8e8 50%, #88b0d8 75%, #6898c8 100%)', card: 'rgba(255,255,255,0.72)', text: '#1c1c1e', textSec: '#8e8e93', border: 'rgba(0,0,0,0.08)' },
+        green: { bg: 'linear-gradient(135deg, #e8f5f0 0%, #c8e8d8 25%, #a8dcc0 50%, #88c8a8 75%, #68b890 100%)', card: 'rgba(255,255,255,0.72)', text: '#1c1c1e', textSec: '#8e8e93', border: 'rgba(0,0,0,0.08)' },
+        pink: { bg: 'linear-gradient(135deg, #f8e8f0 0%, #f0c8d8 25%, #e8a8c0 50%, #d888a8 75%, #c86890 100%)', card: 'rgba(255,255,255,0.72)', text: '#1c1c1e', textSec: '#8e8e93', border: 'rgba(0,0,0,0.08)' },
+        orange: { bg: 'linear-gradient(135deg, #f8f0e8 0%, #f0dcc8 25%, #e8c8a8 50%, #d8b088 75%, #c89868 100%)', card: 'rgba(255,255,255,0.72)', text: '#1c1c1e', textSec: '#8e8e93', border: 'rgba(0,0,0,0.08)' },
+        dark: { bg: 'linear-gradient(135deg, #0d0d12 0%, #12121c 25%, #1a1a24 50%, #0f0f18 75%, #181822 100%)', card: 'rgba(30,30,40,0.85)', text: '#e5e5e7', textSec: '#98989d', border: 'rgba(255,255,255,0.08)' }
     };
-    document.body.style.background = colors[scheme] || colors.purple;
+    var c = colors[scheme] || colors.purple;
+    document.body.style.background = c.bg;
     document.body.style.backgroundSize = '400% 400%';
+    // 应用到所有卡片
+    document.querySelectorAll('.card, .stat-card, .modal-box').forEach(function(el){
+        el.style.background = c.card;
+        el.style.color = c.text;
+    });
+    // 应用到表格
+    document.querySelectorAll('.data-table th, .data-table td').forEach(function(el){
+        el.style.color = c.text;
+    });
+    document.querySelectorAll('.data-table th').forEach(function(el){
+        el.style.background = scheme === 'dark' ? 'rgba(60,60,70,0.8)' : 'linear-gradient(135deg,#7854f4,#5c3dde)';
+    });
+    // 应用到输入框
+    document.querySelectorAll('input, select, textarea').forEach(function(el){
+        el.style.background = scheme === 'dark' ? 'rgba(40,40,50,0.8)' : '#fff';
+        el.style.color = c.text;
+        el.style.borderColor = c.border;
+    });
+    // 保存当前主题
+    localStorage.setItem('colorScheme', scheme);
 }
+
+// 页面加载时恢复主题（已移至changeColor函数末尾）
 
 function toggleAnim(enabled){
     localStorage.setItem('animation', enabled);
