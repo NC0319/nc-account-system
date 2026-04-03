@@ -1083,23 +1083,21 @@ function jumpToEdit(idx){
             
             <!-- 更多操作下拉菜单 -->
             <div class="more-menu" style="position:relative;display:inline-block;">
-                <button class="action-btn secondary" onclick="toggleMoreMenu(event)" style="padding:8px 12px;">⋯ 更多 ▾</button>
+                <button id="moreMenuBtn" class="action-btn secondary" style="padding:8px 12px;">⋯ 更多 ▾</button>
                 <div id="moreMenuDropdown" class="more-dropdown" style="display:none;position:fixed;z-index:9999;min-width:160px;padding:8px 0;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,0.2);">
-                    <button class="more-dropdown-item" onclick="openExportModal();toggleMoreMenu(event);">⬇ 导出Excel</button>
-                    <button class="more-dropdown-item" onclick="openImportModal();toggleMoreMenu(event);">⬆ 导入数据</button>
+                    <button class="more-dropdown-item" onclick="openExportModal();document.getElementById('moreMenuDropdown').style.display='none';">⬇ 导出Excel</button>
+                    <button class="more-dropdown-item" onclick="openImportModal();document.getElementById('moreMenuDropdown').style.display='none';">⬆ 导入数据</button>
                     <div class="more-dropdown-divider"></div>
-                    <button class="more-dropdown-item" onclick="openAnomalyModal();toggleMoreMenu(event);">🔍 异常检测</button>
-                    <button class="more-dropdown-item" onclick="openSharedModal();toggleMoreMenu(event);">📊 公摊计算</button>
+                    <button class="more-dropdown-item" onclick="openAnomalyModal();document.getElementById('moreMenuDropdown').style.display='none';">🔍 异常检测</button>
+                    <button class="more-dropdown-item" onclick="openSharedModal();document.getElementById('moreMenuDropdown').style.display='none';">📊 公摊计算</button>
                 </div>
             </div>
         </div>
         
         <script>
-        function toggleMoreMenu(event){
-            event = event || window.event;
-            event.stopPropagation();
+        function toggleMoreMenu(){
             var m = document.getElementById('moreMenuDropdown');
-            var btn = event.target.closest('.action-btn') || event.target;
+            var btn = document.getElementById('moreMenuBtn');
             var rect = btn.getBoundingClientRect();
             var isVisible = m.style.display === 'block';
             if(!isVisible){
@@ -1117,6 +1115,8 @@ function jumpToEdit(idx){
                 m.style.display = 'none';
             }
         });
+        // 为更多按钮添加点击事件
+        document.getElementById('moreMenuBtn').addEventListener('click', toggleMoreMenu);
         </script>
         <style>
         .more-dropdown-item { display:block;width:100%;padding:10px 16px;text-align:left;background:none;border:none;font-size:13px;cursor:pointer;color:#333; }
