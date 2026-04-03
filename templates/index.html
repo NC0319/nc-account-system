@@ -1109,6 +1109,12 @@ function jumpToEdit(idx){
         .more-dropdown-item { display:block;width:100%;padding:10px 16px;text-align:left;background:none;border:none;font-size:13px;cursor:pointer;color:#333; }
         .more-dropdown-item:hover { background:rgba(120,84,254,0.08);color:#7854f4; }
         .more-dropdown-divider { height:1px;background:rgba(0,0,0,0.1);margin:4px 0; }
+        
+        /* 暗色模式下的下拉菜单 */
+        body.dark .more-dropdown { background: rgba(30,30,40,0.95) !important; }
+        body.dark .more-dropdown-item { color: #e5e5e7 !important; }
+        body.dark .more-dropdown-item:hover { background: rgba(120,84,254,0.3) !important; color: #a78bfa !important; }
+        body.dark .more-dropdown-divider { background: rgba(255,255,255,0.1) !important; }
         </style>
         
         <!-- Table -->
@@ -2439,7 +2445,7 @@ async function togglePaidQuick(idx){
     var newVal = (current === '√') ? '' : '√';
     try{
         var r = await fetch('/api/data/' + idx, {
-            method: 'PUT',
+            method: 'PATCH',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({'回款情况': newVal})
         });
@@ -2534,6 +2540,12 @@ function changeColor(scheme){
     var c = colors[scheme] || colors.purple;
     document.body.style.background = c.bg;
     document.body.style.backgroundSize = '400% 400%';
+    // 切换暗色模式class
+    if(scheme === 'dark'){
+        document.body.classList.add('dark');
+    } else {
+        document.body.classList.remove('dark');
+    }
     // 应用到所有卡片
     document.querySelectorAll('.card, .stat-card, .modal-box').forEach(function(el){
         el.style.background = c.card;
@@ -2551,6 +2563,13 @@ function changeColor(scheme){
         el.style.background = scheme === 'dark' ? 'rgba(40,40,50,0.8)' : '#fff';
         el.style.color = c.text;
         el.style.borderColor = c.border;
+    });
+    // 应用到下拉菜单（暗色模式）
+    document.querySelectorAll('.more-dropdown').forEach(function(el){
+        el.style.background = scheme === 'dark' ? 'rgba(30,30,40,0.95)' : '#fff';
+    });
+    document.querySelectorAll('.more-dropdown-item').forEach(function(el){
+        el.style.color = scheme === 'dark' ? '#e5e5e7' : '#333';
     });
     // 保存当前主题
     localStorage.setItem('colorScheme', scheme);

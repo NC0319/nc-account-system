@@ -238,11 +238,15 @@ def add_data():
     sync_to_github(data)
     return jsonify({'success': True})
 
-@app.route('/api/data/<int:index>', methods=['PUT'])
+@app.route('/api/data/<int:index>', methods=['PUT', 'PATCH'])
 def update_data(index):
     data = load_data()
     if 0 <= index < len(data):
-        data[index] = request.json
+        # PATCH: 部分更新（合并）；PUT: 整条替换
+        if request.method == 'PATCH':
+            data[index].update(request.json)
+        else:
+            data[index] = request.json
         add_log('更新数据', f'索引{index}, 包裹号: {data[index].get("包裹号", "")}')
         save_data(data)
         sync_to_github(data)
