@@ -1096,21 +1096,25 @@ function jumpToEdit(idx){
         
         <script>
         function toggleMoreMenu(event){
+            event = event || window.event;
+            event.stopPropagation();
             var m = document.getElementById('moreMenuDropdown');
-            var btn = event.target.closest('.action-btn');
-            if(m.style.display === 'none'){
-                // 计算按钮位置
-                var rect = btn.getBoundingClientRect();
+            var btn = event.target.closest('.action-btn') || event.target;
+            var rect = btn.getBoundingClientRect();
+            var isVisible = m.style.display === 'block';
+            if(!isVisible){
                 m.style.right = (window.innerWidth - rect.right) + 'px';
-                m.style.top = (rect.bottom + 4) + 'px';
+                m.style.top = (rect.bottom + 6) + 'px';
                 m.style.display = 'block';
             } else {
                 m.style.display = 'none';
             }
         }
+        // 点击其他地方关闭菜单
         document.addEventListener('click', function(e){
-            if(!e.target.closest('.more-menu') && !e.target.closest('.more-dropdown')){
-                document.getElementById('moreMenuDropdown').style.display = 'none';
+            var m = document.getElementById('moreMenuDropdown');
+            if(m.style.display === 'block' && !e.target.closest('.more-menu') && !e.target.closest('.more-dropdown')){
+                m.style.display = 'none';
             }
         });
         </script>
