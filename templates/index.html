@@ -1170,7 +1170,7 @@ function jumpToEdit(idx){
                     <thead>
                         <tr>
                             <th>日期</th><th>班次</th><th>包裹号</th><th>商品</th>
-                            <th>异常</th><th>金额</th><th>责任方</th><th>路由</th><th>回款</th><th>操作</th>
+                            <th>异常</th><th>金额</th><th>责任方</th><th>路由</th><th>凭证</th><th>回款</th><th>操作</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody"></tbody>
@@ -1248,6 +1248,10 @@ function jumpToEdit(idx){
                                 <option value="已下发">已下发</option>
                                 <option value="处理中">处理中</option>
                             </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">凭证</label>
+                            <input type="text" class="form-control" name="凭证" id="fieldVoucher" placeholder="凭证">
                         </div>
                     </div>
                     <div class="form-row">
@@ -1950,7 +1954,7 @@ function applyFilters(){
     var rf = document.getElementById('filterResp').value;
     filteredData = allData.filter(function(item){
         if(st){
-            var found = ['包裹号','商品详情','处理人','责任方','异常情况','处理方式'].some(function(f){
+            var found = ['包裹号','商品详情','处理人','责任方','异常情况','处理方式','凭证'].some(function(f){
                 return (item[f]||'').toLowerCase().indexOf(st) >= 0;
             });
             if(!found) return false;
@@ -1992,6 +1996,7 @@ function renderTable(){
         html += '<td class="amount-cell">' + (item['金额']||'-') + '</td>';
         html += '<td>' + (item['责任方']||'-') + '</td>';
         html += '<td>' + (item['路由']||'-') + '</td>';
+        html += '<td>' + (item['凭证']||'-') + '</td>';
         html += '<td><span class="tag ' + (item['回款情况']==='√'?'tag-paid':'tag-unpaid') + '" onclick="togglePaidQuick('+idx+')" title="点击切换回款状态" style="cursor:pointer;">' + (item['回款情况']==='√'?'✓':'-') + '</span></td>';
         html += '<td><button class="row-btn edit" onclick="openEditModal('+idx+')">✏️</button><button class="row-btn delete" onclick="deleteData('+idx+')">🗑️</button></td></tr>';
     }
@@ -2432,6 +2437,7 @@ function openEditModal(idx){
     document.getElementById('fieldResp').value = item['责任方'] || '';
     document.getElementById('fieldMethod').value = item['处理方式'] || '';
     document.getElementById('fieldRoute').value = item['路由'] || '已妥投';
+    document.getElementById('fieldVoucher').value = item['凭证'] || '';
     document.getElementById('fieldHandler').value = item['处理人'] || '';
     document.getElementById('fieldPaid').value = item['回款情况'] || '';
     document.getElementById('fieldDetail').value = item['商品详情'] || '';
@@ -2454,6 +2460,7 @@ function submitData(){
         '责任方': document.getElementById('fieldResp').value,
         '处理方式': document.getElementById('fieldMethod').value,
         '路由': document.getElementById('fieldRoute').value,
+        '凭证': document.getElementById('fieldVoucher').value,
         '处理人': document.getElementById('fieldHandler').value,
         '回款情况': document.getElementById('fieldPaid').value,
         '商品详情': document.getElementById('fieldDetail').value
