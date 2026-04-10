@@ -274,7 +274,24 @@ def export_excel():
     df.to_excel(excel_path, index=False)
     return send_file(excel_path, as_attachment=True)
 
-
+def standardize_columns(df):
+    """标准化列名，映射常见变体到标准字段名"""
+    column_mapping = {
+        # 凭证相关
+        '凭证号': '凭证',
+        '单据号': '凭证',
+        '凭证编号': '凭证',
+        # 路由相关
+        '路由状态': '路由',
+        # 其他可能的变体
+        '商品': '商品详情',
+        '异常类型': '异常情况',
+        '处理结果': '处理方式',
+        '负责人': '处理人',
+        '回款': '回款情况',
+    }
+    df = df.rename(columns=column_mapping)
+    return df
 
 @app.route('/api/import-preview', methods=['POST'])
 def import_preview():
@@ -286,24 +303,25 @@ def import_preview():
         
         if not file_data:
             return jsonify({'success': False, 'error': '没有文件数据'}), 400
-        
+
         # 解码Base64数据
         if ',' in file_data:
             file_data = file_data.split(',')[1]
         file_bytes = base64.b64decode(file_data)
-        
+
         # 读取Excel
         df = pd.read_excel(io.BytesIO(file_bytes))
+        df = standardize_columns(df)
         df['日期'] = pd.to_datetime(df['日期']).dt.strftime('%Y-%m-%d')
         df = df.fillna('')
         df = df[df['包裹号'].notna() & (df['包裹号'] != '')]
-        
+
         # 转换数据
         for col in df.columns:
             df[col] = df[col].apply(lambda x: '' if pd.isna(x) or str(x) == 'nan' else str(x))
-        
+
         new_data = df.to_dict('records')
-        
+
         # 获取现有数据
         existing_data = load_data()
         existing_keys = set()
@@ -345,9 +363,10 @@ def import_confirm():
         if ',' in file_data:
             file_data = file_data.split(',')[1]
         file_bytes = base64.b64decode(file_data)
-        
+
         # 读取Excel
         df = pd.read_excel(io.BytesIO(file_bytes))
+        df = standardize_columns(df)
         df['日期'] = pd.to_datetime(df['日期']).dt.strftime('%Y-%m-%d')
         df = df.fillna('')
         df = df[df['包裹号'].notna() & (df['包裹号'] != '')]
@@ -412,12 +431,13 @@ def import_excel():
         file = request.files['file']
         if file.filename == '':
             return jsonify({'success': False, 'error': '文件名为空'}), 400
-        
+
         # 读取上传的Excel
         df = pd.read_excel(file)
+        df = standardize_columns(df)
         df['日期'] = pd.to_datetime(df['日期']).dt.strftime('%Y-%m-%d')
         df = df.fillna('')
-        
+
         # 清理空行（包裹号为空的不导入）
         df = df[df['包裹号'].notna() & (df['包裹号'] != '')]
         
