@@ -2139,11 +2139,11 @@ function renderTable(){
     
     // 空状态处理
     if(filteredData.length === 0){
-        tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:60px 20px;">
-            <div style="font-size:48px;margin-bottom:16px;">🔍</div>
-            <div style="font-size:16px;font-weight:600;color:#1c1c1e;margin-bottom:8px;">暂无数据</div>
-            <div style="font-size:13px;color:#8e8e93;">点击上方"添加"按钮录入数据</div>
-        </td></tr>';
+        tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:60px 20px;">' +
+            '<div style="font-size:48px;margin-bottom:16px;">🔍</div>' +
+            '<div style="font-size:16px;font-weight:600;color:#1c1c1e;margin-bottom:8px;">暂无数据</div>' +
+            '<div style="font-size:13px;color:#8e8e93;">点击上方"添加"按钮录入数据</div>' +
+        '</td></tr>';
         document.getElementById('pageTotal').textContent = 0;
         document.getElementById('pagination').innerHTML = '';
         return;
@@ -2151,12 +2151,12 @@ function renderTable(){
     
     // 搜索无结果状态
     if(pageData.length === 0 && filteredData.length > 0){
-        tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:60px 20px;">
-            <div style="font-size:48px;margin-bottom:16px;">📭</div>
-            <div style="font-size:16px;font-weight:600;color:#1c1c1e;margin-bottom:8px;">未找到匹配记录</div>
-            <div style="font-size:13px;color:#8e8e93;">试试调整搜索条件或筛选条件</div>
-            <button onclick="clearFilters()" style="margin-top:16px;padding:8px 16px;background:#007aff;color:white;border:none;border-radius:8px;cursor:pointer;">清除筛选</button>
-        </td></tr>';
+        tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:60px 20px;">' +
+            '<div style="font-size:48px;margin-bottom:16px;">📭</div>' +
+            '<div style="font-size:16px;font-weight:600;color:#1c1c1e;margin-bottom:8px;">未找到匹配记录</div>' +
+            '<div style="font-size:13px;color:#8e8e93;">试试调整搜索条件或筛选条件</div>' +
+            '<button onclick="clearFilters()" style="margin-top:16px;padding:8px 16px;background:#007aff;color:white;border:none;border-radius:8px;cursor:pointer;">清除筛选</button>' +
+        '</td></tr>';
         document.getElementById('pagination').innerHTML = '';
         return;
     }
