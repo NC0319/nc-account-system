@@ -568,6 +568,10 @@ function jumpToEdit(idx){
         .stat-num { font-size: 28px; font-weight: 700; color: #1c1c1e; line-height: 1; transition: all 0.3s ease; }
         .stat-card:hover .stat-num { transform: scale(1.08); }
         .stat-label { font-size: 13px; color: #8e8e93; margin-top: 6px; }
+        .stat-change { font-size: 11px; margin-top: 4px; font-weight: 500; }
+        .stat-change.up { color: #34c759; }
+        .stat-change.down { color: #ff3b30; }
+        .stat-change.neutral { color: #8e8e93; }
         
         /* Chart Cards */
         .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
@@ -658,6 +662,19 @@ function jumpToEdit(idx){
         .action-btn.green { background: #34c759; color: white; }
         .action-btn:hover { transform: scale(1.02); }
         .action-btn:active { transform: scale(0.98); }
+        
+        /* 快捷筛选按钮 */
+        .quick-filters { display: flex; gap: 6px; flex-wrap: wrap; }
+        .quick-filter-btn {
+            padding: 6px 12px; border-radius: 8px; border: none;
+            background: rgba(255,255,255,0.5); color: #007aff;
+            font-size: 12px; font-weight: 500; cursor: pointer;
+            transition: all 0.2s ease; backdrop-filter: blur(10px);
+        }
+        .quick-filter-btn:hover { background: rgba(0,122,255,0.15); transform: translateY(-1px); }
+        .quick-filter-btn.active { background: #007aff; color: white; }
+        body.dark .quick-filter-btn { background: rgba(40,40,50,0.6); }
+        body.dark .quick-filter-btn:hover { background: rgba(0,122,255,0.3); }
         
         /* Table */
         .table-container { border-radius: var(--radius); overflow: hidden; }
@@ -900,7 +917,7 @@ function jumpToEdit(idx){
             font-size: 15px; background: rgba(255,255,255,0.6);
             transition: all 0.2s;
         }
-        .form-control:focus { outline: none; border-color: #007aff; box-shadow: 0 0 0 4px rgba(0,122,255,0.1); }
+        .form-control:focus { outline: none; border-color: #007aff; box-shadow: 0 0 0 4px rgba(0,122,255,0.1); transform: scale(1.01); transition: all 0.2s ease; }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
         @media (max-width: 500px) { .form-row { grid-template-columns: 1fr; } }
         
@@ -1012,21 +1029,25 @@ function jumpToEdit(idx){
                 <div class="stat-icon blue"><i class="bi bi-list-ul"></i></div>
                 <div class="stat-num" id="totalCount">0</div>
                 <div class="stat-label">总记录</div>
+                <div class="stat-change" id="totalCountChange" style="display:none;"></div>
             </div>
             <div class="stat-card">
                 <div class="stat-icon purple"><i class="bi bi-currency-yen"></i></div>
                 <div class="stat-num" id="totalAmount">0</div>
                 <div class="stat-label">累计金额</div>
+                <div class="stat-change" id="totalAmountChange" style="display:none;"></div>
             </div>
             <div class="stat-card" onclick="openUnpaidModal()" style="cursor:pointer;" title="点击处理未回款">
                 <div class="stat-icon orange"><i class="bi bi-exclamation-circle"></i></div>
                 <div class="stat-num" id="unpaidCount">0</div>
                 <div class="stat-label">未回款(点击)</div>
+                <div class="stat-change" id="unpaidCountChange" style="display:none;"></div>
             </div>
             <div class="stat-card" onclick="openPaidModal()" style="cursor:pointer;" title="点击查看已回款记录">
                 <div class="stat-icon green"><i class="bi bi-check-circle"></i></div>
                 <div class="stat-num" id="paidCount">0</div>
                 <div class="stat-label">已回款(点击)</div>
+                <div class="stat-change" id="paidCountChange" style="display:none;"></div>
             </div>
         </div>
         
@@ -1063,6 +1084,14 @@ function jumpToEdit(idx){
             <div class="search-box" style="flex:1;min-width:200px;">
                 <i class="bi bi-search"></i>
                 <input type="text" id="searchInput" placeholder="搜索包裹号、商品、处理人..." style="width:100%;">
+            </div>
+            <!-- 快捷筛选按钮 -->
+            <div class="quick-filters" style="display:flex;gap:6px;flex-wrap:wrap;">
+                <button class="quick-filter-btn" onclick="quickFilter('today')" title="今日">今日</button>
+                <button class="quick-filter-btn" onclick="quickFilter('week')" title="本周">本周</button>
+                <button class="quick-filter-btn" onclick="quickFilter('month')" title="本月">本月</button>
+                <button class="quick-filter-btn" onclick="quickFilter('unpaid')" title="未回款" style="color:#ff9500;">未回款</button>
+                <button class="quick-filter-btn" onclick="quickFilter('paid')" title="已回款" style="color:#34c759;">已回款</button>
             </div>
             <select class="filter-select" id="filterMonth" style="width:auto;min-width:110px;">
                 <option value="">全部月份</option>
@@ -1892,6 +1921,29 @@ document.addEventListener('DOMContentLoaded', function(){
     }
 });
 
+// 键盘快捷键
+document.addEventListener('keydown', function(e){
+    // Esc 关闭弹窗
+    if(e.key === 'Escape'){
+        var modals = document.querySelectorAll('.modal-overlay.show');
+        modals.forEach(function(modal){
+            modal.classList.remove('show');
+        });
+    }
+    // Ctrl/Cmd + F 聚焦搜索框
+    if((e.ctrlKey || e.metaKey) && e.key === 'f'){
+        e.preventDefault();
+        document.getElementById('searchInput').focus();
+    }
+    // Ctrl/Cmd + N 打开添加弹窗
+    if((e.ctrlKey || e.metaKey) && e.key === 'n'){
+        e.preventDefault();
+        openAddModal();
+    }
+});
+    }
+});
+
 function showLoading(){ document.getElementById('loadingOverlay').style.display = 'flex'; }
 function hideLoading(){ document.getElementById('loadingOverlay').style.display = 'none'; }
 
@@ -1944,6 +1996,54 @@ function updateStats(){
     document.getElementById('totalAmount').textContent = amt.toLocaleString('zh-CN', {maximumFractionDigits:2});
     document.getElementById('unpaidCount').textContent = unpaid;
     document.getElementById('paidCount').textContent = paid;
+    
+    // 计算较上期变化（对比上个月同期）
+    var now = new Date();
+    var thisMonth = now.getMonth();
+    var thisYear = now.getFullYear();
+    var lastMonth = thisMonth === 0 ? 11 : thisMonth - 1;
+    var lastMonthYear = thisMonth === 0 ? thisYear - 1 : thisYear;
+    var lastMonthStr = lastMonthYear + '-' + String(lastMonth + 1).padStart(2, '0');
+    
+    // 统计上个月数据
+    var lastTotal = 0, lastAmt = 0, lastUnpaid = 0, lastPaid = 0;
+    for(var i=0; i<allData.length; i++){
+        var date = allData[i]['日期'] || '';
+        if(date.startsWith(lastMonthStr)){
+            lastTotal++;
+            lastAmt += parseFloat(allData[i]['金额']) || 0;
+            var v = allData[i]['回款情况'] || '';
+            if(v === '√' || v === '✔' || v === '已回款'){
+                lastPaid++;
+            } else {
+                lastUnpaid++;
+            }
+        }
+    }
+    
+    // 显示变化指示
+    showChange('totalCountChange', total, lastTotal);
+    showChange('totalAmountChange', amt, lastAmt, true);
+    showChange('unpaidCountChange', unpaid, lastUnpaid);
+    showChange('paidCountChange', paid, lastPaid);
+}
+
+function showChange(elementId, current, last, isMoney){
+    var el = document.getElementById(elementId);
+    if(!el) return;
+    
+    if(last === 0 || current === 0){
+        el.style.display = 'none';
+        return;
+    }
+    
+    var change = ((current - last) / last * 100).toFixed(1);
+    var icon = change > 0 ? '↑' : (change < 0 ? '↓' : '');
+    var cls = change > 0 ? 'up' : (change < 0 ? 'down' : 'neutral');
+    var prefix = change > 0 ? '+' : '';
+    
+    el.innerHTML = '<span class="stat-change ' + cls + '">' + icon + ' ' + prefix + change + '%</span>';
+    el.style.display = 'block';
 }
 
 function applyFilters(){
@@ -1967,6 +2067,61 @@ function applyFilters(){
     renderTable();
 }
 
+// 快捷筛选功能
+function quickFilter(type){
+    var now = new Date();
+    var today = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+    var dayOfWeek = now.getDay() || 7;
+    var weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - dayOfWeek + 1);
+    var weekStartStr = weekStart.getFullYear() + '-' + String(weekStart.getMonth() + 1).padStart(2, '0') + '-' + String(weekStart.getDate()).padStart(2, '0');
+    var monthStart = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    
+    // 清除快捷筛选按钮高亮
+    document.querySelectorAll('.quick-filter-btn').forEach(function(btn){
+        btn.classList.remove('active');
+    });
+    
+    // 设置当前筛选按钮高亮
+    event.target.classList.add('active');
+    
+    // 清除其他筛选条件
+    document.getElementById('searchInput').value = '';
+    document.getElementById('filterMonth').value = '';
+    document.getElementById('filterShift').value = '';
+    document.getElementById('filterResp').value = '';
+    
+    currentPage = 1;
+    
+    if(type === 'today'){
+        filteredData = allData.filter(function(item){
+            return (item['日期']||'') === today;
+        });
+    } else if(type === 'week'){
+        filteredData = allData.filter(function(item){
+            var d = item['日期']||'';
+            return d >= weekStartStr && d <= today;
+        });
+    } else if(type === 'month'){
+        filteredData = allData.filter(function(item){
+            return (item['日期']||'').startsWith(monthStart);
+        });
+    } else if(type === 'unpaid'){
+        filteredData = allData.filter(function(item){
+            var v = item['回款情况'] || '';
+            return v !== '√' && v !== '✔' && v !== '已回款';
+        });
+    } else if(type === 'paid'){
+        filteredData = allData.filter(function(item){
+            var v = item['回款情况'] || '';
+            return v === '√' || v === '✔' || v === '已回款';
+        });
+    } else {
+        filteredData = allData.slice();
+    }
+    renderTable();
+}
+
 function clearFilters(){
     document.getElementById('searchInput').value = '';
     document.getElementById('filterMonth').value = '';
@@ -1983,6 +2138,31 @@ function renderTable(){
     var end = start + ps;
     var pageData = filteredData.slice(start, end);
     var tbody = document.getElementById('tableBody');
+    
+    // 空状态处理
+    if(filteredData.length === 0){
+        tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:60px 20px;">
+            <div style="font-size:48px;margin-bottom:16px;">🔍</div>
+            <div style="font-size:16px;font-weight:600;color:#1c1c1e;margin-bottom:8px;">暂无数据</div>
+            <div style="font-size:13px;color:#8e8e93;">点击上方"添加"按钮录入数据</div>
+        </td></tr>';
+        document.getElementById('pageTotal').textContent = 0;
+        document.getElementById('pagination').innerHTML = '';
+        return;
+    }
+    
+    // 搜索无结果状态
+    if(pageData.length === 0 && filteredData.length > 0){
+        tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:60px 20px;">
+            <div style="font-size:48px;margin-bottom:16px;">📭</div>
+            <div style="font-size:16px;font-weight:600;color:#1c1c1e;margin-bottom:8px;">未找到匹配记录</div>
+            <div style="font-size:13px;color:#8e8e93;">试试调整搜索条件或筛选条件</div>
+            <button onclick="clearFilters()" style="margin-top:16px;padding:8px 16px;background:#007aff;color:white;border:none;border-radius:8px;cursor:pointer;">清除筛选</button>
+        </td></tr>';
+        document.getElementById('pagination').innerHTML = '';
+        return;
+    }
+    
     var html = '';
     for(var i=0; i<pageData.length; i++){
         var item = pageData[i];
