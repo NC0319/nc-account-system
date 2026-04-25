@@ -994,19 +994,106 @@ function jumpToEdit(idx){
             .toolbar { flex-direction: column !important; align-items: stretch !important; }
             .search-box, .filter-select { width: 100% !important; }
             .action-btn { padding: 8px 12px !important; font-size: 12px !important; }
-
         }
         @media (max-width: 600px) {
-            body { padding: 10px !important; }
-            .header { flex-direction: column; gap: 10px; align-items: flex-start !important; }
-            .stats-grid { grid-template-columns: 1fr 1fr !important; }
+            body { padding: 10px 10px 80px !important; }
+            .header { flex-direction: row; align-items: center !important; padding-bottom: 12px; }
+            .header-title { font-size: 22px !important; }
+            .stats-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+            .stat-card { padding: 10px !important; }
+            .stat-num { font-size: 20px !important; }
             .stat-label { font-size: 11px !important; }
+            .stat-icon { width: 32px !important; height: 32px !important; font-size: 14px !important; margin-bottom: 6px !important; }
+            /* 图表区域 */
             .chart-card { min-width: 100% !important; }
-            .charts-row { flex-direction: column !important; }
-            .table-scroll { overflow-x: auto; }
-            .data-table { min-width: 700px !important; font-size: 12px !important; }
-            .data-table th, .data-table td { padding: 8px 6px !important; }
-            .modal-box { width: 95% !important; max-height: 90vh !important; overflow-y: auto !important; }
+            .charts-row { flex-direction: column !important; gap: 10px !important; }
+            .chart-container { height: 180px !important; }
+            /* 工具栏移动端 */
+            .toolbar { padding: 10px !important; gap: 8px !important; }
+            .quick-filters { gap: 4px !important; }
+            .quick-filter-btn { padding: 5px 10px !important; font-size: 12px !important; }
+            .filter-row-mobile { display: flex !important; gap: 6px; }
+            .filter-select { font-size: 13px !important; }
+            /* 桌面操作按钮在移动端隐藏（用底部栏替代） */
+            .mobile-hide { display: none !important; }
+            /* 表格改为卡片视图 */
+            .table-scroll { display: none !important; }
+            .mobile-card-list { display: block !important; }
+            .table-footer { padding: 10px !important; }
+            /* 弹窗 */
+            .modal-box { width: 100% !important; max-width: 100% !important; max-height: 92vh !important; overflow-y: auto !important; border-radius: 20px 20px 0 0 !important; position: fixed !important; bottom: 0 !important; left: 0 !important; margin: 0 !important; }
+            .modal-overlay { align-items: flex-end !important; }
+            .form-row { grid-template-columns: 1fr !important; gap: 10px !important; }
+            .form-group { margin-bottom: 12px !important; }
+            /* 排行榜 */
+            #rankingList > div { min-width: calc(50% - 5px) !important; max-width: calc(50% - 5px) !important; }
+        }
+
+        /* ===== 移动端卡片列表 ===== */
+        .mobile-card-list { display: none; }
+        .m-card {
+            background: rgba(255,255,255,0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 14px;
+            padding: 14px;
+            margin-bottom: 10px;
+            border: 1px solid rgba(0,0,0,0.06);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            transition: transform 0.15s;
+        }
+        .m-card:active { transform: scale(0.98); }
+        .m-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+        .m-card-title { font-size: 14px; font-weight: 600; color: #1c1c1e; flex: 1; margin-right: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .m-card-amount { font-size: 16px; font-weight: 700; color: #ff9500; }
+        .m-card-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+        .m-card-tag { font-size: 11px; padding: 2px 8px; border-radius: 20px; background: rgba(0,0,0,0.06); color: #555; }
+        .m-card-footer { display: flex; align-items: center; justify-content: space-between; }
+        .m-card-date { font-size: 12px; color: #8e8e93; }
+        .m-card-actions { display: flex; gap: 6px; }
+        body.dark .m-card { background: rgba(30,30,40,0.85) !important; border-color: rgba(255,255,255,0.06) !important; }
+        body.dark .m-card-title { color: #e5e5e7 !important; }
+        body.dark .m-card-tag { background: rgba(255,255,255,0.08) !important; color: #b0b0b0 !important; }
+        body.dark .m-card-date { color: #98989d !important; }
+
+        /* ===== 移动端底部悬浮操作栏 ===== */
+        .mobile-fab {
+            display: none;
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            z-index: 1000;
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(0,0,0,0.08);
+            padding: 10px 16px;
+            padding-bottom: calc(10px + env(safe-area-inset-bottom));
+            display: none;
+            gap: 8px;
+        }
+        .mobile-fab-btn {
+            flex: 1;
+            padding: 10px 8px;
+            border-radius: 12px;
+            border: none;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            transition: all 0.2s;
+        }
+        .mobile-fab-btn:active { transform: scale(0.95); }
+        .mobile-fab-btn.primary { background: #7854f4; color: white; }
+        .mobile-fab-btn.secondary { background: rgba(120,84,254,0.1); color: #7854f4; }
+        .mobile-fab-btn.orange { background: rgba(255,149,0,0.12); color: #ff9500; }
+        body.dark .mobile-fab { background: rgba(20,20,30,0.9) !important; border-color: rgba(255,255,255,0.08) !important; }
+        body.dark .mobile-fab-btn.secondary { background: rgba(120,84,254,0.2) !important; }
+        body.dark .mobile-fab-btn.orange { background: rgba(255,149,0,0.2) !important; }
+        @media (max-width: 600px) {
+            .mobile-fab { display: flex !important; }
         }
     </style>
 </head>
@@ -1093,22 +1180,22 @@ function jumpToEdit(idx){
                 <button class="quick-filter-btn" onclick="quickFilter('unpaid')" title="未回款" style="color:#ff9500;">未回款</button>
                 <button class="quick-filter-btn" onclick="quickFilter('paid')" title="已回款" style="color:#34c759;">已回款</button>
             </div>
-            <select class="filter-select" id="filterMonth" style="width:auto;min-width:110px;">
+            <select class="filter-select mobile-hide" id="filterMonth" style="width:auto;min-width:110px;">
                 <option value="">全部月份</option>
                 <option value="2026-01">2026年1月</option>
                 <option value="2026-02">2026年2月</option>
                 <option value="2026-03">2026年3月</option>
             </select>
-            <select class="filter-select" id="filterShift" style="width:auto;min-width:90px;">
+            <select class="filter-select mobile-hide" id="filterShift" style="width:auto;min-width:90px;">
                 <option value="">全部班次</option>
                 <option value="白班">白班</option>
                 <option value="夜班">夜班</option>
             </select>
-            <select class="filter-select" id="filterResp" style="width:auto;min-width:120px;">
+            <select class="filter-select mobile-hide" id="filterResp" style="width:auto;min-width:120px;">
                 <option value="">全部责任方</option>
             </select>
-            <button class="action-btn secondary" onclick="clearFilters()" style="padding:8px 12px;">✕ 清除</button>
-            <button class="action-btn primary" onclick="openAddModal()" style="padding:8px 16px;">✚ 添加</button>
+            <button class="action-btn secondary mobile-hide" onclick="clearFilters()" style="padding:8px 12px;">✕ 清除</button>
+            <button class="action-btn primary mobile-hide" onclick="openAddModal()" style="padding:8px 16px;">✚ 添加</button>
             
             <!-- 更多操作下拉菜单 -->
             <div class="more-menu" style="position:relative;display:inline-block;">
@@ -1205,6 +1292,8 @@ function jumpToEdit(idx){
                     <tbody id="tableBody"></tbody>
                 </table>
             </div>
+            <!-- 移动端卡片列表 -->
+            <div class="mobile-card-list" id="mobileCardList"></div>
             <div class="table-footer">
                 <div class="page-info">共 <strong id="pageTotal">0</strong> 条</div>
                 <div class="page-controls">
@@ -2024,6 +2113,8 @@ function updateStats(){
     showChange('totalAmountChange', amt, lastAmt, true);
     showChange('unpaidCountChange', unpaid, lastUnpaid);
     showChange('paidCountChange', paid, lastPaid);
+    document.getElementById('fabUnpaid').textContent = unpaid;
+    renderMobileCards();
 }
 
 function showChange(elementId, current, last, isMoney){
@@ -2181,6 +2272,63 @@ function renderTable(){
     tbody.innerHTML = html;
     document.getElementById('pageTotal').textContent = filteredData.length;
     renderPagination();
+    renderMobileCards();
+}
+
+function renderMobileCards(){
+    var isMobile = window.innerWidth <= 600;
+    var pcList = document.querySelector('.table-scroll');
+    var mobList = document.getElementById('mobileCardList');
+    if(!pcList || !mobList) return;
+    if(!isMobile) { mobList.innerHTML = ''; return; }
+
+    var ps = parseInt(document.getElementById('pageSize').value);
+    var start = (currentPage - 1) * ps;
+    var end = start + ps;
+    var pageData = filteredData.slice(start, end);
+
+    if(filteredData.length === 0){
+        mobList.innerHTML = '<div style="text-align:center;padding:40px 20px;color:#8e8e93;font-size:14px;">🔍 暂无数据，点击上方添加按钮录入</div>';
+        return;
+    }
+    if(pageData.length === 0 && filteredData.length > 0){
+        mobList.innerHTML = '<div style="text-align:center;padding:40px 20px;color:#8e8e93;font-size:14px;">📭 ��找到匹配记录 <button onclick="clearFilters()" style="display:block;margin:10px auto 0;padding:6px 14px;background:#007aff;color:white;border:none;border-radius:8px;font-size:12px;cursor:pointer;">清除筛选</button></div>';
+        return;
+    }
+
+    var html = '';
+    for(var i=0; i<pageData.length; i++){
+        var item = pageData[i];
+        var idx = item.__idx !== undefined ? item.__idx : allData.indexOf(item);
+        var isPaid = item['回款情况']==='√' || item['回款情况']==='✔' || item['回款情况']==='已回款';
+        var amount = item['金额'] || '-';
+        var pkg = item['包裹号'] || '-';
+        var shift = item['班次'] || '';
+        var shiftCls = shift === '白班' ? 'tag-day' : 'tag-night';
+        var paidCls = isPaid ? 'tag-paid' : 'tag-unpaid';
+        var paidIcon = isPaid ? '✓' : '-';
+        var detail = (item['商品详情']||'').substring(0,15);
+        var exc = item['异常情况'] || '-';
+        var resp = item['责任方'] || '-';
+        var voucher = item['凭证'] || '';
+        html += '<div class="m-card" onclick="openEditModal('+idx+')">';
+        html += '<div class="m-card-header">';
+        html += '<div class="m-card-title" title="'+pkg+'">' + pkg + '</div>';
+        html += '<div class="m-card-amount">' + amount + '元</div>';
+        html += '</div>';
+        html += '<div class="m-card-meta">';
+        if(shift) html += '<span class="m-card-tag">' + shift + '</span>';
+        html += '<span class="m-card-tag">' + exc + '</span>';
+        html += '<span class="m-card-tag">' + resp + '</span>';
+        if(voucher) html += '<span class="m-card-tag">📎'+voucher+'</span>';
+        html += '</div>';
+        html += '<div class="m-card-footer">';
+        html += '<div class="m-card-date">' + (item['日期']||'') + ' · ' + detail + '</div>';
+        html += '<div class="m-card-actions">';
+        html += '<span class="tag ' + paidCls + '" onclick="event.stopPropagation();togglePaidQuick('+idx+')" style="cursor:pointer;">' + paidIcon + '</span>';
+        html += '</div></div></div>';
+    }
+    mobList.innerHTML = html;
 }
 
 function renderPagination(){
@@ -3603,13 +3751,18 @@ window.onerror = function(msg, url, line) {
     return false;
 };
 
-// 确保 hideLoading 总是可用
-if(typeof hideLoading !== 'function') {
-    window.hideLoading = function() {
-        var overlay = document.getElementById('loadingOverlay');
-        if(overlay) overlay.style.display = 'none';
-    };
-}
+// 移动端窗口大小变化时重新渲染卡片
+window.addEventListener('resize', function(){
+    if(typeof renderMobileCards === 'function') renderMobileCards();
+});
 </script>
+
+<!-- 移动端底部悬浮操作栏 -->
+<div class="mobile-fab" id="mobileFAB">
+    <button class="mobile-fab-btn secondary" onclick="document.getElementById('searchInput').focus()">🔍 搜索</button>
+    <button class="mobile-fab-btn orange" onclick="openUnpaidModal()">💰 未回款(<span id="fabUnpaid">0</span>)</button>
+    <button class="mobile-fab-btn primary" onclick="openAddModal()">✚ 添加</button>
+</div>
+
 </body>
 </html>
