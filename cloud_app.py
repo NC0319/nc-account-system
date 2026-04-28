@@ -592,9 +592,21 @@ def calculate_shared_expense():
         if not shift_col_name:
             return jsonify({'success': False, 'error': f'排班文件缺少班次列，当前列名: {list(schedule_df.columns)}'}), 400
         
+        # 识别跳班班次列
+        jump_shift_col = None
+        for c in ['跳班班次', '跳班', 'jump_shift']:
+            if c in schedule_df.columns:
+                jump_shift_col = c
+                break
+        
+        # 默认跳班班次为中班5次
+        default_jump_shift = '中班5次'
+        
         # 班次识别函数
-        def classify_shift(shift_str, clock_time=None):
-            """识别班次类型: 返回 'day'(白班) 或 'night'(夜班) 或 'rest'(休息) 或 None(未知)"""
+        def classify_shift(shift_str, clock_time=None, is_jump_shift=False):
+            """识别班次类型: 返回 'day'(白班) 或 'night'(夜班) 或 'rest'(休息) 或 None(未知)
+            is_jump_shift: 是否为跳班班次（跳班优先）
+            """
             # 先检查是否休息
             if shift_str:
                 s = str(shift_str).strip()
@@ -610,6 +622,12 @@ def calculate_shared_expense():
             if not shift_str or str(shift_str).strip() in ['', 'nan']:
                 return None
             s = str(shift_str).strip()
+            
+            # 跳班班次识别（优先处理）
+            if is_jump_shift:
+                # 跳班班次固定为夜班
+                return 'jump_night'
+            
             # 白班: 早班、中班1次、中班3次、中班4次
             if '早班' in s:
                 return 'day'
@@ -626,7 +644,8 @@ def calculate_shared_expense():
                         return 'night'
             return None  # 无法识别
 
-        # 构建排班字典: {日期: {'day': [白班人员], 'night': [夜班人员], 'all': [全部人员]}}
+        # 构建排班字典: {日期: {'day': [白班人员], 'night': [夜班人员], 'jump_night': [跳班人员], 'all': [全部人员]}}
+        # 跳班人员单独记录，白班计算时需剔除
         schedule = {}
         
         # 使用打卡文件的实际列名
@@ -640,32 +659,54 @@ def calculate_shared_expense():
             if not date or not person or person in ['', 'nan', 'None']:
                 continue
             if date not in schedule:
-                schedule[date] = {'day': [], 'night': [], 'all': []}
+                schedule[date] = {'day': [], 'night': [], 'jump_night': [], 'all': []}
 
             # 获取打卡时间（判断是否实际出勤）
             clock_time = row.get(clock_col) if clock_col else None
             
-            # 识别班次
+            # 识别班次（固定班次）
             shift_val = str(row.get(shift_col, '')).strip() if shift_col else ''
-            shift_type = classify_shift(shift_val, clock_time)
+            shift_type = classify_shift(shift_val, clock_time, is_jump_shift=False)
+
+            # 识别跳班班次
+            jump_shift_val = None
+            if jump_shift_col:
+                jump_shift_val = str(row.get(jump_shift_col, '')).strip() if jump_shift_col else ''
+            if not jump_shift_val or jump_shift_val in ['', 'nan', 'None']:
+                jump_shift_val = default_jump_shift  # 默认中班5次
+            
+            # 判断是否为跳班（跳班班次名称匹配）
+            is_jump = shift_val == jump_shift_val
+            jump_shift_type = classify_shift(shift_val, clock_time, is_jump_shift=is_jump)
 
             # 跳过休息的人
-            if shift_type == 'rest':
+            if shift_type == 'rest' and jump_shift_type == 'rest':
                 continue
 
-            # 同一天同一人出现中班+早班，只识别为白班
+            # 记录到all列表
             if person not in schedule[date]['all']:
                 schedule[date]['all'].append(person)
 
-            if shift_type == 'day':
-                # 如果之前已在夜班，移到白班（早班优先）
-                if person in schedule[date]['night']:
-                    schedule[date]['night'].remove(person)
-                if person not in schedule[date]['day']:
-                    schedule[date]['day'].append(person)
+            # 处理跳班班次（优先级最高）
+            if jump_shift_type == 'jump_night':
+                # 跳班为夜班，加入jump_night列表
+                if person not in schedule[date]['jump_night']:
+                    schedule[date]['jump_night'].append(person)
+                # 如果已在白班列表，移除（跳班优先）
+                if person in schedule[date]['day']:
+                    schedule[date]['day'].remove(person)
+                # 同时加入夜班列表参与公摊
+                if person not in schedule[date]['night']:
+                    schedule[date]['night'].append(person)
+            elif shift_type == 'day':
+                # 固定班次为白班
+                # 如果此人当天有跳班，则不加入白班
+                if person not in schedule[date]['jump_night']:
+                    if person not in schedule[date]['day']:
+                        schedule[date]['day'].append(person)
             elif shift_type == 'night':
-                # 只有当天没有白班记录时才加入夜班
-                if person not in schedule[date]['day'] and person not in schedule[date]['night']:
+                # 固定班次为夜班
+                if person not in schedule[date]['night']:
                     schedule[date]['night'].append(person)
             else:
                 # 无法识别班次，归入全部
