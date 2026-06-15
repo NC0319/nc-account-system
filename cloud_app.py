@@ -293,43 +293,92 @@ def standardize_columns(df):
     df = df.rename(columns=column_mapping)
     return df
 
+def _parse_excel_to_records(file_source):
+    """将Excel文件源(Base64字符串或文件对象)解析为记录列表
+    
+    Args:
+        file_source: Base64字符串(可含data:xxx;base64,前缀) 或 Flask FileStorage对象
+    Returns:
+        list[dict]: 处理后的记录列表
+    """
+    # 判断输入类型并读取Excel
+    if isinstance(file_source, str):
+        # Base64字符串
+        if ',' in file_source:
+            file_source = file_source.split(',')[1]
+        file_bytes = base64.b64decode(file_source)
+        df = pd.read_excel(io.BytesIO(file_bytes))
+    else:
+        # Flask FileStorage对象
+        df = pd.read_excel(file_source)
+    
+    # 标准化列名
+    df = standardize_columns(df)
+    df['日期'] = pd.to_datetime(df['日期']).dt.strftime('%Y-%m-%d')
+    df = df.fillna('')
+    df = df[df['包裹号'].notna() & (df['包裹号'] != '')]
+    
+    # 确保所有值为字符串基本类型
+    for col in df.columns:
+        df[col] = df[col].apply(lambda x: '' if pd.isna(x) or str(x) == 'nan' else str(x))
+    
+    return df.to_dict('records')
+
+
+def _count_filled_fields(item):
+    """计算一条记录中非空字段的数量"""
+    return sum(1 for v in item.values() if str(v).strip() not in ['', 'nan', 'None'])
+
+
+def _merge_data(new_data, existing_data):
+    """合并新数据与现有数据，重复记录保留更详细的版本
+    
+    Returns:
+        tuple: (final_data, added_count, replaced_count)
+    """
+    merged = {}
+    for item in existing_data:
+        key = (str(item.get('日期', '')).strip(), str(item.get('包裹号', '')).strip())
+        if key[1]:
+            merged[key] = item
+    
+    added_count = 0
+    replaced_count = 0
+    for item in new_data:
+        key = (str(item.get('日期', '')).strip(), str(item.get('包裹号', '')).strip())
+        if key[1]:
+            if key in merged:
+                # 保留字段更完整的记录
+                if _count_filled_fields(item) >= _count_filled_fields(merged[key]):
+                    merged[key] = item
+                replaced_count += 1
+            else:
+                merged[key] = item
+                added_count += 1
+    
+    final_data = list(merged.values())
+    final_data.sort(key=lambda x: x.get('日期', ''), reverse=True)
+    return final_data, added_count, replaced_count
+
+
 @app.route('/api/import-preview', methods=['POST'])
 def import_preview():
     """预览导入数据"""
     try:
         data = request.get_json()
         file_data = data.get('fileData', '')
-        file_name = data.get('fileName', '')
-        
         if not file_data:
             return jsonify({'success': False, 'error': '没有文件数据'}), 400
 
-        # 解码Base64数据
-        if ',' in file_data:
-            file_data = file_data.split(',')[1]
-        file_bytes = base64.b64decode(file_data)
+        new_data = _parse_excel_to_records(file_data)
 
-        # 读取Excel
-        df = pd.read_excel(io.BytesIO(file_bytes))
-        df = standardize_columns(df)
-        df['日期'] = pd.to_datetime(df['日期']).dt.strftime('%Y-%m-%d')
-        df = df.fillna('')
-        df = df[df['包裹号'].notna() & (df['包裹号'] != '')]
-
-        # 转换数据
-        for col in df.columns:
-            df[col] = df[col].apply(lambda x: '' if pd.isna(x) or str(x) == 'nan' else str(x))
-
-        new_data = df.to_dict('records')
-
-        # 获取现有数据
+        # 计算新增和替换数量（不实际合并）
         existing_data = load_data()
         existing_keys = set()
         for item in existing_data:
             key = (str(item.get('日期', '')).strip(), str(item.get('包裹号', '')).strip())
             existing_keys.add(key)
         
-        # 计算新增和替换数量
         added = 0
         replaced = 0
         for item in new_data:
@@ -349,64 +398,19 @@ def import_preview():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+
 @app.route('/api/import-confirm', methods=['POST'])
 def import_confirm():
     """确认导入数据"""
     try:
         data = request.get_json()
         file_data = data.get('fileData', '')
-        
         if not file_data:
             return jsonify({'success': False, 'error': '没有文件数据'}), 400
-        
-        # 解码Base64数据
-        if ',' in file_data:
-            file_data = file_data.split(',')[1]
-        file_bytes = base64.b64decode(file_data)
 
-        # 读取Excel
-        df = pd.read_excel(io.BytesIO(file_bytes))
-        df = standardize_columns(df)
-        df['日期'] = pd.to_datetime(df['日期']).dt.strftime('%Y-%m-%d')
-        df = df.fillna('')
-        df = df[df['包裹号'].notna() & (df['包裹号'] != '')]
-        
-        for col in df.columns:
-            df[col] = df[col].apply(lambda x: '' if pd.isna(x) or str(x) == 'nan' else str(x))
-        
-        new_data = df.to_dict('records')
-        
-        # 合并数据
+        new_data = _parse_excel_to_records(file_data)
         existing_data = load_data()
-        
-        def count_filled_fields(item):
-            return sum(1 for v in item.values() if str(v).strip() not in ['', 'nan', 'None'])
-        
-        def pick_more_detailed(item_a, item_b):
-            if count_filled_fields(item_b) >= count_filled_fields(item_a):
-                return item_b
-            return item_a
-        
-        merged = {}
-        for item in existing_data:
-            key = (str(item.get('日期', '')).strip(), str(item.get('包裹号', '')).strip())
-            if key[1]:
-                merged[key] = item
-        
-        replaced_count = 0
-        added_count = 0
-        for item in new_data:
-            key = (str(item.get('日期', '')).strip(), str(item.get('包裹号', '')).strip())
-            if key[1]:
-                if key in merged:
-                    merged[key] = pick_more_detailed(merged[key], item)
-                    replaced_count += 1
-                else:
-                    merged[key] = item
-                    added_count += 1
-        
-        final_data = list(merged.values())
-        final_data.sort(key=lambda x: x.get('日期', ''), reverse=True)
+        final_data, added_count, replaced_count = _merge_data(new_data, existing_data)
         
         save_data(final_data)
         sync_to_github(final_data)
@@ -421,6 +425,7 @@ def import_confirm():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+
 @app.route('/api/import', methods=['POST'])
 def import_excel():
     """导入Excel文件，支持重复数据替换"""
@@ -432,66 +437,10 @@ def import_excel():
         if file.filename == '':
             return jsonify({'success': False, 'error': '文件名为空'}), 400
 
-        # 读取上传的Excel
-        df = pd.read_excel(file)
-        df = standardize_columns(df)
-        df['日期'] = pd.to_datetime(df['日期']).dt.strftime('%Y-%m-%d')
-        df = df.fillna('')
-
-        # 清理空行（包裹号为空的不导入）
-        df = df[df['包裹号'].notna() & (df['包裹号'] != '')]
-        
-        # 转换为列表前，确保所有值都是基本类型
-        for col in df.columns:
-            df[col] = df[col].apply(lambda x: '' if pd.isna(x) or str(x) == 'nan' else str(x))
-        
-        new_data = df.to_dict('records')
-        
-        def count_filled_fields(item):
-            """计算一条记录中非空字段的数量（用于判断哪条更详细）"""
-            return sum(1 for v in item.values() if str(v).strip() not in ['', 'nan', 'None'])
-        
-        def pick_more_detailed(item_a, item_b):
-            """比较两条记录，返回更详细的那条"""
-            score_a = count_filled_fields(item_a)
-            score_b = count_filled_fields(item_b)
-            if score_b >= score_a:
-                return item_b  # 新数据更详细或相同，用新数据
-            return item_a  # 旧数据更详细，保留旧数据
-        
-        # 获取现有数据
+        new_data = _parse_excel_to_records(file)
         existing_data = load_data()
+        final_data, added_count, replaced_count = _merge_data(new_data, existing_data)
         
-        # 根据日期+包裹号判断重复，重复则保留更详细的那条
-        merged = {}
-        
-        # 先添加现有数据
-        for item in existing_data:
-            key = (str(item.get('日期', '')).strip(), str(item.get('包裹号', '')).strip())
-            if key[1]:  # 只添加有包裹号的数据
-                merged[key] = item
-        
-        # 再处理新数据
-        replaced_count = 0
-        added_count = 0
-        for item in new_data:
-            key = (str(item.get('日期', '')).strip(), str(item.get('包裹号', '')).strip())
-            if key[1]:  # 只处理有包裹号的数据
-                if key in merged:
-                    # 保留更详细的那条
-                    merged[key] = pick_more_detailed(merged[key], item)
-                    replaced_count += 1
-                else:
-                    merged[key] = item
-                    added_count += 1
-        
-        # 转换回列表
-        final_data = list(merged.values())
-        
-        # 按日期排序
-        final_data.sort(key=lambda x: x.get('日期', ''), reverse=True)
-        
-        # 保存
         save_data(final_data)
         sync_to_github(final_data)
         add_log('导入数据', f'共{len(final_data)}条, 新增{added_count}条, 替换{replaced_count}条')
