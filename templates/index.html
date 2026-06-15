@@ -908,6 +908,18 @@
             <div id="rankingList" style="display:flex;flex-wrap:wrap;gap:10px;"></div>
         </div>
         
+        <!-- 商品破损次数排名 -->
+        <div class="card" style="margin-top:16px;padding:20px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                <div class="chart-title" style="margin:0;"><i class="bi bi-box-seam" style="color:#ff9500"></i> 商品破损次数排名 TOP10</div>
+                <select id="productRankType" onchange="renderProductRanking()" style="padding:6px 12px;border-radius:8px;border:1px solid rgba(120,86,254,0.3);font-size:13px;background:white;">
+                    <option value="count">按次数</option>
+                    <option value="amount">按金额</option>
+                </select>
+            </div>
+            <div id="productRankingList" style="display:flex;flex-wrap:wrap;gap:10px;"></div>
+        </div>
+        
         <!-- Charts -->
         <div class="charts-row" style="flex-wrap:wrap;">
             <div class="card chart-card" style="flex:2;min-width:300px;">
@@ -1565,6 +1577,7 @@ async function loadData(){
         try { updateStats(); } catch(e) { console.error('updateStats错误:', e); }
         try { renderTable(); } catch(e) { console.error('renderTable错误:', e); }
         try { renderRanking(); } catch(e) { console.error('renderRanking错误:', e); }
+        try { renderProductRanking(); } catch(e) { console.error('renderProductRanking错误:', e); }
         try { renderCharts(); } catch(e) { console.error('renderCharts错误:', e); }
         
     } catch(e) {
@@ -2071,6 +2084,72 @@ function renderRanking(){
     }
     
     document.getElementById('rankingList').innerHTML = html;
+}
+function renderProductRanking(){
+    var type = document.getElementById('productRankType').value;
+    var stats = {};
+    var totalAmount = 0;
+    
+    for(var i=0; i<allData.length; i++){
+        var product = allData[i]['商品详情'] || '未记录';
+        var amt = parseFloat(allData[i]['金额']) || 0;
+        totalAmount += amt;
+        if(!stats[product]){
+            stats[product] = { count: 0, amount: 0 };
+        }
+        stats[product].count++;
+        stats[product].amount += amt;
+    }
+    
+    // 转换为数组并排序
+    var list = [];
+    for(var p in stats){
+        list.push({ name: p, count: stats[p].count, amount: stats[p].amount });
+    }
+    
+    if(type === 'count'){
+        list.sort(function(a,b){ return b.count - a.count; });
+    } else {
+        list.sort(function(a,b){ return b.amount - a.amount; });
+    }
+    
+    // 取TOP10
+    list = list.slice(0, 10);
+    
+    // 如果没有数据，显示提示
+    if(list.length === 0){
+        document.getElementById('productRankingList').innerHTML = '<div style="text-align:center;color:#8e8e93;padding:20px;">暂无数据</div>';
+        return;
+    }
+    
+    // 渲染
+    var html = '';
+    var colors = ['#ff9500','#ff3b30','#007aff','#34c759','#7854f4','#af52de','#ff6b6b','#4ecdc4','#45b7d1','#96ceb4'];
+    var maxValue = type === 'count' ? (list[0] ? list[0].count : 1) : (list[0] ? list[0].amount : 1);
+    
+    for(var i=0; i<list.length; i++){
+        var item = list[i];
+        var value = type === 'count' ? item.count : item.amount;
+        var pct = Math.round(value / (type === 'count' ? allData.length : totalAmount) * 100);
+        var width = Math.max(20, (value / maxValue) * 100);
+        var color = colors[i] || '#8e8e93';
+        
+        html += '<div style="flex:1;min-width:180px;max-width:220px;background:rgba(0,0,0,0.02);border-radius:12px;padding:14px;">';
+        html += '<div style="display:flex;align-items:center;margin-bottom:8px;">';
+        html += '<span style="font-size:18px;font-weight:700;color:' + color + ';width:28px;">' + (i+1) + '</span>';
+        html += '<span style="font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;" title="' + item.name + '">' + item.name + '</span>';
+        html += '</div>';
+        html += '<div style="background:rgba(0,0,0,0.05);border-radius:6px;height:8px;overflow:hidden;margin-bottom:6px;">';
+        html += '<div style="width:' + width + '%;height:100%;background:' + color + ';border-radius:6px;"></div>';
+        html += '</div>';
+        html += '<div style="display:flex;justify-content:space-between;font-size:12px;color:#8e8e93;">';
+        html += '<span>' + item.count + '次</span>';
+        html += '<span style="font-weight:600;color:#1c1c1e;">' + item.amount.toFixed(2) + '元</span>';
+        html += '</div>';
+        html += '</div>';
+    }
+    
+    document.getElementById('productRankingList').innerHTML = html;
 }
 function renderTrendChart(){
     try {
