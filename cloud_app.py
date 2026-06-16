@@ -744,90 +744,61 @@ def calculate_shared_expense():
                     else:
                         damaged_items.append(item)
         
-        # 按日期分组计算
+        # 逐单计算公摊
         results = {}
         daily_details = {}
         
         print(f"破损条目: {len(damaged_items)} 条")
         print(f"排除条目: {len(excluded_items)} 条")
         
-        # 按日期和班次统计破损金额（白班和夜班分开计算！）
-        daily_damage = {}  # {date: {'day': 金额, 'night': 金额}}
+        # 逐单计算公摊：每一单破损按其班次的当班人数均摊
+        item_no = 0
         for item in damaged_items:
-            date = item.get('日期', '')
+            item_no += 1
+            date = str(item.get('日期', '')).strip()
             shift = str(item.get('班次', '')).strip()
             amount = float(item.get('金额', 0) or 0)
-            
-            if date not in daily_damage:
-                daily_damage[date] = {'day': 0, 'night': 0}
-            
-            # 判断班次
-            if '白' in shift:
-                daily_damage[date]['day'] += amount
-            elif '夜' in shift:
-                daily_damage[date]['night'] += amount
-            else:
-                # 无法识别班次，按白班处理
-                daily_damage[date]['day'] += amount
-        
-        # 计算每天每人公摊（白班和夜班分开）
-        for date in sorted(daily_damage.keys()):
-            day_damage = daily_damage[date]
+            if amount <= 0:
+                continue
             day_info = schedule.get(date, {})
-            
-            # 获取白班和夜班人员
             if isinstance(day_info, list):
-                day_people = []
-                night_people = []
-                all_people = day_info
+                day_people, night_people = [], []
             else:
                 day_people = day_info.get('day', [])
                 night_people = day_info.get('night', [])
-                all_people = day_info.get('all', [])
             
-            # 白班公摊
-            if day_people and day_damage['day'] > 0:
-                per_person = day_damage['day'] / len(day_people)
-                daily_details[date + '_白班'] = {
-                    'total': round(day_damage['day'], 2),
-                    'people': len(day_people),
-                    'per_person': round(per_person, 2),
-                    'person_list': day_people,
-                    'shift_label': '白班',
-                    'day_persons': day_people,
-                    'night_persons': []
-                }
-                for person in day_people:
-                    if person not in results:
-                        results[person] = {'total': 0, 'dates': []}
-                    results[person]['total'] = round(results[person]['total'] + per_person, 2)
-                    results[person]['dates'].append({
-                        'date': date,
-                        'shift': '白班',
-                        'amount': round(per_person, 2)
-                    })
+            # 判断该单属于白班还是夜班
+            if '夜' in shift:
+                people = night_people
+                shift_label = '夜班'
+            else:
+                people = day_people
+                shift_label = '白班'
             
-            # 夜班公摊
-            if night_people and day_damage['night'] > 0:
-                per_person = day_damage['night'] / len(night_people)
-                daily_details[date + '_夜班'] = {
-                    'total': round(day_damage['night'], 2),
-                    'people': len(night_people),
-                    'per_person': round(per_person, 2),
-                    'person_list': night_people,
-                    'shift_label': '夜班',
-                    'day_persons': [],
-                    'night_persons': night_people
-                }
-                for person in night_people:
-                    if person not in results:
-                        results[person] = {'total': 0, 'dates': []}
-                    results[person]['total'] = round(results[person]['total'] + per_person, 2)
-                    results[person]['dates'].append({
-                        'date': date,
-                        'shift': '夜班',
-                        'amount': round(per_person, 2)
-                    })
+            if not people:
+                continue
+            
+            per_person = amount / len(people)
+            detail_key = f"{date}_{shift_label}_单{item_no}"
+            daily_details[detail_key] = {
+                'total': round(amount, 2),
+                'people': len(people),
+                'per_person': round(per_person, 2),
+                'person_list': people,
+                'shift_label': shift_label,
+                'package': item.get('包裹号', ''),
+                'responsibility': item.get('_half_note', str(item.get('责任方', '')))
+            }
+            for person in people:
+                if person not in results:
+                    results[person] = {'total': 0, 'dates': []}
+                results[person]['total'] = round(results[person]['total'] + per_person, 2)
+                results[person]['dates'].append({
+                    'date': date,
+                    'shift': shift_label,
+                    'package': item.get('包裹号', ''),
+                    'amount': round(per_person, 2)
+                })
         
         # 汇总排序
         summary = [{'person': p, 'total': d['total'], 'details': d['dates']} 
@@ -840,8 +811,8 @@ def calculate_shared_expense():
             'success': True,
             'start_date': start_date,
             'end_date': end_date,
-            'total_damaged': round(sum(d['day'] + d['night'] for d in daily_damage.values()), 2),
-            'days_count': len(daily_damage),
+            'total_damaged': round(sum(float(i.get('金额', 0) or 0) for i in damaged_items), 2),
+            'days_count': len(set(str(i.get('日期','')) for i in damaged_items)),
             'people_count': len(results),
             'grand_total': round(grand_total, 2),
             'summary': summary,
@@ -903,16 +874,16 @@ def export_shared_expense():
         
         # 白班明细：按人名分组
         day_person_details = {}  # {人名: {日期: 金额}}
-        all_day_dates = sorted(day_details.keys())
+        all_day_dates = sorted(set(k.split('_')[0] for k in day_details.keys()))
         for key, info in day_details.items():
-            date = key.replace('_白班', '')
-            day_persons = info.get('day_persons', [])
+            date = key.split('_')[0]
+            people = info.get('person_list', [])
             per_person = info['per_person']
             
-            for person in day_persons:
+            for person in people:
                 if person not in day_person_details:
                     day_person_details[person] = {'总公摊': 0, '天数': 0}
-                day_person_details[person][date] = per_person
+                day_person_details[person][date] = day_person_details[person].get(date, 0) + per_person
                 day_person_details[person]['总公摊'] += per_person
                 day_person_details[person]['天数'] += 1
         
@@ -921,24 +892,23 @@ def export_shared_expense():
         for person, details in sorted(day_person_details.items(), key=lambda x: -x[1]['总公摊']):
             row = {'姓名': person, '总公摊': round(details['总公摊'], 2), '天数': details['天数']}
             for date in all_day_dates:
-                date_key = date.replace('_白班', '')
-                if date_key in details:
-                    row[date_key] = details[date_key]
+                if date in details:
+                    row[date] = details[date]
             day_rows.append(row)
         day_df = pd.DataFrame(day_rows)
         
         # 夜班明细：按人名分组
         night_person_details = {}
-        all_night_dates = sorted(night_details.keys())
+        all_night_dates = sorted(set(k.split('_')[0] for k in night_details.keys()))
         for key, info in night_details.items():
-            date = key.replace('_夜班', '')
-            night_persons = info.get('night_persons', [])
+            date = key.split('_')[0]
+            people = info.get('person_list', [])
             per_person = info['per_person']
             
-            for person in night_persons:
+            for person in people:
                 if person not in night_person_details:
                     night_person_details[person] = {'总公摊': 0, '天数': 0}
-                night_person_details[person][date] = per_person
+                night_person_details[person][date] = night_person_details[person].get(date, 0) + per_person
                 night_person_details[person]['总公摊'] += per_person
                 night_person_details[person]['天数'] += 1
         
@@ -947,9 +917,8 @@ def export_shared_expense():
         for person, details in sorted(night_person_details.items(), key=lambda x: -x[1]['总公摊']):
             row = {'姓名': person, '总公摊': round(details['总公摊'], 2), '天数': details['天数']}
             for date in all_night_dates:
-                date_key = date.replace('_夜班', '')
-                if date_key in details:
-                    row[date_key] = details[date_key]
+                if date in details:
+                    row[date] = details[date]
             night_rows.append(row)
         night_df = pd.DataFrame(night_rows)
         

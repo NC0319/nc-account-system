@@ -2916,6 +2916,7 @@ async function calculateShared(){
                 html += '<thead><tr style="background:linear-gradient(135deg,#7854f4,#5c3dde);color:white;">';
                 html += '<th style="padding:10px 8px;text-align:left;white-space:nowrap;">日期</th>';
                 html += '<th style="padding:10px 8px;text-align:center;white-space:nowrap;">班次</th>';
+                html += '<th style="padding:10px 8px;text-align:left;">包裹号</th>';
                 html += '<th style="padding:10px 8px;text-align:right;white-space:nowrap;">破损金额</th>';
                 html += '<th style="padding:10px 8px;text-align:center;white-space:nowrap;">人数</th>';
                 html += '<th style="padding:10px 8px;text-align:right;white-space:nowrap;">每人公摊</th>';
@@ -2925,14 +2926,18 @@ async function calculateShared(){
                 for(var ki=0; ki<sortedKeys.length; ki++){
                     var key = sortedKeys[ki];
                     var d = dailyDetails[key];
+                    var dateParts = key.split('_');
+                    var dateStr = dateParts[0];
+                    var pkg = d.package || '';
                     var isDay = d.shift_label === '白班';
                     var shiftColor = isDay ? '#ff9500' : '#5c3dde';
                     var shiftBg = isDay ? 'rgba(255,149,0,0.12)' : 'rgba(92,61,222,0.12)';
                     var rowBg = rowIdx%2===0 ? 'rgba(0,0,0,0.015)' : 'rgba(0,0,0,0)';
                     var persons = (d.person_list||[]).join('、');
                     html += '<tr style="background:'+rowBg+';border-bottom:1px solid rgba(0,0,0,0.06);">';
-                    html += '<td style="padding:10px 8px;font-weight:600;white-space:nowrap;">'+key.replace('_白班','').replace('_夜班','')+'</td>';
+                    html += '<td style="padding:10px 8px;font-weight:600;white-space:nowrap;">'+dateStr+'</td>';
                     html += '<td style="padding:10px 8px;text-align:center;"><span style="background:'+shiftBg+';color:'+shiftColor+';padding:2px 10px;border-radius:20px;font-size:12px;font-weight:600;">'+d.shift_label+'</span></td>';
+                    html += '<td style="padding:10px 8px;font-size:11px;color:#555;max-width:150px;word-break:break-all;">'+(pkg||'-')+'</td>';
                     html += '<td style="padding:10px 8px;text-align:right;font-weight:700;color:#ff3b30;">'+d.total+'元</td>';
                     html += '<td style="padding:10px 8px;text-align:center;color:#007aff;font-weight:600;">'+d.people+'人</td>';
                     html += '<td style="padding:10px 8px;text-align:right;font-weight:700;color:#34c759;font-size:14px;">'+d.per_person+'元</td>';
