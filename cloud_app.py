@@ -483,6 +483,8 @@ def calculate_shared_expense():
         end_date = request.form.get('end_date', '')
         keywords = request.form.get('keywords', '破损,买赔,赔')
         exclude_responsibility = request.form.get('exclude_resp', '')
+        resigned_input = request.form.get('resigned', '')
+        resigned_people = [p.strip() for p in resigned_input.split(',') if p.strip()] if resigned_input else []
         
         if not start_date or not end_date:
             return jsonify({'success': False, 'error': '请设置起止日期'}), 400
@@ -661,6 +663,20 @@ def calculate_shared_expense():
                 # 无法识别班次，归入全部
                 pass
         
+        # 剔除离职人员（从排班中移除）
+        if resigned_people:
+            print(f"需剔除离职人员: {resigned_people}")
+            removed_count = 0
+            for date in list(schedule.keys()):
+                info = schedule[date]
+                for fmt in info:
+                    if isinstance(info, dict):
+                        if isinstance(info[fmt], list):
+                            orig_len = len(info[fmt])
+                            info[fmt] = [p for p in info[fmt] if p not in resigned_people]
+                            removed_count += orig_len - len(info[fmt])
+            print(f"已从排班中剔除 {removed_count} 条离职人员记录")
+        
         # 自动识别单责任人（具体人名）- 包含以下特征的视为单责：
         # 1. 责任方只包含一个具体人名（如：张景莉、吴光辉）
         # 2. 不包含"共责"、"NC"、"验货"、"卸车"等共同责任关键词
@@ -819,7 +835,8 @@ def calculate_shared_expense():
             'daily_details': json.loads(json.dumps({k: {kk: (str(vv) if isinstance(vv, (np.integer, np.floating)) else list(vv) if isinstance(vv, (set, frozenset)) else (float(vv) if isinstance(vv, (int, float)) and not isinstance(vv, bool) else vv)) for kk, vv in v.items()} for k, v in daily_details.items()}, default=str)),
             'excluded_count': len(excluded_items),
             'excluded_list': excluded_items,
-            'half_list': [{'date': str(i.get('日期','')), 'package': i.get('包裹号',''), 'responsibility': i.get('责任方',''), 'original_amount': i.get('_original_amount', i.get('金额',0)), 'half_amount': i.get('金额',0)} for i in damaged_items if i.get('_half_note')]
+            'half_list': [{'date': str(i.get('日期','')), 'package': i.get('包裹号',''), 'responsibility': i.get('责任方',''), 'original_amount': i.get('_original_amount', i.get('金额',0)), 'half_amount': i.get('金额',0)} for i in damaged_items if i.get('_half_note')],
+            'resigned_people': resigned_people
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500

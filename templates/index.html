@@ -1324,12 +1324,17 @@
                     <div style="margin-top:8px;font-size:12px;color:#8e8e93;">排班文件需包含"日期"和"处理人/人员/姓名"列；不上传则自动使用台账中的班次和处理人信息</div>
                 </div>
                 <div style="margin-bottom:16px;">
-                    <h4 style="margin-bottom:10px;color:#1c1c1e;font-size:15px;">3. 排除的责任人名单</h4>
+                    <h4 style="margin-bottom:10px;color:#1c1c1e;font-size:15px;">4. 排除的责任人名单</h4>
                     <input type="text" class="form-control" id="excludeResp" placeholder="输入具体人名，用逗号分隔，如：张三,李四" value="" style="width:100%;">
                     <div style="margin-top:8px;font-size:12px;color:#8e8e93;">这些责任人的单子不计入公摊（如班次负责人）</div>
                 </div>
                 <div style="margin-bottom:16px;">
-                    <h4 style="margin-bottom:10px;color:#1c1c1e;font-size:15px;">4. 计算结果</h4>
+                    <h4 style="margin-bottom:10px;color:#1c1c1e;font-size:15px;">5. 离职人员名单</h4>
+                    <input type="text" class="form-control" id="resignedPeople" placeholder="输入离职人员姓名，用逗号分隔，如：王五,赵六" value="" style="width:100%;">
+                    <div style="margin-top:8px;font-size:12px;color:#8e8e93;">离职人员不参与公摊，其应分担部分由剩余在职人员均摊</div>
+                </div>
+                <div style="margin-bottom:16px;">
+                    <h4 style="margin-bottom:10px;color:#1c1c1e;font-size:15px;">6. 计算结果</h4>
                     <div id="sharedStats" style="display:none;margin-bottom:16px;">
                         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
                             <div style="padding:12px;background:rgba(120,84,244,0.1);border-radius:12px;text-align:center;">
@@ -2875,6 +2880,7 @@ async function calculateShared(){
     formData.append('end_date', endDate);
     formData.append('keywords', '破损,买赔,赔');
     formData.append('exclude_resp', document.getElementById('excludeResp').value || '');
+    formData.append('resigned', document.getElementById('resignedPeople').value || '');
     
     try{
         var r = await fetch('/api/calculate-shared', { method: 'POST', body: formData });
