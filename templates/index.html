@@ -2491,7 +2491,9 @@ async function submitBatch(){
 
 // Settings
 function openSettings(){
-    document.getElementById('colorScheme').value = localStorage.getItem('colorScheme') || 'purple';
+    // 修复：先检查元素是否存在再设置
+    var colorSchemeEl = document.getElementById('colorScheme');
+    if(colorSchemeEl) colorSchemeEl.value = localStorage.getItem('colorScheme') || 'purple';
     document.getElementById('animToggle').checked = localStorage.getItem('animation') !== 'false';
     document.getElementById('settingsModal').classList.add('show');
 }
