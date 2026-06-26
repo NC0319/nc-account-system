@@ -6,7 +6,7 @@
 """
 import os
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from flask import Flask, render_template, jsonify, request, send_file, Response
 import gzip
 import base64
@@ -85,7 +85,7 @@ def add_log(action, detail, user='system'):
                 logs = json.load(f)
         
         log_entry = {
-            'time': datetime.now().isoformat(),
+            'time': datetime.now(timezone.utc).isoformat(),
             'action': action,
             'detail': detail,
             'user': user,
@@ -137,7 +137,7 @@ def export_logs():
             csv_content += f'"{time_str}","{action}","{detail}","{user}","{ip}"\n'
         
         # 生成文件名
-        filename = f'操作日志_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+        filename = f'操作日志_{datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")}.csv'
         return send_file(
             io.BytesIO(csv_content.encode('utf-8-sig')),
             mimetype='text/csv',
@@ -165,7 +165,7 @@ def sync_to_github(data):
     """同步数据到GitHub（需要配置GITHUB_TOKEN环境变量）"""
     token = os.environ.get('GITHUB_TOKEN')
     if not token:
-        return False
+        return False, '未配置GITHUB_TOKEN'
     
     try:
         import requests
@@ -182,7 +182,8 @@ def sync_to_github(data):
             'Accept': 'application/vnd.github.v3+json'
         }
         
-        r = requests.get(api_url, headers=headers)
+        # 添加10秒超时，防止卡死
+        r = requests.get(api_url, headers=headers, timeout=10)
         sha = r.json().get('sha', '') if r.status_code == 200 else ''
         
         # 准备新内容
@@ -196,11 +197,15 @@ def sync_to_github(data):
             'sha': sha
         }
         
-        r = requests.put(api_url, headers=headers, json=payload)
-        return r.status_code in [200, 201]
+        r = requests.put(api_url, headers=headers, json=payload, timeout=10)
+        if r.status_code in [200, 201]:
+            return True, ''
+        else:
+            return False, f'GitHub API返回错误: {r.status_code} {r.text[:200]}'
     except Exception as e:
-        print(f"同步GitHub失败: {e}")
-        return False
+        err_msg = str(e)
+        print(f"同步GitHub失败: {err_msg}")
+        return False, err_msg
 
 def save_to_excel(data):
     """同步保存到Excel"""
@@ -1004,7 +1009,7 @@ def export_template():
                 adjusted_width = min(max_length + 2, 50)
                 ws.column_dimensions[column].width = adjusted_width
         
-        return send_file(excel_path, as_attachment=True, download_name=f'{export_type}_{datetime.now().strftime("%Y%m%d")}.xlsx')
+        return send_file(excel_path, as_attachment=True, download_name=f'{export_type}_{datetime.now(timezone.utc).strftime("%Y%m%d")}.xlsx')
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -1030,7 +1035,7 @@ def save_last_sync_time():
     """保存同步时间"""
     try:
         with open(LAST_SYNC_FILE, 'w') as f:
-            json.dump({'last_sync': datetime.now().isoformat()}, f)
+            json.dump({'last_sync': datetime.now(timezone.utc).isoformat()}, f)
     except:
         pass
 
@@ -1040,24 +1045,20 @@ def sync_status():
     return jsonify({
         'last_sync': get_last_sync_time(),
         'data_count': len(load_data()),
-        'server_time': datetime.now().isoformat()
+        'server_time': datetime.now(timezone.utc).isoformat()
     })
 
 @app.route('/api/manual-sync', methods=['POST'])
 def manual_sync():
     """手动触发同步"""
-    token = os.environ.get('GITHUB_TOKEN')
-    if not token:
-        return jsonify({'success': False, 'error': '未配置GITHUB_TOKEN，无法同步到GitHub'}), 500
-    
     try:
         data = load_data()
-        success = sync_to_github(data)
+        success, err_msg = sync_to_github(data)
         if success:
             save_last_sync_time()
             return jsonify({'success': True, 'message': '同步成功', 'data_count': len(data)})
         else:
-            return jsonify({'success': False, 'error': '同步失败，请检查GITHUB_TOKEN权限'}), 500
+            return jsonify({'success': False, 'error': err_msg}), 500
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -1068,7 +1069,7 @@ def schedule_sync():
         data = load_data()
         sync_to_github(data)
         save_last_sync_time()
-        return jsonify({'success': True, 'synced_at': datetime.now().isoformat()})
+        return jsonify({'success': True, 'synced_at': datetime.now(timezone.utc).isoformat()})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -1091,12 +1092,12 @@ def create_backup():
         ensure_backup_dir()
         
         data = load_data()
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        timestamp = datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')
         backup_file = os.path.join(BACKUP_DIR, f'backup_{timestamp}.json')
         
         with open(backup_file, 'w', encoding='utf-8') as f:
             json.dump({
-                'timestamp': datetime.now().isoformat(),
+                'timestamp': datetime.now(timezone.utc).isoformat(),
                 'data_count': len(data),
                 'data': data
             }, f, ensure_ascii=False, indent=2)
@@ -1136,7 +1137,7 @@ def get_backup_list():
             backups.append({
                 'filename': f,
                 'size': stat.st_size,
-                'time': datetime.fromtimestamp(stat.st_mtime).isoformat()
+                'time': datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).isoformat()
             })
         return backups
     except:
