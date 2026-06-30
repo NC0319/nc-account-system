@@ -159,7 +159,8 @@ def render_analysis_html_report(df):
             if prev_val and prev_val != 0:
                 chg = (amt - prev_val) / prev_val * 100
                 icon = '🔴↑' if chg > 0 else ('🟢↓' if chg < 0 else '⚪-')
-                chg_str = f'<span style="color:{\'#ef4444\' if chg>0 else \'#10b981\'}">{chg:+.1f}%</span>'
+                chg_color = "#ef4444" if chg > 0 else "#10b981"
+                chg_str = f'<span style="color:{chg_color}">{chg:+.1f}%</span>'
             else:
                 chg_str = '-'; icon = ''
             monthly_rows.append({'年月': str(row['年月']), '金额': amt, '变化': chg_str, '图标': icon})
