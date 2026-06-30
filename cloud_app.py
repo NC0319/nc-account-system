@@ -1248,6 +1248,8 @@ def api_analysis_generate():
         filenames = data.get('filenames', [])  # 上传的历史数据文件
         include_current = data.get('include_current', True)  # 是否包含当前系统数据
         
+        print(f"[DEBUG] 收到生成报告请求: filenames={filenames}, include_current={include_current}")
+        
         # 收集所有数据
         all_data = []
         
@@ -1255,29 +1257,37 @@ def api_analysis_generate():
         for filename in filenames:
             filepath = os.path.join(ANALYSIS_DIR, filename)
             if os.path.exists(filepath):
+                print(f"[DEBUG] 读取历史数据文件: {filepath}")
                 df = pd.read_excel(filepath)
                 df.columns = df.columns.str.strip()
                 all_data.append(df)
+                print(f"[DEBUG] 历史数据条数: {len(df)}")
         
         # 2. 读取当前系统数据
         if include_current:
+            print(f"[DEBUG] 读取当前系统数据...")
             current_data = load_data()
             if current_data:
                 df_current = pd.DataFrame(current_data)
                 all_data.append(df_current)
+                print(f"[DEBUG] 当前系统数据条数: {len(df_current)}")
         
         if not all_data:
             return jsonify({'success': False, 'error': '没有数据可用于分析'}), 400
         
         # 合并所有数据
         df_all = pd.concat(all_data, ignore_index=True)
+        print(f"[DEBUG] 合并后总数据条数: {len(df_all)}")
+        print(f"[DEBUG] 数据列名: {list(df_all.columns)}")
         
         # 生成报告（使用 openpyxl）
         report_filename = f"数据分析报告_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
         report_path = os.path.join(ANALYSIS_DIR, report_filename)
+        print(f"[DEBUG] 报告将保存到: {report_path}")
         
         # 调用报告生成函数
         generate_analysis_report(df_all, report_path)
+        print(f"[DEBUG] 报告生成成功: {report_filename}")
         
         return jsonify({
             'success': True,
@@ -1286,7 +1296,11 @@ def api_analysis_generate():
         })
         
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"[ERROR] 生成报告失败: {str(e)}")
+        print(f"[ERROR] 详细堆栈: {error_trace}")
+        return jsonify({'success': False, 'error': str(e), 'traceback': error_trace}), 500
 
 @app.route('/api/analysis/download/<filename>')
 def api_analysis_download(filename):
