@@ -58,28 +58,52 @@ def get_pdf_font():
 
 def render_analysis_html_report(df):
     """渲染精美HTML分析报告（支持浏览器打印为PDF），零依赖"""
-    import matplotlib
-    matplotlib.use('Agg')
-    import matplotlib.pyplot as plt
-    import base64, io
+    try:
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        import base64 as _b64, io as _io
+    except ImportError:
+        plt = None  # graceful fallback: no charts
+        _b64 = None; _io = None
 
-    # 中文字体
+    # ── 数据预处理：从日期字段派生年月信息 ──
+    if '日期' in df.columns and '年月' not in df.columns:
+        df = df.copy()
+        df['日期'] = df['日期'].astype(str).str.strip()
+        df['年月'] = df['日期'].str[:7]   # '2026-04-18' → '2026-04'
+        df['年份'] = df['日期'].str[:4].astype(str)
+        df['月份'] = df['日期'].str[5:7].astype(int)
+
+    # ── 确保金额为数值型 ──
+    if '金额' in df.columns:
+        df['金额'] = pd.to_numeric(df['金额'], errors='coerce').fillna(0)
+
+    # 中文字体（Mac + Linux）
     font_paths = [
         '/System/Library/Fonts/PingFang.ttc',
         '/System/Library/Fonts/STHeiti Light.ttc',
         '/System/Library/Fonts/Hiragino Sans GB.ttc',
+        '/usr/share/fonts/truetype/wqy/wqy-microhei.ttc',
+        '/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf',
+        '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc',
     ]
     chinese_font = next((f for f in font_paths if os.path.exists(f)), None)
 
     def make_chart(fig_size, func):
-        plt.rcParams['font.family'] = chinese_font or 'sans-serif'
-        plt.rcParams['axes.unicode_minus'] = False
-        fig, ax = func()
-        buf = io.BytesIO()
-        plt.savefig(buf, format='png', dpi=150, bbox_inches='tight', facecolor='white')
-        plt.close()
-        buf.seek(0)
-        return base64.b64encode(buf.read()).decode()
+        if plt is None: return None
+        try:
+            plt.rcParams['font.family'] = chinese_font or 'DejaVu Sans'
+            plt.rcParams['axes.unicode_minus'] = False
+            fig, ax = func()
+            buf = _io.BytesIO()
+            plt.savefig(buf, format='png', dpi=150, bbox_inches='tight', facecolor='white')
+            plt.close()
+            buf.seek(0)
+            return _b64.b64encode(buf.read()).decode()
+        except Exception as e:
+            print(f"[图表生成失败] {e}")
+            return None
 
     # ── 图表1：月度破损金额对比 ──
     chart_monthly = None
