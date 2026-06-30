@@ -67,10 +67,15 @@ def render_analysis_html_report(df):
         plt = None  # graceful fallback: no charts
         _b64 = None; _io = None
 
+    # ── 全面防御：强制列类型正确（防止 float 传给 re 函数）───
+    df = df.copy()  # 避免修改原数据
+    if '日期' in df.columns:
+        df['日期'] = df['日期'].apply(lambda x: '' if pd.isna(x) else str(x).strip())
+    if '金额' in df.columns:
+        df['金额'] = pd.to_numeric(df['金额'], errors='coerce').fillna(0)
+
     # ── 数据预处理：从日期字段派生年月信息 ──
     if '日期' in df.columns and '年月' not in df.columns:
-        df = df.copy()
-        df['日期'] = df['日期'].astype(str).str.strip()
         # 用 pd.to_datetime 解析（支持 '2026-04-18', '2026/4/18', '2026年4月18日' 等）
         date_parsed = pd.to_datetime(df['日期'], errors='coerce')
         df['年月'] = date_parsed.dt.strftime('%Y-%m').fillna('')
@@ -82,7 +87,13 @@ def render_analysis_html_report(df):
         if mask.sum() > 0:
             for idx in df.index[mask]:
                 ds = df.loc[idx, '日期']
-                parts = re.split(r'[/\-年]', ds)
+                # 防御：ds 可能是 float(nan)，必须先转 str
+                if not isinstance(ds, str) or pd.isna(ds):
+                    continue
+                ds = str(ds).strip()
+                if not ds or ds.lower() in ('nan', 'nat', ''):
+                    continue
+                parts = re.split(r'[/\\-年]', ds)
                 if len(parts) >= 2:
                     try:
                         y, m = int(parts[0]), int(parts[1])
