@@ -1730,15 +1730,18 @@ def api_analysis_generate():
         # 收集所有数据
         all_data = []
         
-        # 1. 读取上传的历史数据（带金额智能解析）
+        # 1. 读取上传的历史数据（复用台账系统完整解析逻辑）
         for filename in filenames:
             filepath = os.path.join(ANALYSIS_DIR, filename)
             if os.path.exists(filepath):
                 print(f"[DEBUG] 读取历史数据文件: {filepath}")
                 df = pd.read_excel(filepath)
-                df.columns = df.columns.str.strip()
+                # ── 关键修复：复用台账系统的标准化逻辑 ──
+                df = standardize_columns(df)  # 列名标准化（时间→日期、单号→凭证等）
+                if '日期' in df.columns:
+                    df['日期'] = df['日期'].apply(parse_date_flex)  # 日期解析
                 if '金额' in df.columns:
-                    df['金额'] = df['金额'].apply(parse_amount)
+                    df['金额'] = df['金额'].apply(parse_amount)  # 金额解析
                 all_data.append(df)
                 print(f"[DEBUG] 历史数据条数: {len(df)}")
 
