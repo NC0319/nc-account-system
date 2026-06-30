@@ -695,7 +695,7 @@ def export_excel():
     return send_file(excel_path, as_attachment=True)
 
 def standardize_columns(df):
-    """标准化列名，映射常见变体到标准字段名"""
+    """标准化列名，映射常见变体到标准字段名（含智能关键词匹配）"""
     column_mapping = {
         # 凭证相关
         '凭证号': '凭证',
@@ -703,7 +703,7 @@ def standardize_columns(df):
         '凭证编号': '凭证',
         # 路由相关
         '路由状态': '路由',
-        # 金额相关（新增）
+        # 金额相关（精确匹配）
         '破损金额': '金额',
         '赔偿金额': '金额',
         '金额(元)': '金额',
@@ -712,6 +712,17 @@ def standardize_columns(df):
         '货值': '金额',
         '价值': '金额',
         '单价': '金额',
+        '费用总额': '金额',
+        '总金额': '金额',
+        '费用': '金额',
+        '赔款': '金额',
+        '赔偿': '金额',
+        '损失': '金额',
+        '合计': '金额',
+        '金额合计': '金额',
+        '总计': '金额',
+        '总价': '金额',
+        '总价值': '金额',
         # 其他可能的变体
         '商品': '商品详情',
         '异常类型': '异常情况',
@@ -720,6 +731,14 @@ def standardize_columns(df):
         '回款': '回款情况',
     }
     df = df.rename(columns=column_mapping)
+
+    # ── 智能兜底：列名含关键词自动映射为“金额”──
+    if '金额' not in df.columns:
+        for col in df.columns:
+            if any(kw in str(col) for kw in ['金额', '价', '费', '赔', '损失', '款']):
+                df = df.rename(columns={col: '金额'})
+                break  # 只映射第一个匹配到的列
+
     return df
 
 def _parse_excel_to_records(file_source):
