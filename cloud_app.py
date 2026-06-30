@@ -72,8 +72,9 @@ def render_analysis_html_report(df):
         df = df.copy()
         df['日期'] = df['日期'].astype(str).str.strip()
         df['年月'] = df['日期'].str[:7]   # '2026-04-18' → '2026-04'
-        df['年份'] = df['日期'].str[:4].astype(str)
-        df['月份'] = df['日期'].str[5:7].astype(int)
+        # 数值型，支持 y > 2000 这样的比较
+        df['年份'] = pd.to_numeric(df['日期'].str[:4], errors='coerce')
+        df['月份'] = pd.to_numeric(df['日期'].str[5:7], errors='coerce')
 
     # ── 确保金额为数值型 ──
     if '金额' in df.columns:
