@@ -308,13 +308,19 @@
         
         // 生成报告
         async function generateReport() {
+            console.log('=== generateReport() 被调用 ===');
+            console.log('uploadedFiles:', uploadedFiles);
+            console.log('includeCurrent:', document.getElementById('includeCurrent').checked);
+            
             if (uploadedFiles.length === 0 && !document.getElementById('includeCurrent').checked) {
                 showToast('请至少上传一个历史数据文件，或勾选"包含当前系统数据"', 'warning');
+                console.log('校验失败：没有上传文件且未勾选当前数据');
                 return;
             }
             
             try {
                 showToast('正在生成分析报告，请稍候...', 'info');
+                console.log('开始调用 /api/analysis/generate...');
                 
                 const response = await fetch('/api/analysis/generate', {
                     method: 'POST',
