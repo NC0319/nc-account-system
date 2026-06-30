@@ -231,6 +231,70 @@ def render_analysis_html_report(df):
                 f"<div class='bar'><div class='fill' style='width:{min(pct,100):.1f}%'></div></div></td>" \
                 f"<td>{'🔴' if pct>20 else ('🟡' if pct>5 else '🟢')}</td></tr>"
 
+
+    # ── 逐月对比明细表（同比分析）──
+    month_compare_html = ''
+    if len(valid_years) >= 1 and '年月' in df.columns:
+        month_compare_html = '<div class="section page-break"><div class="section-title"><span>📊</span>逐月对比明细（同比分析）</div>' \
+            '<table class="month-compare-table"><thead><tr><th>月份</th>'
+        for y in valid_years:
+            month_compare_html += f'<th>{int(y)}年金额</th><th>同比</th>'
+        month_compare_html += '</tr></thead><tbody>'
+        for m in range(1, 13):
+            month_compare_html += f'<tr><td>{m}月</td>'
+            prev_amt = None
+            for y in valid_years:
+                amt = df[(df['年份']==y)&(df['月份']==m)]['金额'].sum()
+                if prev_amt is not None and prev_amt > 0 and amt > 0:
+                    chg = (amt - prev_amt) / prev_amt * 100
+                    chg_str = f'<span style="color:{"#ef4444" if chg>0 else "#10b981"}">{chg:+.1f}%</span>'
+                else:
+                    chg_str = '-'
+                month_compare_html += f'<td>¥{amt:,.0f}</td><td>{chg_str}</td>'
+                prev_amt = amt
+            month_compare_html += '</tr>'
+        month_compare_html += '</tbody></table></div>'
+
+    # ── 数据洞察与结论 ──
+    insights_html = '<div class="section page-break"><div class="section-title"><span>💡</span>数据洞察与结论</div><div class="insights-box">'
+    # 最高/最低月份
+    if '年月' in df.columns and len(df) > 0:
+        try:
+            monthly_amt = df.groupby('年月')['金额'].sum().reset_index().sort_values('年月')
+            if len(monthly_amt) > 0:
+                row_max = monthly_amt.loc[monthly_amt['金额'].idxmax()]
+                row_min = monthly_amt.loc[monthly_amt['金额'].idxmin()]
+                insights_html += f'<div class="insight-item">📌 <strong>破损金额最高的月份：</strong>{row_max["年月"]}（¥{row_max["金额"]:,.0f}）</div>'
+                if row_min["年月"] != row_max["年月"]:
+                    insights_html += f'<div class="insight-item">📌 <strong>破损金额最低的月份：</strong>{row_min["年月"]}（¥{row_min["金额"]:,.0f}）</div>'
+        except Exception as e:
+            print(f"洞察-月份分析失败: {e}")
+    # 责任方分析
+    if '责任方' in df.columns:
+        try:
+            resp = df.groupby('责任方')['金额'].sum().sort_values(ascending=False)
+            if len(resp) > 0:
+                top_resp = resp.index[0]
+                top_pct = resp.iloc[0] / total_amount * 100 if total_amount > 0 else 0
+                insights_html += f'<div class="insight-item">🏢 <strong>主要破损责任方：</strong>{top_resp}（占比{top_pct:.1f}%）——建议重点跟进！</div>'
+                if len(resp) >= 2:
+                    insights_html += f'<div class="insight-item">🏢 <strong>次要破损责任方：</strong>{resp.index[1]}（占比{resp.iloc[1]/total_amount*100:.1f}%）</div>'
+        except Exception as e:
+            print(f"洞察-责任方分析失败: {e}")
+    # 趋势预警
+    if '年月' in df.columns:
+        try:
+            monthly_sorted = df.groupby('年月')['金额'].sum().reset_index().sort_values('年月')
+            if len(monthly_sorted) >= 3:
+                last3 = monthly_sorted.tail(3)['金额'].values
+                if last3[-1] > last3[-2] and last3[-2] >= last3[-3]:
+                    insights_html += '<div class="insight-item">⚠️ <strong>趋势预警：</strong>破损金额连续上升，请立即排查原因！</div>'
+                elif last3[-1] < last3[-2] and last3[-2] <= last3[-3]:
+                    insights_html += '<div class="insight-item">✅ <strong>趋势向好：</strong>破损金额持续下降，管理措施有效！</div>'
+        except Exception as e:
+            print(f"洞察-趋势分析失败: {e}")
+    insights_html += '<div class="insight-item">📝 <strong>管理建议：</strong>建议每月复盘破损数据，对高频破损责任方和产品建立预警机制，及时采取改进措施。</div>'
+    insights_html += '</div></div>'
     years_str = ', '.join(f'{y}年' for y in valid_years) if valid_years else '-'
     chart_m_img = f'<img src="data:image/png;base64,{chart_monthly}" alt="月度对比">' if chart_monthly else '<p style="color:#9ca3af;padding:40px">数据不足</p>'
     chart_t_img = f'<img src="data:image/png;base64,{chart_trend}" alt="趋势">' if chart_trend else '<p style="color:#9ca3af;padding:40px">数据不足</p>'
@@ -275,6 +339,13 @@ body{{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backg
 .resp-table tr:nth-child(even) td{{background:#faf9ff}}
 .bar{{height:6px;background:#ede9fe;border-radius:3px;margin-top:4px}}
 .fill{{height:100%;background:linear-gradient(90deg,#6366F1,#a78bfa);border-radius:3px;transition:width .3s}}
+  .insights-box{{background:#faf9ff;border-radius:12px;padding:20px;border:1px solid #e9e3ff;margin-top:12px}}
+  .insight-item{{padding:10px 0;border-bottom:1px solid #f0eeff;font-size:13px;line-height:1.6}}
+  .insight-item:last-child{{border-bottom:none}}
+  .month-compare-table{{width:100%;border-collapse:collapse;font-size:12px}}
+  .month-compare-table th{{background:#5b21b6;color:white;padding:8px 10px;text-align:center}}
+  .month-compare-table td{{padding:8px 10px;text-align:center;border-bottom:1px solid #f0eeff}}
+  .month-compare-table tr:nth-child(even) td{{background:#faf9ff}}
 .footer{{text-align:center;padding-top:16px;margin-top:20px;border-top:1px solid #ede9fe;color:#9ca3af;font-size:11px}}
 .print-note{{background:#fef3c7;border-radius:8px;padding:10px 16px;margin-bottom:20px;font-size:12px;color:#92400e;text-align:center}}
 .no-print{{display:block}}
@@ -325,6 +396,8 @@ body{{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backg
     <tbody>{resp_rows}</tbody>
   </table>
 </div>
+{month_compare_html}
+{insights_html}
 <div class="footer">NC台账管理系统 · 数据分析报告 · Generated by QClaw</div>
 </div>
 </body>
