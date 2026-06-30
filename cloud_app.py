@@ -71,10 +71,27 @@ def render_analysis_html_report(df):
     if '日期' in df.columns and '年月' not in df.columns:
         df = df.copy()
         df['日期'] = df['日期'].astype(str).str.strip()
-        df['年月'] = df['日期'].str[:7]   # '2026-04-18' → '2026-04'
-        # 数值型，支持 y > 2000 这样的比较
-        df['年份'] = pd.to_numeric(df['日期'].str[:4], errors='coerce')
-        df['月份'] = pd.to_numeric(df['日期'].str[5:7], errors='coerce')
+        # 用 pd.to_datetime 解析（支持 '2026-04-18', '2026/4/18', '2026年4月18日' 等）
+        date_parsed = pd.to_datetime(df['日期'], errors='coerce')
+        df['年月'] = date_parsed.dt.strftime('%Y-%m').fillna('')
+        df['年份'] = date_parsed.dt.year.fillna(0).astype(int)
+        df['月份'] = date_parsed.dt.month.fillna(0).astype(int)
+        
+        # 对 pd.to_datetime 仍未解析的行，尝试从原始字符串提取年月
+        mask = df['年月'] == ''
+        if mask.sum() > 0:
+            for idx in df.index[mask]:
+                ds = df.loc[idx, '日期']
+                parts = re.split(r'[/\-年]', ds)
+                if len(parts) >= 2:
+                    try:
+                        y, m = int(parts[0]), int(parts[1])
+                        if 2000 <= y <= 2100 and 1 <= m <= 12:
+                            df.loc[idx, '年月'] = f'{y:04d}-{m:02d}'
+                            df.loc[idx, '年份'] = y
+                            df.loc[idx, '月份'] = m
+                    except:
+                        pass
 
     # ── 确保金额为数值型 ──
     if '金额' in df.columns:
@@ -715,7 +732,30 @@ def _parse_excel_to_records(file_source):
 
     # 标准化列名
     df = standardize_columns(df)
-    df['日期'] = pd.to_datetime(df['日期']).dt.strftime('%Y-%m-%d')
+    
+    # ── 日期解析：支持多种格式，失败则保留原字符串 ──
+    def parse_date_flex(s):
+        """尝试多种日期格式解析，失败返回原字符串"""
+        if pd.isna(s):
+            return ''
+        s = str(s).strip()
+        if not s:
+            return ''
+        # 尝试 pandas 智能解析
+        try:
+            return pd.to_datetime(s).strftime('%Y-%m-%d')
+        except Exception:
+            pass
+        # 尝试常见格式
+        for fmt in ('%Y/%m/%d', '%Y-%m-%d', '%Y年%m月%d日', '%d/%m/%Y', '%m/%d/%Y'):
+            try:
+                return pd.to_datetime(s, format=fmt).strftime('%Y-%m-%d')
+            except Exception:
+                continue
+        # 真的失败了，返回原字符串（后续还能从原始字符串提取年月）
+        return s
+    
+    df['日期'] = df['日期'].apply(parse_date_flex)
     df = df.fillna('')
     df = df[df['包裹号'].notna() & (df['包裹号'] != '')]
 
