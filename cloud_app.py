@@ -12,10 +12,298 @@ import gzip
 import base64
 import io
 import hashlib
+import re
 import numpy as np
 import pandas as pd
 
 app = Flask(__name__)
+
+
+# ========== 工具函数 ==========
+def parse_amount(value):
+    """智能解析金额：支持 ¥100, 1,000, 100元, 100.5 等各种格式，返回 float"""
+    if value is None:
+        return 0.0
+    if isinstance(value, (int, float)):
+        return float(value) if not pd.isna(value) else 0.0
+    s = str(value).strip()
+    if not s or s in ('nan', 'None', ''):
+        return 0.0
+    # 去除货币符号和文字
+    s = re.sub(r'[¥$€£元%\s,，]', '', s)
+    try:
+        return float(s)
+    except (ValueError, TypeError):
+        return 0.0
+
+
+def get_pdf_font():
+    """获取支持中文的 PDF 字体"""
+    try:
+        from fpdf import FPDF
+        # 尝试使用系统自带的中文字体
+        font_paths = [
+            '/System/Library/Fonts/PingFang.ttc',
+            '/System/Library/Fonts/STHeiti Light.ttc',
+            '/System/Library/Fonts/Hiragino Sans GB.ttc',
+            '/Library/Fonts/Arial Unicode.ttf',
+        ]
+        for fp in font_paths:
+            if os.path.exists(fp):
+                return fp
+        return None  # fpdf2 内置不支持中文，需要添加字体
+    except ImportError:
+        return None
+
+
+def render_analysis_html_report(df):
+    """渲染精美HTML分析报告（支持浏览器打印为PDF），零依赖"""
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    import base64, io
+
+    # 中文字体
+    font_paths = [
+        '/System/Library/Fonts/PingFang.ttc',
+        '/System/Library/Fonts/STHeiti Light.ttc',
+        '/System/Library/Fonts/Hiragino Sans GB.ttc',
+    ]
+    chinese_font = next((f for f in font_paths if os.path.exists(f)), None)
+
+    def make_chart(fig_size, func):
+        plt.rcParams['font.family'] = chinese_font or 'sans-serif'
+        plt.rcParams['axes.unicode_minus'] = False
+        fig, ax = func()
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png', dpi=150, bbox_inches='tight', facecolor='white')
+        plt.close()
+        buf.seek(0)
+        return base64.b64encode(buf.read()).decode()
+
+    # ── 图表1：月度破损金额对比 ──
+    chart_monthly = None
+    if '年月' in df.columns:
+        valid_years = sorted([y for y in df['年份'].dropna().unique() if y > 2000])
+        if valid_years:
+            def monthly_func():
+                fig, ax = plt.subplots(figsize=(12, 5))
+                colors = ['#6366F1', '#F59E0B']
+                x = list(range(1, 13))
+                for idx, y in enumerate(valid_years[-2:]):
+                    vals = [df[(df['年份']==y)&(df['月份']==m)]['金额'].sum()/10000 for m in range(1,13)]
+                    ax.bar([i+(idx-0.5)*0.35 for i in x], vals, 0.32,
+                           label=f'{int(y)}年', color=colors[idx], alpha=0.85)
+                ax.set_xlabel('月份', fontsize=11)
+                ax.set_ylabel('破损金额（万元）', fontsize=11)
+                ax.set_title('月度破损金额对比', fontsize=14, fontweight='bold')
+                ax.set_xticks(x); ax.set_xticklabels([f'{m}月' for m in x])
+                ax.legend(); ax.grid(axis='y', alpha=0.2)
+                ax.spines['top'].set_visible(False); ax.spines['right'].set_visible(False)
+                return fig, ax
+            try: chart_monthly = make_chart((12,5), monthly_func)
+            except Exception as e: print(f"图表monthly失败: {e}")
+
+    # ── 图表2：破损金额趋势折线图 ──
+    chart_trend = None
+    if '年月' in df.columns:
+        def trend_func():
+            fig, ax = plt.subplots(figsize=(12, 4.5))
+            monthly = df.groupby('年月')['金额'].sum().reset_index().sort_values('年月')
+            x, y = list(range(len(monthly))), monthly['金额'].values / 10000
+            ax.plot(x, y, marker='o', linewidth=2.5, markersize=7, color='#6366F1')
+            ax.fill_between(x, y, alpha=0.1, color='#6366F1')
+            mx = y.argmax()
+            ax.annotate(f'最高: {y[mx]:.2f}万', xy=(x[mx], y[mx]),
+                        xytext=(max(0,x[mx]-2), y[mx]+0.3),
+                        arrowprops=dict(arrowstyle='->', color='#EF4444'),
+                        fontsize=10, color='#EF4444')
+            ax.set_xlabel('月份', fontsize=11); ax.set_ylabel('破损金额（万元）', fontsize=11)
+            ax.set_title('破损金额趋势', fontsize=14, fontweight='bold')
+            ax.set_xticks(x); ax.set_xticklabels(monthly['年月'].values, rotation=45, ha='right', fontsize=9)
+            ax.grid(alpha=0.2); ax.spines['top'].set_visible(False); ax.spines['right'].set_visible(False)
+            return fig, ax
+        try: chart_trend = make_chart((12,4.5), trend_func)
+        except Exception as e: print(f"图表trend失败: {e}")
+
+    # ── 图表3：责任方饼图 ──
+    chart_pie = None
+    if '责任方' in df.columns:
+        resp = df.groupby('责任方')['金额'].sum().sort_values(ascending=False).head(8)
+        if len(resp) > 0:
+            def pie_func():
+                fig, ax = plt.subplots(figsize=(8, 6))
+                colors = ['#6366F1','#F59E0B','#10B981','#EF4444','#8B5CF6','#EC4899','#06B6D4','#84CC16']
+                wedges, texts, autotexts = ax.pie(resp.values, labels=resp.index, autopct='%1.1f%%',
+                                                  startangle=90, colors=colors[:len(resp)], pctdistance=0.75)
+                for at in autotexts: at.set_fontsize(9); at.set_color('white')
+                for t in texts: t.set_fontsize(9)
+                ax.set_title('责任方破损金额占比', fontsize=13, fontweight='bold')
+                return fig, ax
+            try: chart_pie = make_chart((8,6), pie_func)
+            except Exception as e: print(f"图表pie失败: {e}")
+
+    # ── 统计数据 ──
+    total_records = len(df)
+    total_amount = df['金额'].sum()
+    valid_amount_records = (df['金额'] > 0).sum()
+    valid_years = sorted([int(y) for y in df['年份'].dropna().unique() if y > 2000])
+
+    # 月度环比
+    monthly_rows = []
+    if '年月' in df.columns:
+        grp = df.groupby('年月')['金额'].sum().reset_index().sort_values('年月').tail(12)
+        prev_val = None
+        for _, row in grp.iterrows():
+            amt = row['金额']
+            if prev_val and prev_val != 0:
+                chg = (amt - prev_val) / prev_val * 100
+                icon = '🔴↑' if chg > 0 else ('🟢↓' if chg < 0 else '⚪-')
+                chg_str = f'<span style="color:{\'#ef4444\' if chg>0 else \'#10b981\'}">{chg:+.1f}%</span>'
+            else:
+                chg_str = '-'; icon = ''
+            monthly_rows.append({'年月': str(row['年月']), '金额': amt, '变化': chg_str, '图标': icon})
+            prev_val = amt
+
+    # 年同比
+    yoy_html = ''
+    if len(valid_years) >= 2:
+        y_c, y_p = valid_years[-1], valid_years[-2]
+        a_c = df[df['年份']==y_c]['金额'].sum()
+        a_p = df[df['年份']==y_p]['金额'].sum()
+        c_c = len(df[df['年份']==y_c])
+        c_p = len(df[df['年份']==y_p])
+        amt_chg = (a_c - a_p) / a_p * 100 if a_p > 0 else 0
+        clr = '#ef4444' if amt_chg > 0 else '#10b981'
+        yoy_html = f"<div class='yoy-block'>" \
+            f"<div class='yoy-item'><div class='yoy-label'>{y_p}年</div><div class='yoy-value' style='color:#6366F1'>¥{a_p:,.0f}</div><div class='yoy-count'>{c_p}条</div></div>" \
+            f"<div class='yoy-arrow'>→</div>" \
+            f"<div class='yoy-item'><div class='yoy-label'>{y_c}年</div><div class='yoy-value' style='color:#ef4444'>¥{a_c:,.0f}</div><div class='yoy-count'>{c_c}条</div></div>" \
+            f"<div class='yoy-chg'><span style='color:{clr}'>{'↑' if amt_chg>0 else '↓'} {abs(amt_chg):.1f}%</span></div></div>"
+
+    # 月度环比表格行
+    mid = len(monthly_rows) // 2
+    tbody = ''
+    for i in range(mid):
+        r1 = monthly_rows[i]
+        r2 = monthly_rows[i+mid] if i+mid < len(monthly_rows) else None
+        tbody += f"<tr><td>{r1['年月']}</td><td>¥{r1['金额']:,.0f}</td><td>{r1['变化']}</td><td>{r1['图标']}</td>"
+        if r2:
+            tbody += f"<td>{r2['年月']}</td><td>¥{r2['金额']:,.0f}</td><td>{r2['变化']}</td><td>{r2['图标']}</td></tr>"
+        else:
+            tbody += "<td>-</td><td>-</td><td>-</td><td>-</td></tr>"
+
+    # 责任方详细
+    resp_rows = ''
+    if '责任方' in df.columns:
+        rd = df.groupby('责任方').agg(次数=('金额','count'), 金额=('金额','sum')).reset_index().sort_values('金额', ascending=False)
+        for _, r in rd.iterrows():
+            pct = r['金额']/total_amount*100 if total_amount>0 else 0
+            resp_rows += f"<tr><td style='text-align:left;font-weight:600'>{str(r['责任方'])[:18]}</td>" \
+                f"<td>{int(r['次数'])}</td><td>¥{r['金额']:,.0f}</td>" \
+                f"<td><div style='font-weight:700;color:#5b21b6'>{pct:.1f}%</div>" \
+                f"<div class='bar'><div class='fill' style='width:{min(pct,100):.1f}%'></div></div></td>" \
+                f"<td>{'🔴' if pct>20 else ('🟡' if pct>5 else '🟢')}</td></tr>"
+
+    years_str = ', '.join(f'{y}年' for y in valid_years) if valid_years else '-'
+    chart_m_img = f'<img src="data:image/png;base64,{chart_monthly}" alt="月度对比">' if chart_monthly else '<p style="color:#9ca3af;padding:40px">数据不足</p>'
+    chart_t_img = f'<img src="data:image/png;base64,{chart_trend}" alt="趋势">' if chart_trend else '<p style="color:#9ca3af;padding:40px">数据不足</p>'
+    chart_p_img = f'<img src="data:image/png;base64,{chart_pie}" alt="饼图">' if chart_pie else '<p style="color:#9ca3af;padding:40px">数据不足</p>'
+
+    return f'''<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>NC台账数据分析报告</title>
+<style>
+@page{{size:A4;margin:15mm 15mm 20mm}}
+*{{box-sizing:border-box;margin:0;padding:0}}
+body{{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:#f8f7ff;color:#1e1b4b;font-size:13px;padding:20px}}
+.page{{background:white;border-radius:16px;padding:32px;max-width:210mm;margin:0 auto;box-shadow:0 4px 24px rgba(120,84,244,0.1)}}
+.report-header{{text-align:center;margin-bottom:28px;padding-bottom:20px;border-bottom:2px solid #ede9fe}}
+.report-title{{font-size:26px;font-weight:800;color:#5b21b6;margin-bottom:6px}}
+.report-meta{{color:#6b7280;font-size:12px;margin-top:6px}}
+.kpi-grid{{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px}}
+.kpi-card{{background:linear-gradient(135deg,#f5f3ff,#ede9fe);border-radius:14px;padding:18px 14px;text-align:center;border:1px solid #ddd6fe}}
+.kpi-value{{font-size:22px;font-weight:800;color:#5b21b6}}
+.kpi-sub{{color:#6b7280;font-size:11px;margin-top:4px}}
+.yoy-block{{display:flex;align-items:center;justify-content:center;gap:16px;margin:20px 0;padding:16px;background:#faf9ff;border-radius:12px;border:1px solid #e9e3ff}}
+.yoy-item{{text-align:center}}
+.yoy-label{{font-size:12px;color:#6b7280;margin-bottom:4px}}
+.yoy-value{{font-size:18px;font-weight:700}}
+.yoy-count{{font-size:11px;color:#9ca3af}}
+.yoy-arrow{{font-size:22px;color:#a78bfa}}
+.yoy-chg{{font-size:18px;font-weight:800;padding:8px 14px;background:white;border-radius:10px;border:1px solid #e9e3ff}}
+.section{{margin-bottom:28px}}
+.section-title{{font-size:16px;font-weight:700;color:#1e1b4b;margin-bottom:14px;padding-bottom:8px;border-bottom:2px solid #ede9fe;display:flex;align-items:center;gap:8px}}
+.chart-wrap{{background:#faf9ff;border-radius:12px;padding:16px;border:1px solid #ede9fe;text-align:center}}
+.chart-wrap img{{max-width:100%;height:auto;border-radius:8px}}
+.charts-row{{display:grid;grid-template-columns:1fr 1fr;gap:16px}}
+.monthly-table{{width:100%;border-collapse:collapse;font-size:12px}}
+.monthly-table th{{background:#5b21b6;color:white;padding:10px 12px;text-align:center;border-radius:8px}}
+.monthly-table td{{padding:9px 12px;text-align:center;border-bottom:1px solid #f0eeff}}
+.monthly-table tr:nth-child(even) td{{background:#faf9ff}}
+.resp-table{{width:100%;border-collapse:collapse;font-size:12px}}
+.resp-table th{{background:linear-gradient(135deg,#5b21b6,#7c3aed);color:white;padding:10px 14px;text-align:center}}
+.resp-table td{{padding:9px 14px;text-align:center;border-bottom:1px solid #f0eeff}}
+.resp-table tr:nth-child(even) td{{background:#faf9ff}}
+.bar{{height:6px;background:#ede9fe;border-radius:3px;margin-top:4px}}
+.fill{{height:100%;background:linear-gradient(90deg,#6366F1,#a78bfa);border-radius:3px;transition:width .3s}}
+.footer{{text-align:center;padding-top:16px;margin-top:20px;border-top:1px solid #ede9fe;color:#9ca3af;font-size:11px}}
+.print-note{{background:#fef3c7;border-radius:8px;padding:10px 16px;margin-bottom:20px;font-size:12px;color:#92400e;text-align:center}}
+.no-print{{display:block}}
+@media print{{body{{background:white;padding:0}}.page{{box-shadow:none;border-radius:0;padding:20px}}.no-print{{display:none!important}}.page-break{{page-break-after:always}}}}
+</style>
+</head>
+<body>
+<div class="page">
+<div class="print-note no-print">💡 <strong>打印PDF：</strong>按 <kbd>Ctrl+P</kbd>（Mac: <kbd>⌘P</kbd>）→ 目标选"保存为PDF" → 保存</div>
+<div class="report-header">
+  <div class="report-title">📊 NC台账数据分析报告</div>
+  <div class="report-meta">生成时间：{datetime.now().strftime('%Y-%m-%d %H:%M')} &nbsp;|&nbsp; NC台账管理系统</div>
+</div>
+<div class="kpi-grid">
+  <div class="kpi-card"><div class="kpi-value">{total_records}</div><div class="kpi-sub">总记录数</div></div>
+  <div class="kpi-card"><div class="kpi-value">¥{total_amount:,.0f}</div><div class="kpi-sub">总破损金额</div></div>
+  <div class="kpi-card"><div class="kpi-value">{valid_amount_records}</div><div class="kpi-sub">有金额记录</div></div>
+  <div class="kpi-card"><div class="kpi-value">{years_str}</div><div class="kpi-sub">覆盖年份</div></div>
+</div>
+{yoy_html}
+<div class="section page-break">
+  <div class="section-title"><span>📈</span>月度破损金额对比</div>
+  <div class="chart-wrap">{chart_m_img}</div>
+</div>
+<div class="section">
+  <div class="charts-row">
+    <div>
+      <div class="section-title"><span>📉</span>破损金额趋势</div>
+      <div class="chart-wrap">{chart_t_img}</div>
+    </div>
+    <div>
+      <div class="section-title"><span>🥧</span>责任方占比</div>
+      <div class="chart-wrap">{chart_p_img}</div>
+    </div>
+  </div>
+</div>
+<div class="section page-break">
+  <div class="section-title"><span>📅</span>月度环比分析（🔴↑上涨 🟢↓下降）</div>
+  <table class="monthly-table">
+    <thead><tr><th>月份</th><th>破损金额</th><th>环比变化</th><th>趋势</th><th>月份</th><th>破损金额</th><th>环比变化</th><th>趋势</th></tr></thead>
+    <tbody>{tbody}</tbody>
+  </table>
+</div>
+<div class="section">
+  <div class="section-title"><span>🏢</span>责任方详细数据</div>
+  <table class="resp-table">
+    <thead><tr><th>责任方</th><th>破损次数</th><th>破损金额</th><th>金额占比</th><th>等级</th></tr></thead>
+    <tbody>{resp_rows}</tbody>
+  </table>
+</div>
+<div class="footer">NC台账管理系统 · 数据分析报告 · Generated by QClaw</div>
+</div>
+</body>
+</html>'''
+
 
 # Gzip压缩 - 只压缩文本内容
 @app.after_request
@@ -300,7 +588,7 @@ def standardize_columns(df):
 
 def _parse_excel_to_records(file_source):
     """将Excel文件源(Base64字符串或文件对象)解析为记录列表
-    
+
     Args:
         file_source: Base64字符串(可含data:xxx;base64,前缀) 或 Flask FileStorage对象
     Returns:
@@ -316,17 +604,22 @@ def _parse_excel_to_records(file_source):
     else:
         # Flask FileStorage对象
         df = pd.read_excel(file_source)
-    
+
     # 标准化列名
     df = standardize_columns(df)
     df['日期'] = pd.to_datetime(df['日期']).dt.strftime('%Y-%m-%d')
     df = df.fillna('')
     df = df[df['包裹号'].notna() & (df['包裹号'] != '')]
-    
-    # 确保所有值为字符串基本类型
+
+    # 智能解析金额列（支持 ¥1,000 / 1000元 / 100 等各种格式）
+    if '金额' in df.columns:
+        df['金额'] = df['金额'].apply(lambda x: parse_amount(x))
+
+    # 其他列转为字符串
     for col in df.columns:
-        df[col] = df[col].apply(lambda x: '' if pd.isna(x) or str(x) == 'nan' else str(x))
-    
+        if col != '金额':
+            df[col] = df[col].apply(lambda x: '' if pd.isna(x) or str(x) == 'nan' else str(x))
+
     return df.to_dict('records')
 
 
@@ -745,7 +1038,7 @@ def calculate_shared_expense():
             has_amount = item.get('金额') is not None and item.get('金额') != ''
             
             if is_damaged and is_in_range and has_amount:
-                amount = float(item.get('金额', 0) or 0)
+                amount = parse_amount(item.get('金额'))
                 if amount > 0:
                     action, ratio = classify_responsibility(responsibility)
                     if action == 'exclude':
@@ -778,7 +1071,7 @@ def calculate_shared_expense():
             item_no += 1
             date = str(item.get('日期', '')).strip()
             shift = str(item.get('班次', '')).strip()
-            amount = float(item.get('金额', 0) or 0)
+            amount = parse_amount(item.get('金额'))
             if amount <= 0:
                 continue
             day_info = schedule.get(date, {})
@@ -832,7 +1125,7 @@ def calculate_shared_expense():
             'success': True,
             'start_date': start_date,
             'end_date': end_date,
-            'total_damaged': round(sum(float(i.get('金额', 0) or 0) for i in damaged_items), 2),
+            'total_damaged': round(sum(parse_amount(i.get('金额')) for i in damaged_items), 2),
             'days_count': len(set(str(i.get('日期','')) for i in damaged_items)),
             'people_count': len(results),
             'grand_total': round(grand_total, 2),
@@ -1253,22 +1546,26 @@ def api_analysis_generate():
         # 收集所有数据
         all_data = []
         
-        # 1. 读取上传的历史数据
+        # 1. 读取上传的历史数据（带金额智能解析）
         for filename in filenames:
             filepath = os.path.join(ANALYSIS_DIR, filename)
             if os.path.exists(filepath):
                 print(f"[DEBUG] 读取历史数据文件: {filepath}")
                 df = pd.read_excel(filepath)
                 df.columns = df.columns.str.strip()
+                if '金额' in df.columns:
+                    df['金额'] = df['金额'].apply(parse_amount)
                 all_data.append(df)
                 print(f"[DEBUG] 历史数据条数: {len(df)}")
-        
-        # 2. 读取当前系统数据
+
+        # 2. 读取当前系统数据（带金额智能解析）
         if include_current:
             print(f"[DEBUG] 读取当前系统数据...")
             current_data = load_data()
             if current_data:
                 df_current = pd.DataFrame(current_data)
+                if '金额' in df_current.columns:
+                    df_current['金额'] = df_current['金额'].apply(parse_amount)
                 all_data.append(df_current)
                 print(f"[DEBUG] 当前系统数据条数: {len(df_current)}")
         
@@ -1311,6 +1608,59 @@ def api_analysis_download(filename):
             return jsonify({'success': False, 'error': '文件不存在'}), 404
         return send_file(filepath, as_attachment=True, download_name=filename)
     except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/analysis/generate-pdf', methods=['POST'])
+def api_analysis_generate_pdf():
+    """生成精美的 PDF 分析报告"""
+    try:
+        data = request.get_json()
+        filenames = data.get('filenames', [])
+        include_current = data.get('include_current', True)
+
+        print(f"[PDF] 收到PDF生成请求: filenames={filenames}, include_current={include_current}")
+
+        # 收集数据（带金额预处理）
+        all_data = []
+        for filename in filenames:
+            filepath = os.path.join(ANALYSIS_DIR, filename)
+            if os.path.exists(filepath):
+                df = pd.read_excel(filepath)
+                df.columns = df.columns.str.strip()
+                if '金额' in df.columns:
+                    df['金额'] = df['金额'].apply(parse_amount)
+                all_data.append(df)
+
+        if include_current:
+            current_data = load_data()
+            if current_data:
+                df_cur = pd.DataFrame(current_data)
+                if '金额' in df_cur.columns:
+                    df_cur['金额'] = df_cur['金额'].apply(parse_amount)
+                all_data.append(df_cur)
+
+        if not all_data:
+            return jsonify({'success': False, 'error': '没有数据可用于分析'}), 400
+
+        df_all = pd.concat(all_data, ignore_index=True)
+        print(f"[PDF] 合并后总数据: {len(df_all)} 条")
+
+        # 生成精美 HTML 报告（浏览器 Ctrl+P 保存为 PDF）
+        report_filename = f"分析报告_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html"
+
+        html_content = render_analysis_html_report(df_all)
+        print(f"[PDF] HTML报告生成成功: {report_filename} ({len(html_content)} 字节)")
+
+        return jsonify({
+            'success': True,
+            'html': html_content,
+            'filename': report_filename
+        })
+
+    except Exception as e:
+        import traceback
+        print(f"[PDF ERROR] {str(e)}\n{traceback.format_exc()}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 def generate_analysis_report(df, output_path):

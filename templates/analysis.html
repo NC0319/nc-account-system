@@ -5,372 +5,667 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>数据分析报告 - NC台账管理系统</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <style>
         :root {
             --primary: #7854f4;
-            --primary-light: #a78bfa;
-            --bg: #f5f7fb;
-            --card-bg: rgba(255, 255, 255, 0.95);
-            --text: #1a1a2e;
+            --primary-light: #c084fc;
+            --primary-dark: #5b21b6;
+            --bg: #f0eeff;
+            --surface: rgba(255, 255, 255, 0.92);
+            --text: #1e1b4b;
             --text-secondary: #6b7280;
-            --radius: 20px;
-            --shadow: 0 8px 32px rgba(0,0,0,0.08);
+            --radius: 16px;
+            --shadow: 0 8px 32px rgba(120, 84, 244, 0.15);
+            --green: #10b981;
+            --red: #ef4444;
+            --amber: #f59e0b;
         }
-        
+
+        * { box-sizing: border-box; }
+
         body {
-            background: var(--bg);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            padding: 20px;
+            background: linear-gradient(135deg, #ede9fe 0%, #c7d2fe 50%, #fce7f3 100%);
             min-height: 100vh;
-        }
-        
-        .header {
-            background: linear-gradient(135deg, var(--primary), var(--primary-light));
-            color: white;
-            padding: 30px;
-            border-radius: var(--radius);
-            margin-bottom: 30px;
-            box-shadow: var(--shadow);
-        }
-        
-        .header h1 {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            padding: 24px 16px;
             margin: 0;
-            font-size: 28px;
-            font-weight: 700;
         }
-        
-        .card {
-            background: var(--card-bg);
-            border: none;
+
+        .container { max-width: 1100px; margin: 0 auto; }
+
+        /* 顶部卡片 */
+        .header-card {
+            background: linear-gradient(135deg, #7854f4 0%, #a78bfa 50%, #c084fc 100%);
             border-radius: var(--radius);
+            padding: 32px;
+            color: white;
+            margin-bottom: 24px;
+            box-shadow: 0 12px 40px rgba(120, 84, 244, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+        .header-card::before {
+            content: '';
+            position: absolute;
+            top: -60px; right: -40px;
+            width: 200px; height: 200px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 50%;
+        }
+        .header-card::after {
+            content: '';
+            position: absolute;
+            bottom: -80px; left: 20%;
+            width: 160px; height: 160px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50%;
+        }
+        .header-card h1 {
+            margin: 0 0 6px;
+            font-size: 26px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+        .header-card p { margin: 0; opacity: 0.85; font-size: 14px; }
+        .header-card .subtitle { font-size: 15px; margin-top: 4px; opacity: 0.9; }
+
+        /* 通用卡片 */
+        .glass-card {
+            background: var(--surface);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: var(--radius);
+            border: 1px solid rgba(255,255,255,0.6);
             box-shadow: var(--shadow);
             margin-bottom: 20px;
+            overflow: hidden;
         }
-        
-        .card-header {
-            background: transparent;
-            border-bottom: 2px solid #f0f0f0;
-            font-weight: 600;
-            padding: 20px;
+
+        .card-title {
+            padding: 18px 24px 14px;
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text);
+            border-bottom: 1px solid rgba(120, 84, 244, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
-        
-        .btn-primary {
-            background: var(--primary);
+        .card-title .icon {
+            font-size: 20px;
+        }
+
+        .card-body-custom {
+            padding: 20px 24px 24px;
+        }
+
+        /* 按钮 */
+        .btn-generate {
+            background: linear-gradient(135deg, #7854f4, #a78bfa);
+            color: white;
             border: none;
-            border-radius: 12px;
-            padding: 10px 24px;
-            font-weight: 600;
+            border-radius: 14px;
+            padding: 14px 28px;
+            font-size: 16px;
+            font-weight: 700;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 6px 20px rgba(120, 84, 244, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
-        
-        .btn-primary:hover {
-            background: var(--primary-light);
+        .btn-generate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(120, 84, 244, 0.45);
+            background: linear-gradient(135deg, #6d28d9, #7c3aed);
         }
-        
-        .upload-area {
-            border: 2px dashed var(--primary);
-            border-radius: var(--radius);
-            padding: 40px;
+        .btn-generate:active { transform: translateY(0); }
+
+        .btn-pdf {
+            background: linear-gradient(135deg, #dc2626, #ef4444);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            padding: 14px 28px;
+            font-size: 16px;
+            font-weight: 700;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 6px 20px rgba(220, 38, 38, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-pdf:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(220, 38, 38, 0.45);
+            background: linear-gradient(135deg, #b91c1c, #dc2626);
+        }
+        .btn-pdf:active { transform: translateY(0); }
+
+        /* 上传区域 */
+        .upload-zone {
+            border: 2.5px dashed #a78bfa;
+            border-radius: 14px;
+            padding: 36px 24px;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s;
+            background: rgba(120, 84, 244, 0.03);
         }
-        
-        .upload-area:hover {
-            background: rgba(120, 84, 244, 0.05);
+        .upload-zone:hover, .upload-zone.dragover {
+            border-color: #7854f4;
+            background: rgba(120, 84, 244, 0.07);
+            transform: scale(1.01);
         }
-        
-        .file-list {
-            margin-top: 20px;
-        }
-        
+        .upload-icon { font-size: 44px; color: #a78bfa; }
+        .upload-zone p { margin: 8px 0 0; color: var(--text-secondary); font-size: 13px; }
+
+        /* 文件列表 */
+        .file-list { margin-top: 14px; }
         .file-item {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            padding: 12px 16px;
-            background: #f9fafb;
-            border-radius: 12px;
+            justify-content: space-between;
+            padding: 10px 16px;
+            background: #f5f3ff;
+            border-radius: 10px;
             margin-bottom: 8px;
+            font-size: 13px;
+            border: 1px solid #ede9fe;
         }
-        
-        .toast-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 9999;
+        .file-item .name { display: flex; align-items: center; gap: 8px; color: var(--text); font-weight: 500; }
+        .file-item .remove {
+            background: none; border: none; color: #9ca3af;
+            cursor: pointer; font-size: 16px; padding: 0 4px;
+            transition: color 0.2s;
         }
-        
-        .toast {
+        .file-item .remove:hover { color: var(--red); }
+
+        /* 复选框美化 */
+        .form-check-input:checked { background-color: #7854f4; border-color: #7854f4; }
+        .form-check-label { font-size: 14px; color: var(--text); cursor: pointer; }
+
+        /* Toast */
+        .toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; }
+        .toast-msg {
             background: white;
             border-radius: 12px;
-            padding: 16px 20px;
+            padding: 14px 20px;
             margin-bottom: 10px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+            font-size: 14px;
+            font-weight: 500;
             animation: slideIn 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            max-width: 320px;
         }
-        
         @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
+            from { transform: translateX(120%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* 下载结果区 */
+        .result-card {
+            background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+            border: 1px solid #6ee7b7;
+            border-radius: var(--radius);
+            padding: 28px 24px;
+            text-align: center;
+            display: none;
+        }
+        .result-card.show { display: block; }
+        .result-icon { font-size: 52px; }
+        .result-title { font-size: 18px; font-weight: 700; color: #065f46; margin: 10px 0; }
+        .result-desc { color: #047857; font-size: 13px; margin-bottom: 18px; }
+
+        .btn-download {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #059669;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 12px 28px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(5, 150, 105, 0.35);
+        }
+        .btn-download:hover {
+            background: #047857;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(5, 150, 105, 0.45);
+            color: white;
+        }
+
+        .btn-download-pdf {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #dc2626;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 12px 28px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(220, 38, 38, 0.35);
+        }
+        .btn-download-pdf:hover {
+            background: #b91c1c;
+            transform: translateY(-2px);
+            color: white;
+        }
+
+        /* 按钮组 */
+        .btn-group { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+
+        /* KPI概览 */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .kpi-card {
+            background: linear-gradient(135deg, #f5f3ff, #ede9fe);
+            border-radius: 14px;
+            padding: 16px;
+            text-align: center;
+            border: 1px solid #ddd6fe;
+        }
+        .kpi-value { font-size: 22px; font-weight: 800; color: var(--primary); }
+        .kpi-label { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+
+        /* 加载动画 */
+        .spinner {
+            width: 20px; height: 20px;
+            border: 2.5px solid rgba(255,255,255,0.4);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* 空状态 */
+        .empty-hint {
+            text-align: center;
+            padding: 12px;
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        @media (max-width: 768px) {
+            .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+            .header-card { padding: 24px 20px; }
         }
     </style>
 </head>
 <body>
-    <!-- Toast 容器 -->
     <div class="toast-container" id="toastContainer"></div>
-    
-    <!-- 顶部导航 -->
-    <div class="header d-flex justify-content-between align-items-center">
-        <h1>📊 数据分析报告</h1>
-        <a href="/" class="btn btn-light btn-sm">← 返回主页</a>
-    </div>
-    
-    <div class="container-fluid">
-        <div class="row">
-            <!-- 左侧：上传区域 -->
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        📁 上传历史数据
-                    </div>
-                    <div class="card-body">
-                        <div class="upload-area" id="uploadArea">
-                            <i class="bi bi-cloud-upload" style="font-size: 48px; color: var(--primary);"></i>
-                            <p class="mt-3 mb-1">拖拽文件到此处，或点击上传</p>
-                            <p class="text-muted small">支持 .xlsx, .xls 格式</p>
-                            <input type="file" id="fileInput" multiple accept=".xlsx,.xls" style="display: none;">
+
+    <div class="container">
+        <!-- 标题区 -->
+        <div class="header-card">
+            <h1>📊 数据分析报告</h1>
+            <p class="subtitle">多维度深度分析 · 月度对比 · 同比变化 · 一键导出PDF</p>
+        </div>
+
+        <div class="row g-4">
+            <!-- 左侧 -->
+            <div class="col-lg-5">
+                <!-- KPI概览 -->
+                <div class="glass-card">
+                    <div class="card-title"><span class="icon">📈</span>当前数据概览</div>
+                    <div class="card-body-custom">
+                        <div class="kpi-grid">
+                            <div class="kpi-card">
+                                <div class="kpi-value" id="kpiTotal">—</div>
+                                <div class="kpi-label">总记录数</div>
+                            </div>
+                            <div class="kpi-card">
+                                <div class="kpi-value" id="kpiYears">—</div>
+                                <div class="kpi-label">覆盖年份</div>
+                            </div>
+                            <div class="kpi-card">
+                                <div class="kpi-value" id="kpiAmount">—</div>
+                                <div class="kpi-label">总金额(万)</div>
+                            </div>
                         </div>
-                        
-                        <div class="file-list" id="fileList"></div>
-                        
-                        <div class="mt-3">
-                            <label class="form-label">
-                                <input type="checkbox" id="includeCurrent" checked>
-                                包含当前系统数据（2026年）
+                        <div class="empty-hint" id="kpiHint">系统数据加载中...</div>
+                    </div>
+                </div>
+
+                <!-- 上传历史数据 -->
+                <div class="glass-card">
+                    <div class="card-title"><span class="icon">📂</span>上传历史数据</div>
+                    <div class="card-body-custom">
+                        <div class="upload-zone" id="uploadZone">
+                            <div class="upload-icon">☁️</div>
+                            <p style="font-weight:600; color: var(--primary);">点击上传 · 支持拖拽</p>
+                            <p>支持 .xlsx / .xls，可上传多年数据对比</p>
+                        </div>
+                        <input type="file" id="fileInput" multiple accept=".xlsx,.xls,.csv" style="display:none">
+
+                        <div class="file-list" id="fileList">
+                            <div class="empty-hint">暂未上传文件</div>
+                        </div>
+
+                        <div class="form-check mt-3">
+                            <input class="form-check-input" type="checkbox" id="includeCurrent" checked>
+                            <label class="form-check-label" for="includeCurrent">
+                                ✅ 包含当前系统数据（可直接对比分析）
                             </label>
                         </div>
                     </div>
                 </div>
             </div>
-            
-            <!-- 右侧：分析维度 + 生成按钮 -->
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        ⚙️ 分析维度
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label class="form-label">选择要分析的维度：</label>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="dimTime" checked>
-                                <label class="form-check-label" for="dimTime">📈 时间趋势分析</label>
+
+            <!-- 右侧 -->
+            <div class="col-lg-7">
+                <!-- 分析维度 -->
+                <div class="glass-card">
+                    <div class="card-title"><span class="icon">⚙️</span>分析维度（可多选）</div>
+                    <div class="card-body-custom">
+                        <div class="row g-2">
+                            <div class="col-6 col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="dimTime" checked>
+                                    <label class="form-check-label" for="dimTime">📈 时间趋势</label>
+                                </div>
                             </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="dimResponsible" checked>
-                                <label class="form-check-label" for="dimResponsible">🏢 责任方分析</label>
+                            <div class="col-6 col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="dimResp" checked>
+                                    <label class="form-check-label" for="dimResp">🏢 责任方分析</label>
+                                </div>
                             </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="dimProduct" checked>
-                                <label class="form-check-label" for="dimProduct">📦 商品分析</label>
+                            <div class="col-6 col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="dimProd" checked>
+                                    <label class="form-check-label" for="dimProd">📦 商品分析</label>
+                                </div>
                             </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="dimPerson" checked>
-                                <label class="form-check-label" for="dimPerson">👥 人员效率分析</label>
+                            <div class="col-6 col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="dimPerson">
+                                    <label class="form-check-label" for="dimPerson">👥 人员效率</label>
+                                </div>
                             </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="dimPayment" checked>
-                                <label class="form-check-label" for="dimPayment">💰 回款情况分析</label>
+                            <div class="col-6 col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="dimPay">
+                                    <label class="form-check-label" for="dimPay">💰 回款情况</label>
+                                </div>
                             </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="dimShift" checked>
-                                <label class="form-check-label" for="dimShift">📊 班次对比分析</label>
+                            <div class="col-6 col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="dimShift">
+                                    <label class="form-check-label" for="dimShift">📊 班次对比</label>
+                                </div>
                             </div>
                         </div>
-                        
-                        <button class="btn btn-primary w-100" onclick="generateReport()">
-                            📊 生成分析报告
-                        </button>
+
+                        <div class="btn-group">
+                            <button class="btn-generate" id="btnExcel" onclick="generateExcel()">
+                                <span>📊</span> 生成Excel报告
+                            </button>
+                            <button class="btn-pdf" id="btnPdf" onclick="generatePDF()">
+                                <span id="pdfSpinner" class="spinner" style="display:none;"></span>
+                                <span id="pdfBtnText">📄</span> 生成PDF报告
+                            </button>
+                        </div>
+
+                        <!-- 加载提示 -->
+                        <div id="loadingHint" style="display:none; text-align:center; margin-top:14px; color: var(--text-secondary); font-size:13px;">
+                            ⏳ 正在生成图表，请稍候...
+                        </div>
                     </div>
                 </div>
-                
-                <!-- 报告下载区域 -->
-                <div class="card mt-3" id="reportCard" style="display: none;">
-                    <div class="card-header">
-                        📥 报告生成完成
-                    </div>
-                    <div class="card-body text-center">
-                        <i class="bi bi-file-earmark-excel" style="font-size: 48px; color: #34c759;"></i>
-                        <p class="mt-3" id="reportName"></p>
-                        <a href="#" class="btn btn-success" id="downloadBtn" download>
-                            ⬇️ 下载报告
+
+                <!-- 结果区 -->
+                <div class="result-card" id="resultCard">
+                    <div class="result-icon">🎉</div>
+                    <div class="result-title" id="resultTitle">报告生成成功！</div>
+                    <div class="result-desc" id="resultDesc">点击下方按钮下载报告</div>
+                    <div class="btn-group" style="justify-content: center;">
+                        <a href="#" class="btn-download" id="downloadExcel" style="display:none;">
+                            ⬇️ 下载Excel报告
                         </a>
+                        <a href="#" class="btn-download-pdf" id="downloadPDF" style="display:none;">
+                            ⬇️ 下载PDF报告
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 使用说明 -->
+                <div class="glass-card mt-3">
+                    <div class="card-title"><span class="icon">💡</span>使用说明</div>
+                    <div class="card-body-custom" style="font-size:13px; color: var(--text-secondary); line-height: 1.8;">
+                        <p style="margin:0 0 8px;">① 上传历史年份的 <strong>.xlsx 台账文件</strong>（可选多年）</p>
+                        <p style="margin:0 0 8px;">② 勾选"包含当前系统数据"，可自动对比多年度变化</p>
+                        <p style="margin:0 0 8px;">③ 点击 <strong>生成PDF报告</strong>，获得精美图文报告（含图表、环比分析）</p>
+                        <p style="margin:0;">④ 点击 <strong>生成Excel报告</strong>，获得详细数据表格</p>
+                        <p style="margin: 10px 0 0; padding: 10px; background: #fef3c7; border-radius: 8px; color: #92400e; font-size: 12px;">
+                            ⚠️ PDF报告包含：月度对比图、趋势折线图、责任方饼图、环比百分比、年度同比分析
+                        </p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    
+
     <script>
         let uploadedFiles = [];
-        
-        // 上传区域点击事件
-        document.getElementById('uploadArea').addEventListener('click', () => {
-            document.getElementById('fileInput').click();
-        });
-        
-        // 文件选择事件
-        document.getElementById('fileInput').addEventListener('change', async (e) => {
-            const files = e.target.files;
-            if (files.length === 0) return;
-            
-            for (let file of files) {
-                await uploadFile(file);
+        let lastExcelResult = null;
+        let lastPDFResult = null;
+
+        // ===== 加载系统数据概览 =====
+        async function loadStats() {
+            try {
+                const res = await fetch('/api/data');
+                const data = await res.json();
+                const records = data.data || [];
+                if (records.length > 0) {
+                    const amounts = records.map(r => parseFloat(r['金额'] || 0));
+                    const totalAmt = amounts.reduce((a, b) => a + b, 0);
+                    const years = [...new Set(records.map(r => String(r['日期'] || '').slice(0, 4)))].filter(y => y.length === 4);
+
+                    document.getElementById('kpiTotal').textContent = records.length;
+                    document.getElementById('kpiYears').textContent = years.length >= 1 ? (years.length === 1 ? years[0] + '年' : years[0] + '~' + years[years.length-1]) : '—';
+                    document.getElementById('kpiAmount').textContent = totalAmt > 0 ? (totalAmt / 10000).toFixed(1) + '万' : '—';
+                    document.getElementById('kpiHint').textContent = `共 ${records.length} 条记录，已自动纳入分析`;
+                }
+            } catch(e) {
+                document.getElementById('kpiHint').textContent = '无法加载系统数据，请检查网络';
             }
-            
-            // 清空 input，允许重复选择同一文件
+        }
+        loadStats();
+
+        // ===== 上传 =====
+        const uploadZone = document.getElementById('uploadZone');
+        uploadZone.addEventListener('click', () => document.getElementById('fileInput').click());
+        uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+        uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+        uploadZone.addEventListener('drop', e => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            for (let f of e.dataTransfer.files) uploadFile(f);
+        });
+        document.getElementById('fileInput').addEventListener('change', e => {
+            for (let f of e.target.files) uploadFile(f);
             e.target.value = '';
         });
-        
-        // 拖拽上传
-        const uploadArea = document.getElementById('uploadArea');
-        uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadArea.style.background = 'rgba(120, 84, 244, 0.1)';
-        });
-        uploadArea.addEventListener('dragleave', () => {
-            uploadArea.style.background = '';
-        });
-        uploadArea.addEventListener('drop', async (e) => {
-            e.preventDefault();
-            uploadArea.style.background = '';
-            
-            const files = e.dataTransfer.files;
-            for (let file of files) {
-                await uploadFile(file);
-            }
-        });
-        
-        // 上传文件
+
         async function uploadFile(file) {
             const formData = new FormData();
             formData.append('file', file);
-            
+            showToast('⬆️ 正在上传 ' + file.name + '...', 'info');
             try {
-                showToast('正在上传 ' + file.name + '...', 'info');
-                
-                const response = await fetch('/api/analysis/upload', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                const result = await response.json();
-                
+                const res = await fetch('/api/analysis/upload', { method: 'POST', body: formData });
+                const result = await res.json();
                 if (result.success) {
                     uploadedFiles.push(result.filename);
-                    showToast('✅ ' + file.name + ' 上传成功！', 'success');
+                    showToast('✅ ' + file.name + ' 上传成功（' + result.record_count + '条）', 'success');
                     renderFileList();
+                    // 更新kpi
+                    if (result.years && result.years.length > 0) {
+                        const el = document.getElementById('kpiYears');
+                        const current = el.textContent;
+                        const newY = result.years.map(y => y + '年').join(', ');
+                        el.textContent = current.includes('~') ? current + '、' + newY : (current.includes('年') ? current + '~' + newY : newY);
+                    }
                 } else {
-                    showToast('❌ 上传失败：' + result.error, 'error');
+                    showToast('❌ ' + result.error, 'error');
                 }
-            } catch (error) {
-                showToast('❌ 上传失败：' + error.message, 'error');
+            } catch(e) {
+                showToast('❌ 上传失败: ' + e.message, 'error');
             }
         }
-        
-        // 渲染文件列表
+
         function renderFileList() {
-            const fileList = document.getElementById('fileList');
+            const el = document.getElementById('fileList');
             if (uploadedFiles.length === 0) {
-                fileList.innerHTML = '<p class="text-muted text-center">暂无上传的文件</p>';
+                el.innerHTML = '<div class="empty-hint">暂未上传文件</div>';
                 return;
             }
-            
-            fileList.innerHTML = uploadedFiles.map((filename, index) => `
+            el.innerHTML = uploadedFiles.map((f, i) => `
                 <div class="file-item">
-                    <div>
-                        <i class="bi bi-file-earmark-excel text-success"></i>
-                        <span class="ms-2">${filename}</span>
-                    </div>
-                    <button class="btn btn-sm btn-outline-danger" onclick="removeFile(${index})">
-                        ✕
-                    </button>
+                    <span class="name">📋 <span style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${f}</span></span>
+                    <button class="remove" onclick="removeFile(${i})">✕</button>
                 </div>
             `).join('');
         }
-        
-        // 删除文件
-        function removeFile(index) {
-            uploadedFiles.splice(index, 1);
-            renderFileList();
-        }
-        
-        // 生成报告
-        async function generateReport() {
-            console.log('=== generateReport() 被调用 ===');
-            console.log('uploadedFiles:', uploadedFiles);
-            console.log('includeCurrent:', document.getElementById('includeCurrent').checked);
-            
+        function removeFile(i) { uploadedFiles.splice(i, 1); renderFileList(); }
+
+        // ===== 生成Excel =====
+        async function generateExcel() {
             if (uploadedFiles.length === 0 && !document.getElementById('includeCurrent').checked) {
-                showToast('请至少上传一个历史数据文件，或勾选"包含当前系统数据"', 'warning');
-                console.log('校验失败：没有上传文件且未勾选当前数据');
+                showToast('⚠️ 请上传历史数据文件，或勾选"包含当前系统数据"', 'warning');
                 return;
             }
-            
+            const btn = document.getElementById('btnExcel');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> 生成中...';
+            showToast('⏳ 正在生成Excel报告...', 'info');
+
             try {
-                showToast('正在生成分析报告，请稍候...', 'info');
-                console.log('开始调用 /api/analysis/generate...');
-                
-                const response = await fetch('/api/analysis/generate', {
+                const res = await fetch('/api/analysis/generate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         filenames: uploadedFiles,
-                        include_current: document.getElementById('includeCurrent').checked,
-                        dimensions: {
-                            time: document.getElementById('dimTime').checked,
-                            responsible: document.getElementById('dimResponsible').checked,
-                            product: document.getElementById('dimProduct').checked,
-                            person: document.getElementById('dimPerson').checked,
-                            payment: document.getElementById('dimPayment').checked,
-                            shift: document.getElementById('dimShift').checked
-                        }
+                        include_current: document.getElementById('includeCurrent').checked
                     })
                 });
-                
-                const result = await response.json();
-                
+                const result = await res.json();
                 if (result.success) {
-                    showToast('✅ 报告生成成功！', 'success');
-                    
-                    // 显示下载区域
-                    document.getElementById('reportCard').style.display = 'block';
-                    document.getElementById('reportName').textContent = result.report_filename;
-                    document.getElementById('downloadBtn').href = result.download_url;
+                    lastExcelResult = result;
+                    showToast('✅ Excel报告生成成功！', 'success');
+                    showResult('excel', result.report_filename, result.download_url);
                 } else {
-                    showToast('❌ 生成失败：' + result.error, 'error');
+                    showToast('❌ ' + result.error, 'error');
                 }
-            } catch (error) {
-                showToast('❌ 生成失败：' + error.message, 'error');
+            } catch(e) {
+                showToast('❌ 生成失败: ' + e.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<span>📊</span> 生成Excel报告';
             }
         }
-        
-        // 显示 Toast 提示
-        function showToast(msg, type) {
-            type = type || 'success';
-            const toast = document.createElement('div');
-            toast.className = 'toast';
-            toast.style.borderLeft = type === 'success' ? '4px solid #34c759' : 
-                                    type === 'error' ? '4px solid #ff3b30' :
-                                    type === 'warning' ? '4px solid #ff9500' : '4px solid #007aff';
-            toast.textContent = msg;
-            document.getElementById('toastContainer').appendChild(toast);
-            setTimeout(() => toast.remove(), 3000);
+
+        // ===== 生成PDF =====
+        async function generatePDF() {
+            if (uploadedFiles.length === 0 && !document.getElementById('includeCurrent').checked) {
+                showToast('⚠️ 请上传历史数据文件，或勾选"包含当前系统数据"', 'warning');
+                return;
+            }
+            const spinner = document.getElementById('pdfSpinner');
+            const btnText = document.getElementById('pdfBtnText');
+            const btn = document.getElementById('btnPdf');
+            spinner.style.display = 'inline-block';
+            btnText.textContent = ' 生成中...';
+            btn.disabled = true;
+            showToast('⏳ 正在生成PDF精美报告（含图表），请稍候...', 'info');
+            document.getElementById('loadingHint').style.display = 'block';
+
+            try {
+                const res = await fetch('/api/analysis/generate-pdf', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        filenames: uploadedFiles,
+                        include_current: document.getElementById('includeCurrent').checked
+                    })
+                });
+                const result = await res.json();
+                if (result.success && result.html) {
+                    // 在新窗口打开HTML报告 → Ctrl+P保存为PDF
+                    const win = window.open('', '_blank');
+                    win.document.write(result.html);
+                    win.document.close();
+                    showToast('✅ 报告已在新窗口打开！按 Ctrl+P（Mac: ⌘P）→ 保存为PDF', 'success');
+                    document.getElementById('resultCard').classList.add('show');
+                    document.getElementById('resultTitle').textContent = '📄 PDF报告已生成！';
+                    document.getElementById('resultDesc').textContent = '在新窗口中打开，按 Ctrl+P 保存为PDF文件';
+                    document.getElementById('downloadExcel').style.display = 'none';
+                    document.getElementById('downloadPDF').style.display = 'none';
+                } else {
+                    showToast('❌ ' + result.error, 'error');
+                }
+            } catch(e) {
+                showToast('❌ 生成失败: ' + e.message, 'error');
+            } finally {
+                spinner.style.display = 'none';
+                btnText.textContent = '📄';
+                btn.disabled = false;
+                document.getElementById('loadingHint').style.display = 'none';
+            }
         }
-        
-        // 初始化文件列表
-        renderFileList();
+
+        // ===== 显示结果 =====
+        function showResult(type, filename, url) {
+            const card = document.getElementById('resultCard');
+            card.classList.add('show');
+            if (type === 'excel') {
+                document.getElementById('downloadExcel').style.display = 'inline-flex';
+                document.getElementById('downloadExcel').href = url;
+                document.getElementById('downloadExcel').download = filename;
+            } else if (type === 'pdf') {
+                document.getElementById('downloadPDF').style.display = 'inline-flex';
+                document.getElementById('downloadPDF').href = url;
+                document.getElementById('downloadPDF').download = filename;
+            }
+            card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // ===== Toast =====
+        function showToast(msg, type) {
+            const colors = {
+                success: '#10b981', error: '#ef4444', warning: '#f59e0b', info: '#7854f4'
+            };
+            const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+            const t = document.createElement('div');
+            t.className = 'toast-msg';
+            t.style.borderLeft = '4px solid ' + (colors[type] || colors.info);
+            t.innerHTML = `<span>${icons[type] || icons.info}</span><span>${msg}</span>`;
+            document.getElementById('toastContainer').appendChild(t);
+            setTimeout(() => t.remove(), 4000);
+        }
     </script>
 </body>
 </html>
