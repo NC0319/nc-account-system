@@ -1858,14 +1858,22 @@ def generate_analysis_report(df, output_path):
     from openpyxl.utils import get_column_letter
 
     # ========== 数据预处理 ==========
-    if '金额' in df.columns:
-        df['金额'] = pd.to_numeric(df['金额'], errors='coerce').fillna(0)
+    # ── 日期解析：统一使用 parse_date_flex（与台账系统一致）──
     if '日期' in df.columns:
+        df['日期'] = df['日期'].apply(lambda x: parse_date_flex(x) if pd.notna(x) else '')
+        # 将解析后的日期字符串转为 datetime
         df['日期'] = pd.to_datetime(df['日期'], errors='coerce')
         df['年份'] = df['日期'].dt.year.fillna(0).astype(int)
         df['月份'] = df['日期'].dt.month.fillna(0).astype(int)
         df['年月'] = df['日期'].dt.to_period('M').astype(str)
-        df['年月'].fillna('未知', inplace=True)
+        df['年月'] = df['年月'].replace('NaT', '未知')
+    else:
+        df['年份'] = 0
+        df['月份'] = 0
+        df['年月'] = '未知'
+    
+    if '金额' in df.columns:
+        df['金额'] = pd.to_numeric(df['金额'], errors='coerce').fillna(0)
 
     # 样式定义
     hdr_font = Font(bold=True, size=11)
