@@ -1318,91 +1318,143 @@ def generate_analysis_report(df, output_path):
     import openpyxl
     from openpyxl.styles import Font, PatternFill, Alignment
     from openpyxl.chart import BarChart, LineChart, Reference
-    
+
+    # ========== 数据预处理 ==========
+    # 1. 金额列统一转为数值（原始数据有空字符串）
+    if '金额' in df.columns:
+        df['金额'] = pd.to_numeric(df['金额'], errors='coerce').fillna(0)
+
+    # 2. 日期列标准化
+    if '日期' in df.columns:
+        df['日期'] = pd.to_datetime(df['日期'], errors='coerce')
+        df['年月'] = df['日期'].dt.to_period('M').astype(str)
+        df['年月'].fillna('未知', inplace=True)
+
     # 创建 Excel 工作簿
     wb = openpyxl.Workbook()
-    
+
     # ========== Sheet 1: 总览 ==========
     ws_overview = wb.active
     ws_overview.title = "总览"
-    
+
     # 标题
     ws_overview['A1'] = "NC台账数据分析报告"
     ws_overview['A1'].font = Font(size=16, bold=True)
     ws_overview['A3'] = f"生成时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
     ws_overview['A4'] = f"数据总条数: {len(df)}"
-    
+
     # 基本统计
     ws_overview['A6'] = "基本统计"
     ws_overview['A6'].font = Font(bold=True)
-    
+
     row = 7
     if '日期' in df.columns:
-        try:
-            df['日期'] = pd.to_datetime(df['日期'], errors='coerce')
+        valid_dates = df['日期'].dropna()
+        if len(valid_dates) > 0:
             ws_overview[f'A{row}'] = "数据时间范围:"
-            ws_overview[f'B{row}'] = f"{df['日期'].min().strftime('%Y-%m-%d')} 至 {df['日期'].max().strftime('%Y-%m-%d')}"
+            ws_overview[f'B{row}'] = f"{valid_dates.min().strftime('%Y-%m-%d')} 至 {valid_dates.max().strftime('%Y-%m-%d')}"
             row += 1
-        except:
-            pass
-    
+
     if '金额' in df.columns:
+        total_amount = df['金额'].sum()
         ws_overview[f'A{row}'] = "总破损金额:"
-        ws_overview[f'B{row}'] = f"¥{df['金额'].sum():.2f}"
+        ws_overview[f'B{row}'] = f"¥{total_amount:.2f}"
         row += 1
-    
+        amount_records = (df['金额'] > 0).sum()
+        ws_overview[f'A{row}'] = "有金额记录的条数:"
+        ws_overview[f'B{row}'] = int(amount_records)
+        row += 1
+
     # ========== Sheet 2: 时间趋势 ==========
-    if '日期' in df.columns:
+    if '日期' in df.columns and '金额' in df.columns:
         ws_trend = wb.create_sheet("时间趋势")
-        
-        # 按年月汇总
-        df['年月'] = df['日期'].dt.to_period('M').astype(str)
-        
-        # 月度破损金额
+
         monthly_amount = df.groupby('年月')['金额'].sum().reset_index()
+        monthly_amount.columns = ['年月', '破损金额']
+
         ws_trend['A1'] = "月度破损金额统计"
         ws_trend['A1'].font = Font(bold=True)
-        
+
         ws_trend['A3'] = "年月"
         ws_trend['B3'] = "破损金额"
-        for i, (_, row_data) in enumerate(monthly_amount.iterrows(), start=4):
-            ws_trend[f'A{i}'] = row_data['年月']
-            ws_trend[f'B{i}'] = float(row_data['金额'])
-        
-        # 创建图表
-        chart = LineChart()
-        chart.title = "月度破损金额趋势"
-        chart.style = 10
-        chart.y_axis.title = "金额"
-        chart.x_axis.title = "年月"
-        
-        data = Reference(ws_trend, min_col=2, min_row=3, max_row=3+len(monthly_amount))
-        cats = Reference(ws_trend, min_col=1, min_row=4, max_row=3+len(monthly_amount))
-        chart.add_data(data, titles_from_data=True)
-        chart.set_categories(cats)
-        ws_trend.add_chart(chart, "D3")
-    
+        for i, (_, r) in enumerate(monthly_amount.iterrows(), start=4):
+            ws_trend[f'A{i}'] = str(r['年月'])
+            ws_trend[f'B{i}'] = float(r['破损金额'])
+
+        if len(monthly_amount) >= 2:
+            chart = LineChart()
+            chart.title = "月度破损金额趋势"
+            chart.style = 10
+            chart.y_axis.title = "金额 (¥)"
+            chart.x_axis.title = "年月"
+
+            data_ref = Reference(ws_trend, min_col=2, min_row=3, max_row=3+len(monthly_amount))
+            cat_ref = Reference(ws_trend, min_col=1, min_row=4, max_row=3+len(monthly_amount))
+            chart.add_data(data_ref, titles_from_data=True)
+            chart.set_categories(cat_ref)
+            chart.width = 20
+            chart.height = 12
+            ws_trend.add_chart(chart, "D3")
+
     # ========== Sheet 3: 责任方分析 ==========
-    if '责任方' in df.columns:
+    if '责任方' in df.columns and '金额' in df.columns:
         ws_responsible = wb.create_sheet("责任方分析")
-        
-        responsible_stats = df.groupby('责任方').agg({
-            '金额': 'sum',
-            '日期': 'count'
-        }).rename(columns={'日期': '次数'})
-        
+
+        responsible_stats = df.groupby('责任方').agg(
+            破损次数=('日期', 'count'),
+            破损金额=('金额', 'sum')
+        ).reset_index().sort_values('破损金额', ascending=False)
+
         ws_responsible['A1'] = "责任方统计"
         ws_responsible['A1'].font = Font(bold=True)
-        
+
         ws_responsible['A3'] = "责任方"
         ws_responsible['B3'] = "破损次数"
         ws_responsible['C3'] = "破损金额"
-        
-        for i, (name, row_data) in enumerate(responsible_stats.iterrows(), start=4):
-            ws_responsible[f'A{i}'] = name
-            ws_responsible[f'B{i}'] = int(row_data['次数'])
-            ws_responsible[f'C{i}'] = float(row_data['金额'])
-    
+
+        for i, (_, r) in enumerate(responsible_stats.iterrows(), start=4):
+            ws_responsible[f'A{i}'] = str(r['责任方'])
+            ws_responsible[f'B{i}'] = int(r['破损次数'])
+            ws_responsible[f'C{i}'] = float(r['破损金额'])
+
+    # ========== Sheet 4: 产品破损排行 ==========
+    if '商品详情' in df.columns and '金额' in df.columns:
+        ws_product = wb.create_sheet("产品破损排行")
+
+        product_stats = df.groupby('商品详情').agg(
+            破损次数=('金额', 'count'),
+            破损金额=('金额', 'sum')
+        ).reset_index().sort_values('破损金额', ascending=False).head(20)
+
+        ws_product['A1'] = "产品破损排行 TOP20"
+        ws_product['A1'].font = Font(bold=True)
+
+        ws_product['A3'] = "排名"
+        ws_product['B3'] = "商品详情"
+        ws_product['C3'] = "破损次数"
+        ws_product['D3'] = "破损金额"
+
+        for i, (_, r) in enumerate(product_stats.iterrows(), start=4):
+            ws_product[f'A{i}'] = i - 3
+            ws_product[f'B{i}'] = str(r['商品详情'])[:50]
+            ws_product[f'C{i}'] = int(r['破损次数'])
+            ws_product[f'D{i}'] = float(r['破损金额'])
+
+        if len(product_stats) >= 2:
+            chart = BarChart()
+            chart.title = "产品破损金额 TOP20"
+            chart.style = 10
+            chart.y_axis.title = "金额 (¥)"
+            chart.type = "col"
+
+            data_ref = Reference(ws_product, min_col=4, min_row=3, max_row=3+min(len(product_stats), 20))
+            cat_ref = Reference(ws_product, min_col=2, min_row=4, max_row=3+min(len(product_stats), 20))
+            chart.add_data(data_ref, titles_from_data=True)
+            chart.set_categories(cat_ref)
+            chart.width = 24
+            chart.height = 14
+            ws_product.add_chart(chart, "F3")
+
     # 保存文件
     wb.save(output_path)
 
