@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据分析报告 - NC台账管理系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #7854f4;
+            --primary-light: #a78bfa;
+            --bg: #f5f7fb;
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --text: #1a1a2e;
+            --text-secondary: #6b7280;
+            --radius: 20px;
+            --shadow: 0 8px 32px rgba(0,0,0,0.08);
+        }
+        
+        body {
+            background: var(--bg);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+            padding: 30px;
+            border-radius: var(--radius);
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 700;
+        }
+        
+        .card {
+            background: var(--card-bg);
+            border: none;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+        }
+        
+        .card-header {
+            background: transparent;
+            border-bottom: 2px solid #f0f0f0;
+            font-weight: 600;
+            padding: 20px;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            border: none;
+            border-radius: 12px;
+            padding: 10px 24px;
+            font-weight: 600;
+        }
+        
+        .btn-primary:hover {
+            background: var(--primary-light);
+        }
+        
+        .upload-area {
+            border: 2px dashed var(--primary);
+            border-radius: var(--radius);
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .upload-area:hover {
+            background: rgba(120, 84, 244, 0.05);
+        }
+        
+        .file-list {
+            margin-top: 20px;
+        }
+        
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: #f9fafb;
+            border-radius: 12px;
+            margin-bottom: 8px;
+        }
+        
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+        
+        .toast {
+            background: white;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Toast 容器 -->
+    <div class="toast-container" id="toastContainer"></div>
+    
+    <!-- 顶部导航 -->
+    <div class="header d-flex justify-content-between align-items-center">
+        <h1>📊 数据分析报告</h1>
+        <a href="/" class="btn btn-light btn-sm">← 返回主页</a>
+    </div>
+    
+    <div class="container-fluid">
+        <div class="row">
+            <!-- 左侧：上传区域 -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        📁 上传历史数据
+                    </div>
+                    <div class="card-body">
+                        <div class="upload-area" id="uploadArea">
+                            <i class="bi bi-cloud-upload" style="font-size: 48px; color: var(--primary);"></i>
+                            <p class="mt-3 mb-1">拖拽文件到此处，或点击上传</p>
+                            <p class="text-muted small">支持 .xlsx, .xls 格式</p>
+                            <input type="file" id="fileInput" multiple accept=".xlsx,.xls" style="display: none;">
+                        </div>
+                        
+                        <div class="file-list" id="fileList"></div>
+                        
+                        <div class="mt-3">
+                            <label class="form-label">
+                                <input type="checkbox" id="includeCurrent" checked>
+                                包含当前系统数据（2026年）
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 右侧：分析维度 + 生成按钮 -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        ⚙️ 分析维度
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">选择要分析的维度：</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="dimTime" checked>
+                                <label class="form-check-label" for="dimTime">📈 时间趋势分析</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="dimResponsible" checked>
+                                <label class="form-check-label" for="dimResponsible">🏢 责任方分析</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="dimProduct" checked>
+                                <label class="form-check-label" for="dimProduct">📦 商品分析</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="dimPerson" checked>
+                                <label class="form-check-label" for="dimPerson">👥 人员效率分析</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="dimPayment" checked>
+                                <label class="form-check-label" for="dimPayment">💰 回款情况分析</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="dimShift" checked>
+                                <label class="form-check-label" for="dimShift">📊 班次对比分析</label>
+                            </div>
+                        </div>
+                        
+                        <button class="btn btn-primary w-100" onclick="generateReport()">
+                            📊 生成分析报告
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 报告下载区域 -->
+                <div class="card mt-3" id="reportCard" style="display: none;">
+                    <div class="card-header">
+                        📥 报告生成完成
+                    </div>
+                    <div class="card-body text-center">
+                        <i class="bi bi-file-earmark-excel" style="font-size: 48px; color: #34c759;"></i>
+                        <p class="mt-3" id="reportName"></p>
+                        <a href="#" class="btn btn-success" id="downloadBtn" download>
+                            ⬇️ 下载报告
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let uploadedFiles = [];
+        
+        // 上传区域点击事件
+        document.getElementById('uploadArea').addEventListener('click', () => {
+            document.getElementById('fileInput').click();
+        });
+        
+        // 文件选择事件
+        document.getElementById('fileInput').addEventListener('change', async (e) => {
+            const files = e.target.files;
+            if (files.length === 0) return;
+            
+            for (let file of files) {
+                await uploadFile(file);
+            }
+            
+            // 清空 input，允许重复选择同一文件
+            e.target.value = '';
+        });
+        
+        // 拖拽上传
+        const uploadArea = document.getElementById('uploadArea');
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.background = 'rgba(120, 84, 244, 0.1)';
+        });
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.background = '';
+        });
+        uploadArea.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            uploadArea.style.background = '';
+            
+            const files = e.dataTransfer.files;
+            for (let file of files) {
+                await uploadFile(file);
+            }
+        });
+        
+        // 上传文件
+        async function uploadFile(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                showToast('正在上传 ' + file.name + '...', 'info');
+                
+                const response = await fetch('/api/analysis/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    uploadedFiles.push(result.filename);
+                    showToast('✅ ' + file.name + ' 上传成功！', 'success');
+                    renderFileList();
+                } else {
+                    showToast('❌ 上传失败：' + result.error, 'error');
+                }
+            } catch (error) {
+                showToast('❌ 上传失败：' + error.message, 'error');
+            }
+        }
+        
+        // 渲染文件列表
+        function renderFileList() {
+            const fileList = document.getElementById('fileList');
+            if (uploadedFiles.length === 0) {
+                fileList.innerHTML = '<p class="text-muted text-center">暂无上传的文件</p>';
+                return;
+            }
+            
+            fileList.innerHTML = uploadedFiles.map((filename, index) => `
+                <div class="file-item">
+                    <div>
+                        <i class="bi bi-file-earmark-excel text-success"></i>
+                        <span class="ms-2">${filename}</span>
+                    </div>
+                    <button class="btn btn-sm btn-outline-danger" onclick="removeFile(${index})">
+                        ✕
+                    </button>
+                </div>
+            `).join('');
+        }
+        
+        // 删除文件
+        function removeFile(index) {
+            uploadedFiles.splice(index, 1);
+            renderFileList();
+        }
+        
+        // 生成报告
+        async function generateReport() {
+            if (uploadedFiles.length === 0 && !document.getElementById('includeCurrent').checked) {
+                showToast('请至少上传一个历史数据文件，或勾选"包含当前系统数据"', 'warning');
+                return;
+            }
+            
+            try {
+                showToast('正在生成分析报告，请稍候...', 'info');
+                
+                const response = await fetch('/api/analysis/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        filenames: uploadedFiles,
+                        include_current: document.getElementById('includeCurrent').checked,
+                        dimensions: {
+                            time: document.getElementById('dimTime').checked,
+                            responsible: document.getElementById('dimResponsible').checked,
+                            product: document.getElementById('dimProduct').checked,
+                            person: document.getElementById('dimPerson').checked,
+                            payment: document.getElementById('dimPayment').checked,
+                            shift: document.getElementById('dimShift').checked
+                        }
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast('✅ 报告生成成功！', 'success');
+                    
+                    // 显示下载区域
+                    document.getElementById('reportCard').style.display = 'block';
+                    document.getElementById('reportName').textContent = result.report_filename;
+                    document.getElementById('downloadBtn').href = result.download_url;
+                } else {
+                    showToast('❌ 生成失败：' + result.error, 'error');
+                }
+            } catch (error) {
+                showToast('❌ 生成失败：' + error.message, 'error');
+            }
+        }
+        
+        // 显示 Toast 提示
+        function showToast(msg, type) {
+            type = type || 'success';
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.style.borderLeft = type === 'success' ? '4px solid #34c759' : 
+                                    type === 'error' ? '4px solid #ff3b30' :
+                                    type === 'warning' ? '4px solid #ff9500' : '4px solid #007aff';
+            toast.textContent = msg;
+            document.getElementById('toastContainer').appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+        
+        // 初始化文件列表
+        renderFileList();
+    </script>
+</body>
+</html>

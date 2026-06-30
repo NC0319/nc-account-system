@@ -1189,6 +1189,211 @@ def api_download_backup(filename):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+
+
+# ==================== 数据分析报告功能 ====================
+
+ANALYSIS_DIR = '/tmp/analysis_reports'
+os.makedirs(ANALYSIS_DIR, exist_ok=True)
+
+@app.route('/analysis')
+def analysis_page():
+    """数据分析报告页面"""
+    return render_template('analysis.html')
+
+@app.route('/api/analysis/upload', methods=['POST'])
+def api_analysis_upload():
+    """上传历史数据（不存入主数据，只用于分析）"""
+    try:
+        if 'file' not in request.files:
+            return jsonify({'success': False, 'error': '请选择文件'}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'success': False, 'error': '请选择文件'}), 400
+        
+        # 保存临时文件
+        filename = f"analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{file.filename}"
+        filepath = os.path.join(ANALYSIS_DIR, filename)
+        file.save(filepath)
+        
+        # 读取数据，提取年份
+        df = pd.read_excel(filepath)
+        df.columns = df.columns.str.strip()
+        
+        # 尝试从"日期"列提取年份
+        years = []
+        if '日期' in df.columns:
+            try:
+                df['日期'] = pd.to_datetime(df['日期'], errors='coerce')
+                years = df['日期'].dt.year.dropna().unique().tolist()
+            except:
+                pass
+        
+        return jsonify({
+            'success': True,
+            'filename': filename,
+            'years': years,
+            'record_count': len(df)
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/analysis/generate', methods=['POST'])
+def api_analysis_generate():
+    """生成数据分析报告"""
+    try:
+        data = request.get_json()
+        filenames = data.get('filenames', [])  # 上传的历史数据文件
+        include_current = data.get('include_current', True)  # 是否包含当前系统数据
+        
+        # 收集所有数据
+        all_data = []
+        
+        # 1. 读取上传的历史数据
+        for filename in filenames:
+            filepath = os.path.join(ANALYSIS_DIR, filename)
+            if os.path.exists(filepath):
+                df = pd.read_excel(filepath)
+                df.columns = df.columns.str.strip()
+                all_data.append(df)
+        
+        # 2. 读取当前系统数据
+        if include_current:
+            current_data = load_data()
+            if current_data:
+                df_current = pd.DataFrame(current_data)
+                all_data.append(df_current)
+        
+        if not all_data:
+            return jsonify({'success': False, 'error': '没有数据可用于分析'}), 400
+        
+        # 合并所有数据
+        df_all = pd.concat(all_data, ignore_index=True)
+        
+        # 生成报告（使用 openpyxl）
+        report_filename = f"数据分析报告_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        report_path = os.path.join(ANALYSIS_DIR, report_filename)
+        
+        # 调用报告生成函数
+        generate_analysis_report(df_all, report_path)
+        
+        return jsonify({
+            'success': True,
+            'report_filename': report_filename,
+            'download_url': f'/api/analysis/download/{report_filename}'
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/analysis/download/<filename>')
+def api_analysis_download(filename):
+    """下载分析报告"""
+    try:
+        filepath = os.path.join(ANALYSIS_DIR, filename)
+        if not os.path.exists(filepath):
+            return jsonify({'success': False, 'error': '文件不存在'}), 404
+        return send_file(filepath, as_attachment=True, download_name=filename)
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+def generate_analysis_report(df, output_path):
+    """生成数据分析报告（Excel格式）"""
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment
+    from openpyxl.chart import BarChart, LineChart, Reference
+    
+    # 创建 Excel 工作簿
+    wb = openpyxl.Workbook()
+    
+    # ========== Sheet 1: 总览 ==========
+    ws_overview = wb.active
+    ws_overview.title = "总览"
+    
+    # 标题
+    ws_overview['A1'] = "NC台账数据分析报告"
+    ws_overview['A1'].font = Font(size=16, bold=True)
+    ws_overview['A3'] = f"生成时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+    ws_overview['A4'] = f"数据总条数: {len(df)}"
+    
+    # 基本统计
+    ws_overview['A6'] = "基本统计"
+    ws_overview['A6'].font = Font(bold=True)
+    
+    row = 7
+    if '日期' in df.columns:
+        try:
+            df['日期'] = pd.to_datetime(df['日期'], errors='coerce')
+            ws_overview[f'A{row}'] = "数据时间范围:"
+            ws_overview[f'B{row}'] = f"{df['日期'].min().strftime('%Y-%m-%d')} 至 {df['日期'].max().strftime('%Y-%m-%d')}"
+            row += 1
+        except:
+            pass
+    
+    if '金额' in df.columns:
+        ws_overview[f'A{row}'] = "总破损金额:"
+        ws_overview[f'B{row}'] = f"¥{df['金额'].sum():.2f}"
+        row += 1
+    
+    # ========== Sheet 2: 时间趋势 ==========
+    if '日期' in df.columns:
+        ws_trend = wb.create_sheet("时间趋势")
+        
+        # 按年月汇总
+        df['年月'] = df['日期'].dt.to_period('M').astype(str)
+        
+        # 月度破损金额
+        monthly_amount = df.groupby('年月')['金额'].sum().reset_index()
+        ws_trend['A1'] = "月度破损金额统计"
+        ws_trend['A1'].font = Font(bold=True)
+        
+        ws_trend['A3'] = "年月"
+        ws_trend['B3'] = "破损金额"
+        for i, (_, row_data) in enumerate(monthly_amount.iterrows(), start=4):
+            ws_trend[f'A{i}'] = row_data['年月']
+            ws_trend[f'B{i}'] = float(row_data['金额'])
+        
+        # 创建图表
+        chart = LineChart()
+        chart.title = "月度破损金额趋势"
+        chart.style = 10
+        chart.y_axis.title = "金额"
+        chart.x_axis.title = "年月"
+        
+        data = Reference(ws_trend, min_col=2, min_row=3, max_row=3+len(monthly_amount))
+        cats = Reference(ws_trend, min_col=1, min_row=4, max_row=3+len(monthly_amount))
+        chart.add_data(data, titles_from_data=True)
+        chart.set_categories(cats)
+        ws_trend.add_chart(chart, "D3")
+    
+    # ========== Sheet 3: 责任方分析 ==========
+    if '责任方' in df.columns:
+        ws_responsible = wb.create_sheet("责任方分析")
+        
+        responsible_stats = df.groupby('责任方').agg({
+            '金额': 'sum',
+            '日期': 'count'
+        }).rename(columns={'日期': '次数'})
+        
+        ws_responsible['A1'] = "责任方统计"
+        ws_responsible['A1'].font = Font(bold=True)
+        
+        ws_responsible['A3'] = "责任方"
+        ws_responsible['B3'] = "破损次数"
+        ws_responsible['C3'] = "破损金额"
+        
+        for i, (name, row_data) in enumerate(responsible_stats.iterrows(), start=4):
+            ws_responsible[f'A{i}'] = name
+            ws_responsible[f'B{i}'] = int(row_data['次数'])
+            ws_responsible[f'C{i}'] = float(row_data['金额'])
+    
+    # 保存文件
+    wb.save(output_path)
+
+
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
