@@ -6,7 +6,7 @@
 """
 import os
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from flask import Flask, render_template, jsonify, request, send_file, Response
 import gzip
 import base64
@@ -195,6 +195,30 @@ def render_analysis_html_report(df):
             try: chart_pie = make_chart((8,6), pie_func)
             except Exception as e: print(f"图表pie失败: {e}")
 
+    # ── 图表4：商品详情柱状图 ──
+    chart_product = None
+    if '商品详情' in df.columns:
+        prod = df.groupby('商品详情')['金额'].sum().sort_values(ascending=False).head(10)
+        if len(prod) > 0:
+            def prod_func():
+                fig, ax = plt.subplots(figsize=(10, 5))
+                colors = ['#6366F1','#8B5CF6','#A78BFA','#C4B5FD','#DDD6FE',
+                          '#F59E0B','#FBBF24','#FCD34D','#FDE68A','#FEF3C7']
+                bars = ax.barh(range(len(prod)), prod.values / 10000, color=colors[:len(prod)], height=0.6)
+                ax.set_yticks(range(len(prod)))
+                ax.set_yticklabels([str(p)[:20] for p in prod.index], fontsize=9)
+                ax.set_xlabel('破损金额（万元）', fontsize=11)
+                ax.set_title('商品破损金额 TOP10', fontsize=13, fontweight='bold')
+                for i, (v, b) in enumerate(zip(prod.values / 10000, bars)):
+                    ax.text(v + 0.1, b.get_y() + b.get_height()/2, f'{v:.2f}万',
+                            va='center', fontsize=9, color='#374151')
+                ax.spines['top'].set_visible(False); ax.spines['right'].set_visible(False)
+                ax.invert_yaxis()
+                ax.grid(axis='x', alpha=0.2)
+                return fig, ax
+            try: chart_product = make_chart((10,5), prod_func)
+            except Exception as e: print(f"图表product失败: {e}")
+
     # ── 统计数据 ──
     total_records = len(df)
     total_amount = df['金额'].sum()
@@ -326,6 +350,7 @@ def render_analysis_html_report(df):
     chart_m_img = f'<img src="data:image/png;base64,{chart_monthly}" alt="月度对比">' if chart_monthly else '<p style="color:#9ca3af;padding:40px">数据不足</p>'
     chart_t_img = f'<img src="data:image/png;base64,{chart_trend}" alt="趋势">' if chart_trend else '<p style="color:#9ca3af;padding:40px">数据不足</p>'
     chart_p_img = f'<img src="data:image/png;base64,{chart_pie}" alt="饼图">' if chart_pie else '<p style="color:#9ca3af;padding:40px">数据不足</p>'
+    chart_p_img_prod = f'<img src="data:image/png;base64,{chart_product}" alt="商品排行">' if chart_product else '<p style="color:#9ca3af;padding:40px">数据不足</p>'
 
     return f'''<!DOCTYPE html>
 <html lang="zh-CN">
@@ -384,7 +409,7 @@ body{{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backg
 <div class="print-note no-print">💡 <strong>打印PDF：</strong>按 <kbd>Ctrl+P</kbd>（Mac: <kbd>⌘P</kbd>）→ 目标选"保存为PDF" → 保存</div>
 <div class="report-header">
   <div class="report-title">📊 NC台账数据分析报告</div>
-  <div class="report-meta">生成时间：{datetime.now().strftime('%Y-%m-%d %H:%M')} &nbsp;|&nbsp; NC台账管理系统</div>
+  <div class="report-meta">生成时间：{datetime.now(timezone(timedelta(hours=8))).strftime('%Y-%m-%d %H:%M')} &nbsp;|&nbsp; NC台账管理系统</div>
 </div>
 <div class="kpi-grid">
   <div class="kpi-card"><div class="kpi-value">{total_records}</div><div class="kpi-sub">总记录数</div></div>
@@ -1892,7 +1917,7 @@ def generate_analysis_report(df, output_path):
     ws.title = "总览"
     ws['A1'] = "NC台账数据分析报告"
     ws['A1'].font = title_font
-    ws['A3'] = f"生成时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+    ws['A3'] = f"生成时间: {datetime.now(timezone(timedelta(hours=8))).strftime('%Y-%m-%d %H:%M:%S')}"
     ws['A4'] = f"数据总条数: {len(df)}"
 
     # 获取年份列表
@@ -2021,7 +2046,8 @@ def generate_analysis_report(df, output_path):
 
         # 月度对比图表
         if len(monthly_comp) >= 2:
-            chart = LineChart()
+            chart = BarChart()
+            chart.type = "col"  # 纵向柱状图
             chart.title = f"月度破损金额对比 ({int(y_prev)}年 vs {int(y_curr)}年)"
             chart.style = 10
             chart.y_axis.title = "金额 (¥)"
@@ -2185,6 +2211,42 @@ def generate_analysis_report(df, output_path):
             chart.width = 26
             chart.height = 14
             ws_prod.add_chart(chart, "F3")
+
+
+    # ========================================================================
+    # Sheet 6: 责任方饼图
+    # ========================================================================
+    ws_pie = wb.create_sheet("责任方占比")
+    if '责任方' in df.columns and '金额' in df.columns:
+        resp_top = df.groupby('责任方')['金额'].sum().sort_values(ascending=False).head(8)
+        ws_pie['A1'] = "责任方破损金额占比 TOP8"
+        ws_pie['A1'].font = hdr_font
+        ws_pie['A3'] = "责任方"
+        ws_pie['B3'] = "破损金额"
+        ws_pie['C3'] = "占比"
+
+        total = resp_top.sum()
+        for i, (name, amt) in enumerate(resp_top.items(), start=4):
+            ws_pie[f'A{i}'] = str(name)
+            ws_pie[f'B{i}'] = float(amt)
+            ws_pie[f'C{i}'] = float(amt / total) if total > 0 else 0
+            ws_pie[f'C{i}'].number_format = '0.0%'
+
+        if len(resp_top) > 0:
+            # 使用柱状图代替饼图（openpyxl原生不支持饼图依赖颜色正确显示）
+            chart = BarChart()
+            chart.type = "col"
+            chart.title = "责任方破损金额 TOP8"
+            chart.style = 10
+            chart.y_axis.title = "金额 (¥)"
+            n = len(resp_top)
+            data_ref = Reference(ws_pie, min_col=2, min_row=3, max_row=3+n)
+            cat_ref = Reference(ws_pie, min_col=1, min_row=4, max_row=3+n)
+            chart.add_data(data_ref, titles_from_data=True)
+            chart.set_categories(cat_ref)
+            chart.width = 22
+            chart.height = 13
+            ws_pie.add_chart(chart, "E3")
 
     # 保存
     wb.save(output_path)
