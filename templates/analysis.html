@@ -616,6 +616,10 @@
                 if (result.success && result.html) {
                     // 在新窗口打开HTML报告 → Ctrl+P保存为PDF
                     const win = window.open('', '_blank');
+                    if (!win) {
+                        showToast('⚠️ 弹出窗口被拦截了！请允许本页面弹窗，然后重试。', 'warning');
+                        return;
+                    }
                     win.document.write(result.html);
                     win.document.close();
                     showToast('✅ 报告已在新窗口打开！按 Ctrl+P（Mac: ⌘P）→ 保存为PDF', 'success');
