@@ -1808,15 +1808,18 @@ def api_analysis_generate_pdf():
 
         print(f"[PDF] 收到PDF生成请求: filenames={filenames}, include_current={include_current}")
 
-        # 收集数据（带金额预处理）
+        # 收集数据（复用台账系统完整解析逻辑）
         all_data = []
         for filename in filenames:
             filepath = os.path.join(ANALYSIS_DIR, filename)
             if os.path.exists(filepath):
                 df = pd.read_excel(filepath)
                 df.columns = df.columns.str.strip()
+                df = standardize_columns(df)  # 列名标准化（时间→日期、单号→凭证等）
+                if '日期' in df.columns:
+                    df['日期'] = df['日期'].apply(parse_date_flex)  # 日期解析
                 if '金额' in df.columns:
-                    df['金额'] = df['金额'].apply(parse_amount)
+                    df['金额'] = df['金额'].apply(parse_amount)  # 金额解析
                 all_data.append(df)
 
         if include_current:
@@ -2058,6 +2061,8 @@ def generate_analysis_report(df, output_path):
             df_prev = df[df['年份'] == y_prev]
             df_curr = df[df['年份'] == y_curr]
             all_parties = set(df_prev['责任方'].unique()) | set(df_curr['责任方'].unique())
+            # 过滤掉 NaN/float，避免 sorted() 时 float 与 str 无法比较
+            all_parties = {p for p in all_parties if p == p and p is not None}
 
             party_comp = []
             for p in sorted(all_parties):
