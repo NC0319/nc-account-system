@@ -1580,6 +1580,7 @@ async function loadData(){
         raw.sort(function(a,b){ return (b['日期']||'').localeCompare(a['日期']||''); });
         allData = raw;
         filteredData = allData.slice();
+        try { populateFilters(); } catch(e) { console.error('populateFilters错误:', e); }
         
         // 逐个调用渲染函数，每个都有错误保护
         try { updateStats(); } catch(e) { console.error('updateStats错误:', e); }
@@ -1661,6 +1662,51 @@ function showChange(elementId, current, last, isMoney){
     
     el.innerHTML = '<span class="stat-change ' + cls + '">' + icon + ' ' + prefix + change + '%</span>';
     el.style.display = 'block';
+}
+
+// 动态填充月份 / 责任方 筛选下拉（修复写死 & 空选项 bug）
+function populateFilters(){
+    try {
+        var monthSet = {}, respSet = {};
+        for(var i=0;i<allData.length;i++){
+            var d = allData[i]['日期'] || '';
+            if(typeof d === 'string' && d.length >= 7){
+                var m = d.slice(0,7);
+                if(/^\d{4}-\d{2}$/.test(m)) monthSet[m] = true;
+            }
+            var r = allData[i]['责任方'];
+            if(r === null || r === undefined) continue;
+            if(typeof r === 'number' && isNaN(r)) continue;
+            var rs = String(r).trim();
+            if(rs === '' || rs === 'nan' || rs === 'NaN') continue;
+            respSet[rs] = true;
+        }
+        // 月份下拉：按降序（最新在前）
+        var mf = document.getElementById('filterMonth');
+        var curM = mf.value;
+        var months = Object.keys(monthSet).sort().reverse();
+        mf.innerHTML = '<option value="">全部月份</option>';
+        months.forEach(function(m){
+            var y = m.slice(0,4), mo = parseInt(m.slice(5,7),10);
+            var o = document.createElement('option');
+            o.value = m; o.textContent = y + '年' + mo + '月';
+            mf.appendChild(o);
+        });
+        if(months.indexOf(curM) >= 0) mf.value = curM;
+        // 责任方下拉
+        var rf = document.getElementById('filterResp');
+        var curR = rf.value;
+        var resps = Object.keys(respSet);
+        rf.innerHTML = '<option value="">全部责任方</option>';
+        resps.forEach(function(r){
+            var o = document.createElement('option');
+            o.value = r; o.textContent = r;
+            rf.appendChild(o);
+        });
+        if(resps.indexOf(curR) >= 0) rf.value = curR;
+    } catch(e) {
+        console.error('populateFilters错误:', e);
+    }
 }
 
 function applyFilters(){
