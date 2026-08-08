@@ -186,7 +186,7 @@
             padding: 8px 0 20px;
             position: relative;
         }
-        .header-title { font-size: 34px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.5px; }
+        .header-title { font-size: 34px; font-weight: 700; background: linear-gradient(135deg, var(--accent-1), var(--accent-2), var(--accent-pink)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: -0.5px; }
         .header-btn {
             width: 44px; height: 44px;
             border-radius: 50%;
@@ -274,6 +274,10 @@
         .stat-card:nth-child(2) { animation-delay: 0.1s; }
         .stat-card:nth-child(3) { animation-delay: 0.15s; }
         .stat-card:nth-child(4) { animation-delay: 0.2s; }
+/* 按钮微交互 */
+.btn-confirm:active, .btn-cancel:active, .header-btn:active { transform: scale(0.95) translateY(1px); }
+.row-btn:active { transform: scale(0.85); }
+
         
         @keyframes cardAppear {
             from { opacity: 0; transform: translateY(20px) scale(0.95); }
@@ -299,7 +303,15 @@
         .stat-icon.purple { background: linear-gradient(135deg, rgba(139,92,246,0.12), rgba(139,92,246,0.06)); color: #8b5cf6; }
         .stat-icon.orange { background: linear-gradient(135deg, rgba(251,146,60,0.12), rgba(251,146,60,0.06)); color: #fb923c; }
         .stat-icon.green { background: linear-gradient(135deg, rgba(52,211,153,0.12), rgba(52,211,153,0.06)); color: #34d399; }
-        .stat-num { font-size: 28px; font-weight: 700; color: var(--text-primary); line-height: 1; font-variant-numeric: tabular-nums; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        /* 骨架屏 */
+.skeleton .stat-num { background: linear-gradient(90deg, #e0e7ff 25%, #c7d2fe 50%, #e0e7ff 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; color: transparent !important; border-radius: 6px; min-width: 60px; }
+@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+.skeleton .stat-icon { opacity: 0.3; }
+.skeleton .stat-label { opacity: 0.5; }
+/* 波纹 */
+.ripple { position: absolute; border-radius: 50%; background: rgba(99,102,241,0.3); transform: scale(0); animation: rippleAnim 0.6s ease-out; pointer-events: none; }
+@keyframes rippleAnim { to { transform: scale(2.5); opacity: 0; } }
+.stat-num { font-size: 28px; font-weight: 700; color: var(--text-primary); line-height: 1; font-variant-numeric: tabular-nums; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .stat-card:hover .stat-num { transform: none; }
         .stat-label { font-size: 13px; color: var(--text-secondary); margin-top: 8px; }
         .stat-change { font-size: 11px; margin-top: 4px; font-weight: 500; }
@@ -877,7 +889,7 @@
         </div>
         
         <!-- Stats -->
-        <div class="stats-grid">
+        <div class="stats-grid skeleton" id="statsGrid">
             <div class="stat-card">
                 <div class="stat-icon blue"><i class="bi bi-list-ul"></i></div>
                 <div class="stat-num" id="totalCount">0</div>
@@ -1578,6 +1590,36 @@ document.addEventListener('keydown', function(e){
 function showLoading(){ document.getElementById('loadingOverlay').style.display = 'flex'; }
 function hideLoading(){ document.getElementById('loadingOverlay').style.display = 'none'; }
 
+// 点击波纹
+function addRipple(e){
+    var t = e.currentTarget;
+    var r = document.createElement('span');
+    r.className = 'ripple';
+    var rect = t.getBoundingClientRect();
+    var size = Math.max(rect.width, rect.height);
+    r.style.width = r.style.height = size + 'px';
+    r.style.left = e.clientX - rect.left - size/2 + 'px';
+    r.style.top = e.clientY - rect.top - size/2 + 'px';
+    t.appendChild(r);
+    setTimeout(function(){ r.remove(); }, 600);
+}
+
+// 数字滚动动画
+function animateNumber(id, target, decimals, isMoney){
+    var el = document.getElementById(id);
+    if(!el) return;
+    var start = 0, duration = 600, startTime = null;
+    function step(ts){
+        if(!startTime) startTime = ts;
+        var progress = Math.min((ts - startTime) / duration, 1);
+        var ease = 1 - Math.pow(1 - progress, 3);
+        var current = start + (target - start) * ease;
+        el.textContent = isMoney ? current.toLocaleString('zh-CN', {maximumFractionDigits:decimals}) : Math.floor(current);
+        if(progress < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+}
+
 function showToast(msg, type){
     type = type || 'success';
     var t = document.createElement('div');
@@ -1612,9 +1654,14 @@ async function loadData(){
     } finally {
         hideLoading();
     }
+    // 绑定波纹事件
+    document.querySelectorAll('.stat-card, .header-btn').forEach(function(el){ el.addEventListener('click', addRipple); });
+
 }
 
 function updateStats(){
+    // 先触发骨架屏消失+数字滚动
+    setTimeout(function(){ document.getElementById('statsGrid')?.classList.remove('skeleton'); }, 100);
     var total = allData.length, amt = 0, unpaid = 0, paid = 0;
     for(var i=0; i<allData.length; i++){
         amt += parseFloat(allData[i]['金额']) || 0;
@@ -1625,10 +1672,11 @@ function updateStats(){
             unpaid++;
         }
     }
-    document.getElementById('totalCount').textContent = total;
-    document.getElementById('totalAmount').textContent = amt.toLocaleString('zh-CN', {maximumFractionDigits:2});
-    document.getElementById('unpaidCount').textContent = unpaid;
-    document.getElementById('paidCount').textContent = paid;
+    // 数字滚动动画
+    animateNumber('totalCount', total, 0);
+    animateNumber('totalAmount', amt, 2, true);
+    animateNumber('unpaidCount', unpaid, 0);
+    animateNumber('paidCount', paid, 0);
     
     // 计算较上期变化（对比上个月同期）
     var now = new Date();
