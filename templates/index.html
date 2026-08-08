@@ -242,7 +242,7 @@
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             overflow: hidden;
         }
-        .card:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(99,102,241,0.1), 0 2px 8px rgba(99,102,241,0.06); }
+        .card:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(167,139,250,0.2), 0 2px 8px rgba(99,102,241,0.06); }
         
         /* Stats Grid */
         .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
@@ -334,7 +334,7 @@
         .chart-canvas { max-height: 160px; }
         /* 表头吸顶（升级4）*/
         .data-table thead { position: sticky; top: 0; z-index: 10; background: var(--card-bg); box-shadow: 0 2px 12px rgba(99,102,241,0.1); }
-        body.dark .data-table thead { background: #1a1a2e; }
+        body.dark .data-table thead { background: rgba(20,18,40,0.98); box-shadow: 0 2px 12px rgba(99,102,241,0.2); }
         .sortable { cursor: pointer; user-select: none; }
         .sortable:hover { color: var(--accent-1) !important; }
         .sort-icon { font-size: 11px; opacity: 0.45; margin-left: 3px; }
@@ -1013,17 +1013,9 @@
             background: linear-gradient(135deg, #0f0b1a 0%, #1a1333 25%, #171029 50%, #1e1640 75%, #141025 100%) !important;
             background-size: 300% 300% !important;
         }
-        body.dark::before {
-            background: 
-                radial-gradient(ellipse 600px 400px at 20% 30%, rgba(99,102,241,0.06) 0%, transparent 70%),
-                radial-gradient(ellipse 500px 500px at 75% 65%, rgba(139,92,246,0.04) 0%, transparent 70%),
-                radial-gradient(ellipse 800px 300px at 50% 80%, rgba(192,132,252,0.03) 0%, transparent 70%) !important;
-        }
-        body.dark::after {
-            background: 
-                radial-gradient(ellipse 500px 500px at 40% 50%, rgba(99,102,241,0.03) 0%, transparent 60%) !important;
-        }
-        body.dark .card, body.dark .stat-card { background: rgba(20,18,40,0.8) !important; color: #e2e0f0 !important; border-color: rgba(99,102,241,0.1) !important; box-shadow: 0 1px 3px rgba(0,0,0,0.2), 0 4px 16px rgba(99,102,241,0.06) !important; }
+        body.dark::before { display: none !important; }
+        body.dark::after { display: none !important; }
+        body.dark .card, body.dark .stat-card { background: rgba(28,25,50,0.9) !important; color: #e2e0f0 !important; border-color: rgba(99,102,241,0.1) !important; box-shadow: 0 1px 3px rgba(0,0,0,0.2), 0 4px 16px rgba(99,102,241,0.06) !important; }
         body.dark .header-title { color: #e2e0f0 !important; }
         body.dark .stat-num { color: #e2e0f0 !important; }
         body.dark .stat-label { color: #8b8ba0 !important; }
@@ -1545,7 +1537,7 @@
     <script>
 var allData=[], filteredData=[], currentPage=1, editingIndex=-1, selectedBatch=[];
 var ecChart=null, rcChart=null, trendChart=null;
-var chartColors=['#7854f4','#007aff','#34c759','#ff9500','#ff3b30','#5856d6','#af52de','#00c7be'];
+var chartColors=['#a78bfa','#818cf8','#c4b5fd','#6366f1','#ddd6fe','#7c3aed','#8b5cf6','#d946ef'];
 
 document.addEventListener('DOMContentLoaded', function(){
     console.log('=== 页面加载开始 ===');
@@ -2320,13 +2312,22 @@ function renderTrendChart(){
                 datasets: [{
                     label: '破损金额',
                     data: values,
-                    borderColor: '#ff9500',
-                    backgroundColor: 'rgba(255,149,0,0.1)',
+                    borderColor: '#a78bfa',
+                    backgroundColor: function(context) {
+                        var ctx = context.chart.ctx;
+                        var gradient = ctx.createLinearGradient(0, 0, 0, 160);
+                        gradient.addColorStop(0, 'rgba(167,139,250,0.45)');
+                        gradient.addColorStop(1, 'rgba(167,139,250,0)');
+                        return gradient;
+                    },
                     fill: true,
                     tension: 0.4,
-                    pointRadius: 3,
-                    pointHoverRadius: 6,
-                    pointBackgroundColor: '#ff9500'
+                    pointRadius: 4,
+                    pointHoverRadius: 7,
+                    pointBackgroundColor: '#a78bfa',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    borderWidth: 2.5
                 }]
             },
             options: {
@@ -2336,7 +2337,7 @@ function renderTrendChart(){
                 plugins: {
                     legend: { display: false },
                     tooltip: {
-                        backgroundColor: 'rgba(30,30,30,0.9)',
+                        backgroundColor: 'rgba(20,18,40,0.95)',
                         titleFont: { size: 13 },
                         bodyFont: { size: 12 },
                         padding: 10,
@@ -2348,7 +2349,7 @@ function renderTrendChart(){
                     }
                 },
                 scales: {
-                    y: { beginAtZero: true, ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.05)' } },
+                    y: { beginAtZero: true, ticks: { font: { size: 10 }, color: 'rgba(0,0,0,0.4)' }, grid: { color: 'rgba(0,0,0,0.05)' } },
                     x: { ticks: { font: { size: 9 }, maxRotation: 45 }, grid: { display: false } }
                 }
             }
@@ -2374,7 +2375,7 @@ function renderChartsCore(){
             try{ ecChart.destroy(); }catch(e){}
             ecChart = new Chart(ecCanvas.getContext('2d'), {
                 type: 'doughnut',
-                data: { labels: Object.keys(ec), datasets: [{ data: Object.values(ec), backgroundColor: ['#7854f4','#007aff','#34c759','#ff9500','#ff3b30','#5856d6','#af52de','#00c7be'], borderWidth: 2, borderColor: '#fff', hoverBorderWidth: 3, hoverOffset: 10 }] },
+                data: { labels: Object.keys(ec), datasets: [{ data: Object.values(ec), backgroundColor: ['#7854f4','#007aff','#34c759','#ff9500','#ff3b30','#5856d6','#af52de','#00c7be'], borderWidth: 2, borderColor: 'rgba(255,255,255,0.1)', hoverBorderWidth: 3, hoverOffset: 10 }] },
                 options: { 
                     responsive: false, 
                     maintainAspectRatio: false, 
@@ -2382,7 +2383,7 @@ function renderChartsCore(){
                     plugins: { 
                         legend: { position: 'bottom', labels: { boxWidth: 10, padding: 6, font: { size: 10 }, usePointStyle: true } },
                         tooltip: {
-                            backgroundColor: 'rgba(30,30,30,0.9)',
+                            backgroundColor: 'rgba(20,18,40,0.95)',
                             titleFont: { size: 13, weight: 'bold' },
                             bodyFont: { size: 12 },
                             padding: 12,
@@ -2414,7 +2415,7 @@ function renderChartsCore(){
             try{ rcChart.destroy(); }catch(e){}
             rcChart = new Chart(rcCanvas.getContext('2d'), {
                 type: 'bar',
-                data: { labels: Object.keys(rc), datasets: [{ label: '数量', data: Object.values(rc), backgroundColor: ['#7854f4','#007aff','#34c759','#ff9500','#ff3b30','#5856d6','#af52de','#00c7be','#ff6b6b','#4ecdc4'], hoverBackgroundColor: 'rgba(120,86,244,0.9)', borderRadius: 6 }] },
+                data: { labels: Object.keys(rc), datasets: [{ label: '数量', data: Object.values(rc), backgroundColor: ['#a78bfa','#818cf8','#c4b5fd','#6366f1','#ddd6fe','#7c3aed','#8b5cf6','#d946ef','#e879f9','#f0abfc'], hoverBackgroundColor: 'rgba(167,139,250,0.9)', borderRadius: 8, borderSkipped: false }] },
                 options: { 
                     responsive: false, 
                     maintainAspectRatio: false, 
@@ -2422,7 +2423,7 @@ function renderChartsCore(){
                     plugins: { 
                         legend: { display: false },
                         tooltip: {
-                            backgroundColor: 'rgba(30,30,30,0.9)',
+                            backgroundColor: 'rgba(20,18,40,0.95)',
                             titleFont: { size: 13, weight: 'bold' },
                             bodyFont: { size: 12 },
                             padding: 12,
@@ -2439,7 +2440,7 @@ function renderChartsCore(){
                         }
                     }, 
                     scales: { 
-                        y: { beginAtZero: true, ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.05)' } }, 
+                        y: { beginAtZero: true, ticks: { font: { size: 10 }, color: 'rgba(0,0,0,0.4)' }, grid: { color: 'rgba(0,0,0,0.05)' } }, 
                         x: { ticks: { font: { size: 10 }, maxRotation: 45 }, grid: { display: false } } 
                     }
                 }
