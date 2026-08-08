@@ -11,21 +11,24 @@
     <style>
         :root {
             --blur: 20px;
-            --radius: 22px;
-            --sat: 1.2;
-            --accent-1: #6366f1;
+            --radius: 26px;
+            --sat: 1.25;
+            --accent-1: #7b5bff;
             --accent-2: #a78bfa;
             --accent-3: #c084fc;
             --accent-pink: #f0abfc;
+            --flyme-purple: #7b5bff;
+            --flyme-purple-deep: #5b3fd9;
+            --flyme-glow: rgba(123,91,255,0.4);
             --bg-base: #eef2ff;
             --bg-warm: #faf5ff;
             --bg-cool: #e0e7ff;
-            --text-primary: #1e1b4b;
+            --text-primary: #1a1730;
             --text-secondary: #6b7280;
         }
         * { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Noto Sans SC', sans-serif; -webkit-font-smoothing: antialiased; }
         body {
-            background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 20%, #ede9fe 40%, #faf5ff 60%, #e0e7ff 80%, #eef2ff 100%);
+            background: linear-gradient(135deg, #f0edff 0%, #e6e0ff 20%, #efeaff 40%, #f7f2ff 60%, #e6e0ff 80%, #f0edff 100%);
             background-size: 300% 300%;
             animation: gradientShift 25s ease infinite;
             min-height: 100vh;
@@ -56,7 +59,7 @@
                 radial-gradient(ellipse 500px 500px at 75% 65%, rgba(99,102,241,0.06) 0%, transparent 70%),
                 radial-gradient(ellipse 800px 300px at 50% 80%, rgba(192,132,252,0.05) 0%, transparent 70%),
                 radial-gradient(ellipse 400px 400px at 80% 20%, rgba(240,171,252,0.06) 0%, transparent 70%);
-            animation: lightFloat 20s ease-in-out infinite;
+            animation: lightFloat 20s ease-in-out infinite, flymeBreathe 8s ease-in-out infinite;
             pointer-events: none;
             z-index: 0;
         }
@@ -72,7 +75,7 @@
             background: 
                 radial-gradient(ellipse 500px 500px at 40% 50%, rgba(255,255,255,0.25) 0%, transparent 60%),
                 radial-gradient(ellipse 400px 300px at 70% 25%, rgba(237,233,254,0.2) 0%, transparent 50%);
-            animation: lightFloat2 22s ease-in-out infinite reverse;
+            animation: lightFloat2 22s ease-in-out infinite reverse, flymeBreathe 10s ease-in-out infinite;
             pointer-events: none;
             z-index: 0;
         }
@@ -88,6 +91,11 @@
             33% { transform: translate(-3%, 2%) rotate(-1.5deg); }
             66% { transform: translate(2%, -2%) rotate(1deg); }
         }
+        /* Flyme 灵动呼吸光效 */
+        @keyframes flymeBreathe {
+            0%, 100% { opacity: 0.55; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.08); }
+        }
         
         /* 页面入场动画 */
         .container {
@@ -101,18 +109,18 @@
         
         /* 卡片悬浮动画 - 柔和优雅 */
         .card {
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         .card:hover { 
-            transform: translateY(-3px);
-            box-shadow: 0 12px 40px rgba(99,102,241,0.12), 0 4px 12px rgba(99,102,241,0.06);
+            transform: translateY(-4px);
+            box-shadow: 0 16px 48px rgba(123,91,255,0.16), 0 4px 14px rgba(123,91,255,0.08);
         }
         
         /* 按钮过渡 - 统一 */
         .action-btn, .row-btn, .header-btn {
             position: relative;
             overflow: hidden;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         .action-btn:active, .row-btn:active, .header-btn:active {
             transform: scale(0.96) !important;
@@ -186,7 +194,7 @@
             padding: 8px 0 20px;
             position: relative;
         }
-        .header-title { font-size: 34px; font-weight: 700; background: linear-gradient(135deg, var(--accent-1), var(--accent-2), var(--accent-pink)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: -0.5px; }
+        .header-title { font-size: 34px; font-weight: 700; margin-bottom: 4px; background: linear-gradient(135deg, var(--accent-1), var(--accent-2), var(--accent-pink)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: -0.5px; }
         .header-btn {
             width: 44px; height: 44px;
             border-radius: 50%;
@@ -207,7 +215,10 @@
         
         /* 图表容器 */
         .chart-card {
-            padding: 20px;
+            padding: 22px;
+            background: rgba(255,255,255,0.65);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             min-height: 240px;
             display: flex;
             flex-direction: column;
@@ -242,7 +253,7 @@
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             overflow: hidden;
         }
-        .card:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(167,139,250,0.2), 0 2px 8px rgba(99,102,241,0.06); }
+        .card:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(123,91,255,0.25), 0 2px 8px rgba(99,102,241,0.06); }
         
         /* Stats Grid */
         .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
@@ -285,16 +296,16 @@
         }
         
         .stat-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 35px rgba(99,102,241,0.14), 0 4px 12px rgba(99,102,241,0.08);
+            transform: translateY(-6px) scale(1.02);
+            box-shadow: 0 18px 44px rgba(123,91,255,0.2), 0 4px 14px rgba(123,91,255,0.1), 0 0 0 1px rgba(123,91,255,0.25);
         }
         
         .stat-icon {
-            width: 38px; height: 38px;
-            border-radius: 12px;
+            width: 42px; height: 42px;
+            border-radius: 14px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 18px; margin-bottom: 14px;
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 19px; margin-bottom: 16px;
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         .stat-card:hover .stat-icon {
             transform: translateY(-2px);
@@ -422,7 +433,7 @@
         /* 快捷筛选按钮 */
         .quick-filters { display: flex; gap: 6px; flex-wrap: wrap; }
         .quick-filter-btn {
-            padding: 6px 12px; border-radius: 8px; border: none;
+            padding: 7px 15px; border-radius: 999px; border: none;
             background: rgba(255,255,255,0.5); color: #007aff;
             font-size: 12px; font-weight: 500; cursor: pointer;
             transition: all 0.2s ease; backdrop-filter: blur(10px);
@@ -637,6 +648,12 @@
         /* 表格行交错动画 */
         .data-table tbody tr {
             animation: rowIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+            transition: background 0.25s ease, box-shadow 0.25s ease;
+            position: relative;
+        }
+        .data-table tbody tr:hover {
+            background: linear-gradient(90deg, rgba(123,91,255,0.06), rgba(167,139,250,0.03));
+            box-shadow: inset 3px 0 0 var(--flyme-purple);
         }
         
         /* 删除按钮悬浮 */
@@ -704,10 +721,10 @@
             background: linear-gradient(90deg, transparent, rgba(0,0,0,0.06), transparent);
         }
         
-        .btn-cancel { padding: 12px 24px; border-radius: 12px; background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.06); font-size: 15px; font-weight: 600; color: var(--text-primary); cursor: pointer; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+        .btn-cancel { padding: 12px 24px; border-radius: 999px; background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.06); font-size: 15px; font-weight: 600; color: var(--text-primary); cursor: pointer; transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); }
         .btn-cancel:hover { background: rgba(0,0,0,0.06); }
-        .btn-confirm { padding: 12px 24px; border-radius: 12px; background: linear-gradient(135deg, var(--accent-1), var(--accent-2)); border: none; font-size: 15px; font-weight: 600; color: white; cursor: pointer; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
-        .btn-confirm:hover { box-shadow: 0 4px 15px rgba(99,102,241,0.3); transform: translateY(-1px); }
+        .btn-confirm { padding: 13px 30px; border-radius: 999px; background: linear-gradient(135deg, #7b5bff, #a78bfa); border: none; font-size: 15px; font-weight: 600; color: white; cursor: pointer; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); box-shadow: 0 4px 14px rgba(123,91,255,0.25); }
+        .btn-confirm:hover { box-shadow: 0 8px 22px rgba(123,91,255,0.38); transform: translateY(-2px); }
         .btn-confirm.success { background: linear-gradient(135deg, #34d399, #10b981); }
         .btn-confirm.success:hover { box-shadow: 0 4px 15px rgba(52,211,153,0.3); transform: translateY(-1px); }
         
@@ -1015,7 +1032,7 @@
         }
         body.dark::before { display: none !important; }
         body.dark::after { display: none !important; }
-        body.dark .card, body.dark .stat-card { background: rgba(28,25,50,0.9) !important; color: #e2e0f0 !important; border-color: rgba(99,102,241,0.1) !important; box-shadow: 0 1px 3px rgba(0,0,0,0.2), 0 4px 16px rgba(99,102,241,0.06) !important; }
+        body.dark .card, body.dark .stat-card { background: rgba(26,22,46,0.92) !important; color: #e2e0f0 !important; border-color: rgba(99,102,241,0.1) !important; box-shadow: 0 1px 3px rgba(0,0,0,0.2), 0 4px 16px rgba(99,102,241,0.06) !important; }
         body.dark .header-title { color: #e2e0f0 !important; }
         body.dark .stat-num { color: #e2e0f0 !important; }
         body.dark .stat-label { color: #8b8ba0 !important; }
