@@ -2671,28 +2671,44 @@ function renderTrendChart(){
     try {
         var trendCanvas = document.getElementById('trendChart');
         if(!trendCanvas || typeof Chart === 'undefined') return;
-        
+
+        // 统一金额解析（兼容 number / '5.0' / '¥1,000' / '' / nan）
+        function parseAmt(v){
+            if(v === '' || v === null || v === undefined) return 0;
+            if(typeof v === 'number') return isFinite(v) ? v : 0;
+            var s = String(v).replace(/[¥$€£,\s元]/g, '').replace(/[^\d.\-]/g, '');
+            var n = parseFloat(s);
+            return isFinite(n) ? n : 0;
+        }
+
         // 按日期统计破损金额
         var dailyData = {};
         for(var i=0; i<allData.length; i++){
             var date = allData[i]['日期'] || '';
-            var amt = parseFloat(allData[i]['金额']) || 0;
-            if(date){
-                dailyData[date] = (dailyData[date] || 0) + amt;
-            }
+            if(!date) continue;
+            var amt = parseAmt(allData[i]['金额']);
+            dailyData[date] = (dailyData[date] || 0) + amt;
         }
-        
-        // 按日期排序，取最近30天
+
         var dates = Object.keys(dailyData).sort();
-        if(dates.length > 30){
-            dates = dates.slice(-30);
+        if(dates.length === 0) return;
+
+        // 剔除末尾连续的全0天（导入的无金额新数据若集中在最近，会让窗口压成一条直线）
+        while(dates.length > 1 && dailyData[dates[dates.length-1]] === 0){
+            dates.pop();
         }
-        
+
+        // 取最近有破损金额的趋势窗口（上限60天，避免过密）
+        var MAX = 60;
+        if(dates.length > MAX){
+            dates = dates.slice(-MAX);
+        }
+
         var values = dates.map(function(d){ return dailyData[d]; });
-        
+
         trendCanvas.width = trendCanvas.parentElement.offsetWidth || 400;
         trendCanvas.height = 160;
-        
+
         trendChart = new Chart(trendCanvas.getContext('2d'), {
             type: 'line',
             data: {
@@ -2744,7 +2760,6 @@ function renderTrendChart(){
         });
     } catch(e) { console.error('趋势图渲染失败:', e); }
 }
-
 function renderChartsCore(){
     try {
         // 饼图 - 异常分布
