@@ -320,6 +320,14 @@
         .chart-title::after { content: ''; position: absolute; bottom: 0; left: 28px; width: 40px; height: 3px; background: linear-gradient(90deg, var(--accent-1), var(--accent-3)); border-radius: 2px; }
         .chart-title i { font-size: 16px; }
         .chart-canvas { max-height: 160px; }
+        /* 表头吸顶（升级4）*/
+        .data-table thead { position: sticky; top: 0; z-index: 10; background: var(--card-bg); box-shadow: 0 2px 12px rgba(99,102,241,0.1); }
+        body.dark .data-table thead { background: #1a1a2e; }
+        .sortable { cursor: pointer; user-select: none; }
+        .sortable:hover { color: var(--accent-1) !important; }
+        .sort-icon { font-size: 11px; opacity: 0.45; margin-left: 3px; }
+        th.sorted-asc .sort-icon { opacity: 1; }
+        th.sorted-desc .sort-icon { opacity: 1; }
         
         /* Toolbar */
         /* 导入拖拽区域 */
@@ -874,7 +882,7 @@
                 <div class="stat-icon blue"><i class="bi bi-list-ul"></i></div>
                 <div class="stat-num" id="totalCount">0</div>
                 <div class="stat-label">总记录</div>
-                <div class="stat-change" id="totalCountChange" style="display:none;"></div>
+                <div class="stat-change" id="totalCountChange"></div>
             </div>
             <div class="stat-card">
                 <div class="stat-icon purple"><i class="bi bi-currency-yen"></i></div>
@@ -886,13 +894,13 @@
                 <div class="stat-icon orange"><i class="bi bi-exclamation-circle"></i></div>
                 <div class="stat-num" id="unpaidCount">0</div>
                 <div class="stat-label">未回款(点击)</div>
-                <div class="stat-change" id="unpaidCountChange" style="display:none;"></div>
+                <div class="stat-change" id="unpaidCountChange"></div>
             </div>
             <div class="stat-card" onclick="openPaidModal()" style="cursor:pointer;" title="点击查看已回款记录">
                 <div class="stat-icon green"><i class="bi bi-check-circle"></i></div>
                 <div class="stat-num" id="paidCount">0</div>
                 <div class="stat-label">已回款(点击)</div>
-                <div class="stat-change" id="paidCountChange" style="display:none;"></div>
+                <div class="stat-change" id="paidCountChange"></div>
             </div>
         </div>
         
@@ -1077,10 +1085,19 @@
         <div class="card table-container">
             <div class="table-scroll">
                 <table class="data-table">
-                    <thead>
+                    <thead id="dataThead">
                         <tr>
-                            <th>日期</th><th>班次</th><th>包裹号</th><th>商品</th>
-                            <th>异常</th><th>金额</th><th>责任方</th><th>路由</th><th>凭证</th><th>回款</th><th>操作</th>
+                            <th class="sortable" data-col="日期" onclick="sortTable('日期')">日期 <span class="sort-icon" id="si-日期">⇅</span></th>
+                            <th class="sortable" data-col="班次" onclick="sortTable('班次')">班次 <span class="sort-icon" id="si-班次">⇅</span></th>
+                            <th class="sortable" data-col="包裹号" onclick="sortTable('包裹号')">包裹号 <span class="sort-icon" id="si-包裹号">⇅</span></th>
+                            <th class="sortable" data-col="商品详情" onclick="sortTable('商品详情')">商品 <span class="sort-icon" id="si-商品详情">⇅</span></th>
+                            <th class="sortable" data-col="异常情况" onclick="sortTable('异常情况')">异常 <span class="sort-icon" id="si-异常情况">⇅</span></th>
+                            <th class="sortable" data-col="金额" onclick="sortTable('金额')">金额 <span class="sort-icon" id="si-金额">⇅</span></th>
+                            <th class="sortable" data-col="责任方" onclick="sortTable('责任方')">责任方 <span class="sort-icon" id="si-责任方">⇅</span></th>
+                            <th class="sortable" data-col="路由" onclick="sortTable('路由')">路由 <span class="sort-icon" id="si-路由">⇅</span></th>
+                            <th class="sortable" data-col="凭证" onclick="sortTable('凭证')">凭证 <span class="sort-icon" id="si-凭证">⇅</span></th>
+                            <th class="sortable" data-col="回款情况" onclick="sortTable('回款情况')">回款 <span class="sort-icon" id="si-回款情况">⇅</span></th>
+                            <th>操作</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody"></tbody>
@@ -1650,8 +1667,9 @@ function showChange(elementId, current, last, isMoney){
     var el = document.getElementById(elementId);
     if(!el) return;
     
-    if(last === 0 || current === 0){
-        el.style.display = 'none';
+    if(current === 0){
+        el.innerHTML = '<span class="stat-change neutral">—</span>';
+        el.style.display = 'block';
         return;
     }
     
@@ -1662,6 +1680,22 @@ function showChange(elementId, current, last, isMoney){
     
     el.innerHTML = '<span class="stat-change ' + cls + '">' + icon + ' ' + prefix + change + '%</span>';
     el.style.display = 'block';
+}
+
+// 表格列头排序（升级1）
+var _sc = null, _sd = -1;
+function sortTable(col){
+    if(_sc === col) _sd *= -1; else { _sc = col; _sd = -1; }
+    document.querySelectorAll('.sort-icon').forEach(function(el){ el.textContent = '⇅'; el.parentElement.classList.remove('sorted-asc','sorted-desc'); });
+    var ie = document.getElementById('si-'+col);
+    if(ie){ ie.textContent = _sd>0?'↑':'↓'; ie.parentElement.classList.add(_sd>0?'sorted-asc':'sorted-desc'); }
+    filteredData.sort(function(a,b){
+        var va=a[col]||'', vb=b[col]||'';
+        var na=parseFloat(va), nb=parseFloat(vb);
+        if(!isNaN(na)&&!isNaN(nb)) return (na-nb)*_sd;
+        return String(va).localeCompare(String(vb),'zh')*_sd;
+    });
+    currentPage=1; renderTable();
 }
 
 // 动态填充月份 / 责任方 筛选下拉（修复写死 & 空选项 bug）
@@ -2362,6 +2396,35 @@ function renderChartsCore(){
                     }
                 }
             });
+
+    // ===== 图表点击联动筛选（升级2）=====
+    function addChartClick(chart, filterKey){
+        if(!chart || chart._clickBound) return;
+        chart.options.events = ['click'];
+        chart.options.onClick = function(evt, els){
+            if(!els.length){
+                clearFilters();
+                return;
+            }
+            var lbl = chart.data.labels[els[0].index];
+            if(filterKey === '责任方'){
+                var rf = document.getElementById('filterResp');
+                rf.value = lbl;
+                document.getElementById('searchInput').value = '';
+                document.getElementById('filterShift').value = '';
+                applyFilters();
+            } else if(filterKey === '异常情况'){
+                document.getElementById('searchInput').value = lbl;
+                document.getElementById('filterShift').value = '';
+                document.getElementById('filterResp').value = '';
+                applyFilters();
+            }
+        };
+        chart._clickBound = true;
+        chart.update();
+    }
+    addChartClick(rcChart, '责任方');
+    addChartClick(ecChart, '异常情况');
         }
     } catch(e) { console.error('图表渲染失败:', e); }
 }
