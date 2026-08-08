@@ -834,7 +834,15 @@ def _parse_excel_to_records(file_source):
         if col != '金额':
             df[col] = df[col].apply(lambda x: '' if pd.isna(x) or str(x) == 'nan' else str(x))
 
-    return df.to_dict('records')
+    records = df.to_dict('records')
+    _date_pat = re.compile(r'^\d{4}[-/年]\d{1,2}[-/月]\d{1,2}')
+    for _r in records:
+        _d = str(_r.get('日期', '') or '').strip()
+        _s = str(_r.get('班次', '') or '').strip()
+        if not _d and _date_pat.match(_s):
+            _r['日期'] = _s
+            _r['班次'] = ''
+    return records
 
 
 def _count_filled_fields(item):
