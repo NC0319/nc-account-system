@@ -177,10 +177,25 @@
         .chart-card canvas {
             animation: chartIn 0.4s ease backwards;
         }
+        .chart-card canvas { will-change: transform, opacity; }
         
         @keyframes chartIn {
             from { opacity: 0; transform: scale(0.9); }
             to { opacity: 1; transform: scale(1); }
+        }
+        
+        /* 图表滚动入场动画 */
+        .chart-card.anim-hide {
+            opacity: 0;
+            transform: translateY(28px) scale(0.95);
+        }
+        @keyframes chartFlymeIn {
+            0%   { opacity: 0; transform: translateY(30px) scale(0.94); }
+            60%  { opacity: 1; transform: translateY(-6px) scale(1.02); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .chart-card.anim-in {
+            animation: chartFlymeIn 0.7s cubic-bezier(0.34,1.56,0.64,1) forwards;
         }
         
         .blur-bg { filter: blur(var(--blur)); transition: filter 0.3s ease; }
@@ -537,7 +552,11 @@
                 inset 0 1px 0 rgba(255,255,255,0.9);
             overflow: hidden;
             animation: modalFlymeIn 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            /* 拖动支持 */
+            cursor: grab;
+            user-select: none;
         }
+        .modal-box.dragging { cursor: grabbing !important; opacity: 0.92; }
 
         @keyframes modalFlymeIn {
             0% {
@@ -581,14 +600,33 @@
             100% { opacity: 1; transform: translateX(0) scale(1); }
         }
         
-        /* Toast 消失动画 */
+        /* Flyme Toast 灵动通知 */
+        .toast {
+            background: rgba(20,18,45,0.92);
+            color: #fff;
+            padding: 12px 16px;
+            border-radius: 16px;
+            font-size: 14px; font-weight: 500;
+            margin-bottom: 8px;
+            display: flex; align-items: center; gap: 12px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px rgba(123,91,255,0.25), 0 0 0 1px rgba(255,255,255,0.06);
+            opacity: 0;
+            transform: translateX(110%);
+            transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+            will-change: transform, opacity;
+        }
+        .toast.show { opacity: 1; transform: translateX(0); }
         .toast.removing {
-            animation: toastFadeOut 0.3s ease forwards;
+            opacity: 0; transform: translateX(110%);
+            transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.4,0,0.2,1);
         }
-        
-        @keyframes toastFadeOut {
-            to { opacity: 0; transform: translateX(50px) scale(0.9); }
-        }
+        .toast-icon { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 15px; }
+        .toast.success .toast-icon { background: rgba(52,211,153,0.2); color: #34d399; }
+        .toast.error   .toast-icon { background: rgba(248,113,113,0.2); color: #f87171; }
+        .toast.info    .toast-icon { background: rgba(123,91,255,0.2);  color: #a78bfa; }
+        @keyframes toastFadeOut { to { opacity: 0; transform: translateX(50px) scale(0.9); } }
         
         /* Loading 动画 */
         .spinner {
@@ -749,6 +787,14 @@
             bottom: 0; left: 28px; right: 28px;
             height: 1px;
             background: linear-gradient(90deg, transparent, rgba(99,102,241,0.2), rgba(192,132,252,0.15), transparent);
+        }
+        .modal-header::before {
+            content: '';
+            position: absolute;
+            top: 8px; left: 50%; transform: translateX(-50%);
+            width: 40px; height: 4px;
+            border-radius: 2px;
+            background: rgba(123,91,255,0.22);
         }
         .modal-header h3 { font-size: 18px; font-weight: 600; color: var(--text-primary); margin: 0; }
         .modal-close {
@@ -1211,10 +1257,62 @@
         body.dark .page-btn { background: rgba(25,23,45,0.8) !important; color: #c8c6dc !important; border-color: rgba(99,102,241,0.12) !important; }
         body.dark .page-btn.active { background: linear-gradient(135deg, var(--accent-1), var(--accent-2)) !important; color: #fff !important; }
         body.dark .page-btn:hover { background: rgba(99,102,241,0.2) !important; }
-        body.dark .modal-overlay { background: rgba(10,8,20,0.7) !important; }
-        body.dark .modal-box { background: rgba(20,18,40,0.95) !important; color: #e2e0f0 !important; border-color: rgba(99,102,241,0.15) !important; }
-        body.dark .modal-header::after { background: linear-gradient(90deg, transparent, rgba(139,92,246,0.2), rgba(192,132,252,0.15), transparent) !important; }
+        body.dark .modal-overlay {
+            background: rgba(5,4,15,0.72) !important;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        body.dark .modal-box {
+            background: rgba(14,12,32,0.97) !important;
+            color: #e2e0f0 !important;
+            border-color: rgba(123,91,255,0.2) !important;
+            box-shadow:
+                0 40px 100px rgba(0,0,0,0.6),
+                0 0 0 1px rgba(123,91,255,0.12),
+                0 0 80px rgba(123,91,255,0.12),
+                inset 0 1px 0 rgba(255,255,255,0.04) !important;
+        }
+        body.dark .modal-header::after {
+            background: linear-gradient(90deg, transparent, rgba(123,91,255,0.3), rgba(192,132,252,0.2), transparent) !important;
+        }
         body.dark .modal-header h3 { color: #e2e0f0 !important; }
+        /* 暗色 stat-card 翻转面深化 */
+        body.dark .stat-face-back {
+            background: linear-gradient(135deg, rgba(123,91,255,0.18), rgba(99,102,241,0.08)) !important;
+            border-color: rgba(123,91,255,0.25) !important;
+        }
+        body.dark .stat-face-back .back-title { color: rgba(226,224,240,0.6) !important; }
+        body.dark .stat-face-back .back-hint  { color: rgba(226,224,240,0.4) !important; }
+        /* 暗色 input/select */
+        body.dark input[type="text"],
+        body.dark input[type="number"],
+        body.dark select,
+        body.dark textarea {
+            background: rgba(14,12,32,0.9) !important;
+            border-color: rgba(123,91,255,0.2) !important;
+            color: #e2e0f0 !important;
+        }
+        body.dark input:focus, body.dark select:focus, body.dark textarea:focus {
+            border-color: rgba(123,91,255,0.5) !important;
+            box-shadow: 0 0 0 3px rgba(123,91,255,0.12) !important;
+        }
+        /* 暗色表格 */
+        body.dark .data-table { color: #d1d0e0; }
+        body.dark .data-table thead th {
+            background: rgba(14,12,32,0.95) !important;
+            color: rgba(226,224,240,0.8) !important;
+            border-bottom-color: rgba(123,91,255,0.25) !important;
+        }
+        body.dark .data-table tbody tr:hover td {
+            background: rgba(123,91,255,0.07) !important;
+        }
+        body.dark .data-table tbody tr:nth-child(even) td {
+            background: rgba(255,255,255,0.015);
+        }
+        /* 暗色滚动条 */
+        body.dark ::-webkit-scrollbar { width: 6px; }
+        body.dark ::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); }
+        body.dark ::-webkit-scrollbar-thumb { background: rgba(123,91,255,0.3); border-radius: 3px; }
         body.dark .form-label { color: #c8c6dc !important; }
         body.dark .form-control { background: rgba(25,23,45,0.8) !important; color: #e2e0f0 !important; border-color: rgba(99,102,241,0.15) !important; }
         body.dark .form-control:focus { border-color: var(--accent-2) !important; box-shadow: 0 0 0 3px rgba(139,92,246,0.15) !important; }
@@ -1299,7 +1397,7 @@
     
     <!-- Add/Edit Modal -->
     <div class="modal-overlay" id="dataModal">
-        <div class="modal-box">
+        <div class="modal-box" draggable="true">
             <div class="modal-header">
                 <h3 id="modalTitle"><i class="bi bi-plus-circle"></i> 添加数据</h3>
                 <button class="modal-close" onclick="closeDataModal()">✕</button>
@@ -1390,7 +1488,7 @@
     
     <!-- Settings Modal -->
     <div class="modal-overlay" id="settingsModal">
-        <div class="modal-box">
+        <div class="modal-box" draggable="true">
             <div class="modal-header">
                 <h3><h3>⚙️ 设置</h3></h3>
                 <button class="modal-close" onclick="closeSettings()">✕</button>
@@ -1806,11 +1904,67 @@ function animateNumber(id, target, decimals, isMoney){
 function showToast(msg, type){
     type = type || 'success';
     var t = document.createElement('div');
-    t.className = 'toast ' + type;
-    t.innerHTML = '<i class="bi bi-' + (type==='success'?'check-circle-fill':'exclamation-circle-fill') + '"></i><span>' + msg + '</span>';
-    document.getElementById('toastContainer').appendChild(t);
-    setTimeout(function(){ t.remove(); }, 3000);
+    t.className = 'toast flyme-toast ' + type;
+    var icon = type === 'success' ? 'check-circle-fill' : type === 'error' ? 'x-circle-fill' : 'info-circle-fill';
+    t.innerHTML = '<div class="toast-icon"><i class="bi bi-' + icon + '"></i></div><span>' + msg + '</span>';
+    var c = document.getElementById('toastContainer');
+    c.appendChild(t);
+    requestAnimationFrame(function(){ t.classList.add('show'); });
+    setTimeout(function(){
+        t.classList.remove('show');
+        setTimeout(function(){ t.remove(); }, 350);
+    }, 2800);
 }
+
+/* ── Flyme 弹窗拖动 ── */
+(function(){
+    var drag = { el: null, header: null, ox: 0, oy: 0, tx: 0, ty: 0, down: false };
+    document.addEventListener('mousedown', function(e){
+        var hdr = e.target.closest('.modal-header');
+        if (!hdr) return;
+        var box = hdr.closest('.modal-box');
+        if (!box || !box.closest('.modal-overlay.show')) return;
+        var rect = box.getBoundingClientRect();
+        drag.el = box; drag.header = hdr;
+        drag.ox = e.clientX - rect.left; drag.oy = e.clientY - rect.top;
+        drag.tx = parseFloat(box.dataset.tX) || 0; drag.ty = parseFloat(box.dataset.tY) || 0;
+        drag.down = true;
+        box.classList.add('dragging');
+        box.style.animation = 'none';
+        hdr.style.cursor = 'grabbing';
+    });
+    document.addEventListener('mousemove', function(e){
+        if (!drag.down) return;
+        e.preventDefault();
+        var vw = window.innerWidth, vh = window.innerHeight;
+        var w = drag.el.offsetWidth, h = drag.el.offsetHeight;
+        var nx = Math.min(Math.max(0, e.clientX - drag.ox), vw - w) - vw/2 + w/2;
+        var ny = Math.min(Math.max(0, e.clientY - drag.oy), vh - h) - vh/2 + h/2;
+        drag.el.style.transform = 'translate(' + nx + 'px, ' + ny + 'px) scale(1) rotate(0deg)';
+        drag.el.dataset.tX = nx; drag.el.dataset.tY = ny;
+    });
+    document.addEventListener('mouseup', function(){
+        if (!drag.down) return;
+        drag.down = false;
+        if (drag.el) {
+            drag.el.classList.remove('dragging');
+            drag.el.style.transition = 'transform 0.2s cubic-bezier(0.34,1.56,0.64,1)';
+        }
+        if (drag.header) drag.header.style.cursor = 'grab';
+        drag.el = null;
+    });
+    /* 弹窗关闭时重置位置 */
+    var _origClose = function(id){
+        var el = document.getElementById(id);
+        if (el) {
+            el.classList.remove('show');
+            var box = el.querySelector('.modal-box');
+            if (box) { box.style.transform = ''; box.style.transition = ''; delete box.dataset.tX; delete box.dataset.tY; }
+        }
+    };
+    window._resetModalPos = _origClose;
+})();
+
 
 async function loadData(){
     showLoading();
@@ -1830,7 +1984,43 @@ async function loadData(){
         try { renderRanking(); } catch(e) { console.error('renderRanking错误:', e); }
         try { renderProductRanking(); } catch(e) { console.error('renderProductRanking错误:', e); }
         try { renderCharts(); } catch(e) { console.error('renderCharts错误:', e); }
-        
+
+        /* 图表入场动画 — IntersectionObserver */
+        var chartObserver = new IntersectionObserver(function(entries){
+            entries.forEach(function(entry){
+                if (entry.isIntersecting) {
+                    var card = entry.target;
+                    card.classList.remove('anim-hide');
+                    card.classList.add('anim-in');
+                    setTimeout(function(){ chartObserver.unobserve(card); }, 700);
+                }
+            });
+        }, { threshold: 0.15 });
+        document.querySelectorAll('.chart-card').forEach(function(c){
+            c.classList.add('anim-hide');
+            chartObserver.observe(c);
+        });
+        /* 图内入场触发 Chart.js 动画 */
+        var _origRC = window.renderChartsCore || function(){};
+        (function(){
+            var _fired = false;
+            var trigger = function(){
+                if (_fired) return; _fired = true;
+                if (window.renderChartsCore) {
+                    var orig = window.renderChartsCore;
+                    window.renderChartsCore = function(){
+                        var r = orig.apply(this, arguments);
+                        document.querySelectorAll('.chart-card canvas').forEach(function(cv){
+                            var ch = cv.chart || (cv._chart && cv._chart());
+                            if (ch && !ch._animFired) { ch.update('active'); ch._animFired = true; }
+                        });
+                        return r;
+                    };
+                }
+            };
+            document.querySelectorAll('.chart-card').forEach(function(c){ chartObserver.observe(c); });
+        })();
+
     } catch(e) {
         console.error('数据加载失败:', e);
         showToast('数据加载失败', 'error');
