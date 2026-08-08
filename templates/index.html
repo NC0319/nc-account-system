@@ -446,7 +446,7 @@
         /* Table */
         .table-container { border-radius: var(--radius); overflow: hidden; }
         .table-scroll { max-height: 55vh; overflow-y: auto; }
-        .data-table { width: 100%; border-collapse: collapse; min-width: 900px; }
+        .data-table { width: 100%; border-collapse: collapse; min-width: 760px; }
         .data-table th {
             position: sticky; top: 0; z-index: 10;
             background: linear-gradient(180deg, rgba(248,250,252,0.98), rgba(241,245,249,0.95));
@@ -640,12 +640,18 @@
             transform: rotateY(180deg);
         }
         .stat-face {
-            position: absolute; inset: 0;
             backface-visibility: hidden;
             -webkit-backface-visibility: hidden;
             border-radius: inherit;
         }
-        .stat-face-front  { transform: rotateY(0deg); }
+        .stat-face-front  {
+            position: relative;
+            transform: rotateY(0deg);
+        }
+        .stat-card-inner { min-height: 104px; }
+        .stat-face-back {
+            position: absolute; inset: 0;
+        }
         .stat-face-back {
             transform: rotateY(180deg);
             background: linear-gradient(135deg, rgba(123,91,255,0.12), rgba(167,139,250,0.06));
@@ -953,6 +959,58 @@
         @media (max-width: 600px) {
             .mobile-fab { display: flex !important; }
         }
+        /* ===== 设备适配 ===== */
+        /* 大屏（≥1600px）超宽屏：限宽更舒适，字号略增 */
+        @media (min-width: 1600px) {
+            .container { max-width: 1560px; }
+            .stat-num { font-size: 30px; }
+            .stat-label { font-size: 14px; }
+            .stat-icon { width: 48px; height: 48px; font-size: 22px; }
+            .chart-container { height: 240px; }
+        }
+        /* 平板横屏 / 小笔记本（1024-1280）：统计卡略缩 */
+        @media (min-width: 1024px) and (max-width: 1280px) {
+            .stat-card { padding: 16px 14px; }
+            .stat-num { font-size: 24px; }
+        }
+        /* 平板竖屏（768-1024）：表格与图表已堆叠，仅微调间距 */
+        @media (min-width: 769px) and (max-width: 1023px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+            .stat-card-inner { min-height: 96px; }
+        }
+        /* 横屏小高度（手机横屏）：压缩纵向空间，表格/弹窗不溢出 */
+        @media (max-height: 520px) and (orientation: landscape) {
+            body { padding: 8px 14px 16px !important; }
+            .container { max-width: 1200px; }
+            .header { padding-bottom: 8px; }
+            .header-title { font-size: 20px !important; }
+            .stats-grid { grid-template-columns: repeat(4, 1fr) !important; gap: 8px; }
+            .stat-card { padding: 8px 10px !important; }
+            .stat-icon { width: 28px !important; height: 28px !important; font-size: 13px !important; margin-bottom: 4px !important; }
+            .stat-num { font-size: 18px !important; }
+            .stat-label { font-size: 10px !important; }
+            .stat-card-inner { min-height: 72px; }
+            .table-scroll { max-height: 42vh; }
+            .modal-box { max-height: 92vh; }
+            .chart-container { height: 150px !important; }
+        }
+        /* 超小屏（<380px）：字号再缩，避免溢出 */
+        @media (max-width: 379px) {
+            .header-title { font-size: 19px !important; }
+            .stat-num { font-size: 17px !important; }
+            .stat-label { font-size: 10px !important; }
+            .stat-card { padding: 8px 6px !important; }
+            .quick-filter-btn { padding: 5px 9px !important; font-size: 11px !important; }
+            .toolbar { padding: 8px !important; gap: 6px !important; }
+            .chart-title { font-size: 14px !important; }
+            .modal-box { border-radius: 18px 18px 24px 18px; }
+            .modal-body { padding: 18px; }
+        }
+        /* 折叠屏展开态 / 大平板（>1280 且 <1600）：略增间距 */
+        @media (min-width: 1281px) and (max-width: 1599px) {
+            .stat-card { padding: 22px 18px; }
+        }
+
     </style>
 </head>
 <body>
