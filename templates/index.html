@@ -738,25 +738,32 @@
         /* 表格行交错动画 */
         .data-table tbody tr {
             animation: rowIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+            animation-delay: calc(var(--ri, 0) * 18ms);
             transition: background 0.25s ease, box-shadow 0.25s ease;
             position: relative;
             overflow: hidden;
         }
-        /* Flyme 灵动环 — 左侧流入光条 */
+        /* Flyme 灵动环 — 横扫光带（明显强化） */
         .data-table tbody tr::before {
             content: '';
             position: absolute;
-            left: 0; top: 0; bottom: 0;
-            width: 0;
-            background: linear-gradient(90deg, rgba(123,91,255,0.35), rgba(167,139,250,0.1));
-            border-left: 3px solid var(--flyme-purple, #7b5bff);
-            animation: flymeRing 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-            z-index: 1;
+            top: 0; bottom: 0;
+            left: -45%;
+            width: 50%;
+            background: linear-gradient(90deg, transparent, rgba(167,139,250,0.6), rgba(123,91,255,0.45), rgba(167,139,250,0.6), transparent);
+            box-shadow: 0 0 18px 2px rgba(123,91,255,0.55);
+            border-radius: 8px;
+            pointer-events: none;
+            opacity: 0;
+            z-index: 2;
+            animation: flymeRing 1.15s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+            animation-delay: calc(var(--ri, 0) * 18ms);
         }
         @keyframes flymeRing {
-            0%   { width: 0; opacity: 1; }
-            70%  { width: 12px; opacity: 1; }
-            100% { width: 8px; opacity: 0; }
+            0%   { left: -45%; opacity: 0; }
+            12%  { opacity: 1; }
+            88%  { opacity: 1; }
+            100% { left: 135%; opacity: 0; }
         }
         .data-table tbody tr:hover {
             background: linear-gradient(90deg, rgba(123,91,255,0.06), rgba(167,139,250,0.03));
@@ -2286,7 +2293,7 @@ function renderTable(){
         var item = pageData[i];
         var idx = item.__idx !== undefined ? item.__idx : allData.indexOf(item);
         var detail = item['商品详情'] || '';
-        html += '<tr><td>' + (item['日期']||'-') + '</td>';
+        html += '<tr style="--ri:' + Math.min(i, 26) + '"><td>' + (item['日期']||'-') + '</td>';
         html += '<td><span class="tag ' + (item['班次']==='白班'?'tag-day':'tag-night') + '">' + (item['班次']||'-') + '</span></td>';
         html += '<td><span class="cell-truncate" title="'+(item['包裹号']||'')+'">' + (item['包裹号']||'-') + '</span></td>';
         html += '<td><span class="cell-truncate" title="'+detail+'">' + detail.substring(0,18) + (detail.length>18?'...':'') + '</span></td>';
