@@ -507,11 +507,11 @@
         /* Modal - iOS Style */
         .modal-overlay {
             position: fixed; inset: 0; z-index: 1000;
-            background: rgba(0,0,0,0.5);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            display: none; align-items: center; justify-content: center;
-            padding: 20px;
+            background: rgba(0,0,0,0.28);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            display: none; align-items: flex-end; justify-content: flex-end;
+            padding: 28px 28px 80px;
         }
         .modal-overlay.show { 
             display: flex; 
@@ -524,48 +524,50 @@
         }
         
         .modal-box {
-            width: 100%; max-width: 600px; max-height: 90vh;
-            background: rgba(255,255,255,0.92);
+            width: 100%; max-width: 560px; max-height: 85vh;
+            background: rgba(248,246,255,0.96);
             backdrop-filter: blur(40px);
             -webkit-backdrop-filter: blur(40px);
-            border-radius: 28px;
-            border: 1px solid rgba(255,255,255,0.6);
-            box-shadow: 
-                0 25px 60px rgba(0,0,0,0.3), 
-                0 0 120px rgba(120,86,254,0.15),
-                inset 0 1px 0 rgba(255,255,255,0.8);
+            border-radius: 24px 24px 32px 24px;
+            border: 1px solid rgba(123,91,255,0.15);
+            box-shadow:
+                0 32px 80px rgba(0,0,0,0.35),
+                0 0 0 1px rgba(255,255,255,0.5),
+                0 0 100px rgba(123,91,255,0.18),
+                inset 0 1px 0 rgba(255,255,255,0.9);
             overflow: hidden;
-            animation: modalBounceIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            animation: modalFlymeIn 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
-        
-        @keyframes modalBounceIn {
-            0% { 
-                opacity: 0; 
-                transform: translateY(60px) scale(0.85) rotateX(-15deg); 
+
+        @keyframes modalFlymeIn {
+            0% {
+                opacity: 0;
+                transform: translateY(80px) translateX(-20px) scale(0.8) rotate(-3deg);
             }
-            60% { 
-                transform: translateY(-10px) scale(1.02) rotateX(2deg); 
+            60% {
+                transform: translateY(-12px) translateX(4px) scale(1.02) rotate(0.8deg);
             }
-            100% { 
-                opacity: 1; 
-                transform: translateY(0) scale(1) rotateX(0deg); 
+            100% {
+                opacity: 1;
+                transform: translateY(0) translateX(0) scale(1) rotate(0deg);
             }
         }
         
         /* 弹窗关闭动画 */
-        .modal-overlay.closing .modal-box {
-            animation: modalBounceOut 0.3s ease forwards;
-        }
+
         
-        @keyframes modalBounceOut {
-            from { 
-                opacity: 1; 
-                transform: translateY(0) scale(1); 
+        @keyframes modalFlymeOut {
+            from {
+                opacity: 1;
+                transform: translateY(0) translateX(0) scale(1) rotate(0deg);
             }
-            100% { 
-                opacity: 0; 
-                transform: translateY(30px) scale(0.95); 
+            100% {
+                opacity: 0;
+                transform: translateY(50px) translateX(20px) scale(0.9) rotate(-2deg);
             }
+        }
+        .modal-overlay.closing .modal-box {
+            animation: modalFlymeOut 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
         }
         
         /* Toast 动画 */
@@ -621,6 +623,50 @@
                 transform: translateY(0) scale(1) rotateX(0deg); 
             }
         }
+
+        /* ── 3D 翻转卡片 ── */
+        .stat-card {
+            perspective: 1200px;
+            cursor: pointer;
+        }
+        .stat-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .stat-card.flipped .stat-card-inner {
+            transform: rotateY(180deg);
+        }
+        .stat-face {
+            position: absolute; inset: 0;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            border-radius: inherit;
+        }
+        .stat-face-front  { transform: rotateY(0deg); }
+        .stat-face-back {
+            transform: rotateY(180deg);
+            background: linear-gradient(135deg, rgba(123,91,255,0.12), rgba(167,139,250,0.06));
+            border: 1px solid rgba(123,91,255,0.18);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 16px; gap: 6px;
+        }
+        .stat-face-back .back-title {
+            font-size: 11px; font-weight: 600; color: var(--text-secondary);
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .stat-face-back .back-value {
+            font-size: 20px; font-weight: 700;
+            background: linear-gradient(135deg, var(--flyme-purple, #7b5bff), var(--accent-2, #a78bfa));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .stat-face-back .back-hint {
+            font-size: 10px; color: var(--text-secondary); opacity: 0.7;
+        }
         
         /* 图表入场动画 */
         .chart-card {
@@ -650,6 +696,23 @@
             animation: rowIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
             transition: background 0.25s ease, box-shadow 0.25s ease;
             position: relative;
+            overflow: hidden;
+        }
+        /* Flyme 灵动环 — 左侧流入光条 */
+        .data-table tbody tr::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 0;
+            background: linear-gradient(90deg, rgba(123,91,255,0.35), rgba(167,139,250,0.1));
+            border-left: 3px solid var(--flyme-purple, #7b5bff);
+            animation: flymeRing 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            z-index: 1;
+        }
+        @keyframes flymeRing {
+            0%   { width: 0; opacity: 1; }
+            70%  { width: 12px; opacity: 1; }
+            100% { width: 8px; opacity: 0; }
         }
         .data-table tbody tr:hover {
             background: linear-gradient(90deg, rgba(123,91,255,0.06), rgba(167,139,250,0.03));
@@ -817,7 +880,7 @@
             .table-footer { padding: 10px !important; }
             /* 弹窗 */
             .modal-box { width: 100% !important; max-width: 100% !important; max-height: 92vh !important; overflow-y: auto !important; border-radius: 20px 20px 0 0 !important; position: fixed !important; bottom: 0 !important; left: 0 !important; margin: 0 !important; }
-            .modal-overlay { align-items: flex-end !important; }
+            .modal-overlay { align-items: center !important; justify-content: center !important; padding: 16px !important; }
             .form-row { grid-template-columns: 1fr !important; gap: 10px !important; }
             .form-group { margin-bottom: 12px !important; }
             /* 排行榜 */
@@ -907,29 +970,65 @@
         
         <!-- Stats -->
         <div class="stats-grid skeleton" id="statsGrid">
-            <div class="stat-card">
-                <div class="stat-icon blue"><i class="bi bi-list-ul"></i></div>
-                <div class="stat-num" id="totalCount">0</div>
-                <div class="stat-label">总记录</div>
-                <div class="stat-change" id="totalCountChange"></div>
+            <div class="stat-card" onclick="flipStatCard(this, 'totalCount', 'totalCountChange')">
+                <div class="stat-card-inner">
+                    <div class="stat-face stat-face-front">
+                        <div class="stat-icon blue"><i class="bi bi-list-ul"></i></div>
+                        <div class="stat-num" id="totalCount">0</div>
+                        <div class="stat-label">总记录</div>
+                        <div class="stat-change" id="totalCountChange"></div>
+                    </div>
+                    <div class="stat-face stat-face-back">
+                        <div class="back-title">上月记录</div>
+                        <div class="back-value" id="totalCountBack">—</div>
+                        <div class="back-hint">↩ 再点返回</div>
+                    </div>
+                </div>
             </div>
-            <div class="stat-card">
-                <div class="stat-icon purple"><i class="bi bi-currency-yen"></i></div>
-                <div class="stat-num" id="totalAmount">0</div>
-                <div class="stat-label">累计金额</div>
-                <div class="stat-change" id="totalAmountChange" style="display:none;"></div>
+            <div class="stat-card" onclick="flipStatCard(this, 'totalAmount', null)">
+                <div class="stat-card-inner">
+                    <div class="stat-face stat-face-front">
+                        <div class="stat-icon purple"><i class="bi bi-currency-yen"></i></div>
+                        <div class="stat-num" id="totalAmount">0</div>
+                        <div class="stat-label">累计金额</div>
+                        <div class="stat-change" id="totalAmountChange" style="display:none;"></div>
+                    </div>
+                    <div class="stat-face stat-face-back">
+                        <div class="back-title">上月金额</div>
+                        <div class="back-value" id="totalAmountBack">—</div>
+                        <div class="back-hint">↩ 再点返回</div>
+                    </div>
+                </div>
             </div>
-            <div class="stat-card" onclick="openUnpaidModal()" style="cursor:pointer;" title="点击处理未回款">
-                <div class="stat-icon orange"><i class="bi bi-exclamation-circle"></i></div>
-                <div class="stat-num" id="unpaidCount">0</div>
-                <div class="stat-label">未回款(点击)</div>
-                <div class="stat-change" id="unpaidCountChange"></div>
+            <div class="stat-card" onclick="flipStatCard(this, 'unpaidCount', 'unpaidCountChange'); openUnpaidModal();">
+                <div class="stat-card-inner">
+                    <div class="stat-face stat-face-front">
+                        <div class="stat-icon orange"><i class="bi bi-exclamation-circle"></i></div>
+                        <div class="stat-num" id="unpaidCount">0</div>
+                        <div class="stat-label">未回款(点击)</div>
+                        <div class="stat-change" id="unpaidCountChange"></div>
+                    </div>
+                    <div class="stat-face stat-face-back">
+                        <div class="back-title">上月未回款</div>
+                        <div class="back-value" id="unpaidCountBack">—</div>
+                        <div class="back-hint">↩ 再点返回</div>
+                    </div>
+                </div>
             </div>
-            <div class="stat-card" onclick="openPaidModal()" style="cursor:pointer;" title="点击查看已回款记录">
-                <div class="stat-icon green"><i class="bi bi-check-circle"></i></div>
-                <div class="stat-num" id="paidCount">0</div>
-                <div class="stat-label">已回款(点击)</div>
-                <div class="stat-change" id="paidCountChange"></div>
+            <div class="stat-card" onclick="flipStatCard(this, 'paidCount', 'paidCountChange'); openPaidModal();">
+                <div class="stat-card-inner">
+                    <div class="stat-face stat-face-front">
+                        <div class="stat-icon green"><i class="bi bi-check-circle"></i></div>
+                        <div class="stat-num" id="paidCount">0</div>
+                        <div class="stat-label">已回款(点击)</div>
+                        <div class="stat-change" id="paidCountChange"></div>
+                    </div>
+                    <div class="stat-face stat-face-back">
+                        <div class="back-title">上月已回款</div>
+                        <div class="back-value" id="paidCountBack">—</div>
+                        <div class="back-hint">↩ 再点返回</div>
+                    </div>
+                </div>
             </div>
         </div>
         
@@ -1628,6 +1727,23 @@ function animateNumber(id, target, decimals, isMoney){
     }
     requestAnimationFrame(step);
 }
+
+    /* ── Flyme 3D 卡片翻转 ── */
+    var _flipping = false;
+    function flipStatCard(card, mainId, changeId) {
+        if (_flipping) return;
+        _flipping = true;
+        if (card.classList.contains('flipped')) {
+            card.classList.remove('flipped');
+            setTimeout(function() { _flipping = false; }, 400);
+            return;
+        }
+        var mainEl = document.getElementById(mainId);
+        var backEl = document.getElementById(mainId + 'Back');
+        if (mainEl && backEl) { backEl.textContent = mainEl.textContent; }
+        card.classList.add('flipped');
+        setTimeout(function() { _flipping = false; }, 400);
+    }
 
 function showToast(msg, type){
     type = type || 'success';
