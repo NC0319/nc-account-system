@@ -1626,18 +1626,36 @@
                     </div>
                     <div style="margin-top:8px;font-size:12px;color:#8e8e93;">排班文件需包含"日期"和"处理人/人员/姓名"列；不上传则自动使用台账中的班次和处理人信息</div>
                 </div>
+
+                <div style="margin-bottom:16px;">
+                    <h4 style="margin-bottom:10px;color:#1c1c1e;font-size:15px;">3. 计算规则 <span style="font-size:12px;color:#8e8e93;font-weight:400;">（勾选开关）</span></h4>
+                    <div style="display:flex;flex-direction:column;gap:8px;padding:12px;background:rgba(120,84,244,0.05);border-radius:12px;border:1px solid rgba(120,84,244,0.15);">
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:#1c1c1e;">
+                            <input type="checkbox" id="ruleExcludeSingle" checked style="width:16px;height:16px;accent-color:#7854f4;">
+                            <span><b>单责剔除</b> — 责任方仅一人（无其他关键词）的单子不进公摊池</span>
+                        </label>
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:#1c1c1e;">
+                            <input type="checkbox" id="ruleExcludeResigned" checked style="width:16px;height:16px;accent-color:#7854f4;">
+                            <span><b>离职剔除</b> — 离职人员不参与公摊，其份额由剩余人平摊</span>
+                        </label>
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:#1c1c1e;">
+                            <input type="checkbox" id="ruleHalveMixed" checked style="width:16px;height:16px;accent-color:#7854f4;">
+                            <span><b>混合半责</b> — "人名/NC"类混合责任，金额÷2后进公摊池</span>
+                        </label>
+                    </div>
+                </div>
                 <div style="margin-bottom:16px;">
                     <h4 style="margin-bottom:10px;color:#1c1c1e;font-size:15px;">4. 排除的责任人名单</h4>
                     <input type="text" class="form-control" id="excludeResp" placeholder="输入具体人名，用逗号分隔，如：张三,李四" value="" style="width:100%;">
                     <div style="margin-top:8px;font-size:12px;color:#8e8e93;">这些责任人的单子不计入公摊（如班次负责人）</div>
                 </div>
                 <div style="margin-bottom:16px;">
-                    <h4 style="margin-bottom:10px;color:#1c1c1e;font-size:15px;">5. 离职人员名单</h4>
+                    <h4 style="margin-bottom:10px;color:#1c1c1e;font-size:15px;">6. 离职人员名单</h4>
                     <input type="text" class="form-control" id="resignedPeople" placeholder="输入离职人员姓名，用逗号分隔，如：王五,赵六" value="" style="width:100%;">
                     <div style="margin-top:8px;font-size:12px;color:#8e8e93;">离职人员不参与公摊，其应分担部分由剩余在职人员均摊</div>
                 </div>
                 <div style="margin-bottom:16px;">
-                    <h4 style="margin-bottom:10px;color:#1c1c1e;font-size:15px;">6. 计算结果</h4>
+                    <h4 style="margin-bottom:10px;color:#1c1c1e;font-size:15px;">7. 计算结果</h4>
                     <div id="sharedStats" style="display:none;margin-bottom:16px;">
                         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
                             <div style="padding:12px;background:rgba(120,84,244,0.1);border-radius:12px;text-align:center;">
@@ -3447,6 +3465,9 @@ async function calculateShared(){
     formData.append('keywords', '破损,买赔,赔');
     formData.append('exclude_resp', document.getElementById('excludeResp').value || '');
     formData.append('resigned', document.getElementById('resignedPeople').value || '');
+    formData.append('exclude_single', document.getElementById('ruleExcludeSingle').checked);
+    formData.append('exclude_resigned', document.getElementById('ruleExcludeResigned').checked);
+    formData.append('halve_mixed', document.getElementById('ruleHalveMixed').checked);
     
     try{
         var r = await fetch('/api/calculate-shared', { method: 'POST', body: formData });
