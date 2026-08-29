@@ -1003,6 +1003,10 @@ def calculate_shared_expense():
         end_date = request.form.get('end_date', '')
         keywords = request.form.get('keywords', '破损,买赔,赔')
         exclude_responsibility = request.form.get('exclude_resp', '')
+        # 三个开关：true/false
+        flag_excl_single = request.form.get('exclude_single', 'true').lower() == 'true'
+        flag_excl_resigned = request.form.get('exclude_resigned', 'true').lower() == 'true'
+        flag_halve_mixed = request.form.get('halve_mixed', 'true').lower() == 'true'
         resigned_input = request.form.get('resigned', '')
         resigned_people = [p.strip() for p in resigned_input.split(',') if p.strip()] if resigned_input else []
         
@@ -1184,7 +1188,7 @@ def calculate_shared_expense():
                 pass
         
         # 剔除离职人员（从排班中移除）
-        if resigned_people:
+        if flag_excl_resigned and resigned_people:
             print(f"需剔除离职人员: {resigned_people}")
             removed_count = 0
             for date in list(schedule.keys()):
@@ -1208,37 +1212,23 @@ def calculate_shared_expense():
             for p in date_info.get('night', []):
                 all_persons_in_schedule.add(p)
         
-        def classify_responsibility(resp):
+        def classify_responsibility(resp, flag_excl_single, flag_halve_mixed):
             """
             分析责任方，返回 (action, ratio)
-            action:
-              'exclude'  — 整条剔除（单人全责 或 两个真实人名共责）
-              'half'     — 金额减半后参与公摊（一个真实人名 + NC/共责等）
-              'include'  — 正常参与公摊
-            ratio: 参与公摊的金额比例（1.0 或 0.5）
+            flag_excl_single: True → 单人全责（责任方仅一个排班人员且无其他关键词）→ 整单剔除
+            flag_halve_mixed:  True → 一个排班人员+其他关键词（如/NC）→ 金额÷2进池
             """
             if not resp or resp == '':
                 return ('include', 1.0)
-
-            # 统计责任方中包含多少个排班真实人名
             matched_persons = [p for p in all_persons_in_schedule if p in resp]
             n = len(matched_persons)
-
             if n == 0:
-                # 没有真实人名：未拦截、NC、卸车/NC共责 等 → 正常公摊
                 return ('include', 1.0)
-            elif n == 1:
-                # 恰好一个真实人名
-                person = matched_persons[0]
-                if resp == person:
-                    # 完全匹配：单人全责 → 剔除
-                    return ('exclude', 0.0)
-                else:
-                    # 含有其他内容（如"/NC共责"、"&NC"）→ 半责，金额÷2参与公摊
-                    return ('half', 0.5)
-            else:
-                # 两个及以上真实人名（如"张三&李四"）→ 剔除，但人员仍参与公摊
+            if flag_excl_single and n == 1 and resp.strip() == matched_persons[0]:
                 return ('exclude', 0.0)
+            if flag_halve_mixed and n == 1:
+                return ('half', 0.5)
+            return ('include', 1.0)
         
         # 筛选时间范围内的破损买赔数据
         nc_data = load_data()
@@ -1262,7 +1252,7 @@ def calculate_shared_expense():
             if is_damaged and is_in_range and has_amount:
                 amount = parse_amount(item.get('金额'))
                 if amount > 0:
-                    action, ratio = classify_responsibility(responsibility)
+                    action, ratio = classify_responsibility(responsibility, flag_excl_single, flag_halve_mixed)
                     if action == 'exclude':
                         excluded_items.append({
                             'date': item_date,
@@ -1356,7 +1346,12 @@ def calculate_shared_expense():
             'excluded_count': len(excluded_items),
             'excluded_list': excluded_items,
             'half_list': [{'date': str(i.get('日期','')), 'package': i.get('包裹号',''), 'responsibility': i.get('责任方',''), 'original_amount': i.get('_original_amount', i.get('金额',0)), 'half_amount': i.get('金额',0)} for i in damaged_items if i.get('_half_note')],
-            'resigned_people': resigned_people
+            'resigned_people': resigned_people,
+            'flags': {
+                'exclude_single': flag_excl_single,
+                'exclude_resigned': flag_excl_resigned,
+                'halve_mixed': flag_halve_mixed
+            }
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
