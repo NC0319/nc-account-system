@@ -892,7 +892,24 @@ def _process_sheet_to_records(df):
             if (not _d) or (not _date_pat.match(_d)):
                 _r['日期'] = _s
                 _r['班次'] = ''
-    return records
+    # ── 过滤空壳记录：只有单号、无其他有效字段 → 不导入 ──
+    meaningful_fields = ('日期', '商品详情', '异常情况', '金额',
+                         '责任方', '处理方式', '凭证', '路由', '处理人', '回款情况', '班次')
+    valid = []
+    for _r in records:
+        pkg = str(_r.get('包裹号', '') or '').strip()
+        if not pkg:
+            valid.append(_r)
+            continue
+        # 包裹号 有值 → 检查是否只有单号、空无其他内容
+        others = any(
+            str(_r.get(f, '') or '').strip() not in ('', 'nan', 'None')
+            for f in meaningful_fields
+        )
+        if others:
+            valid.append(_r)
+        # else: 只有单号、无其他字段 → 跳过，不导入
+    return valid
 
 
 def _count_filled_fields(item):
