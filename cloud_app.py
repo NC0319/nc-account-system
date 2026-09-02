@@ -13,6 +13,7 @@ import base64
 import io
 import hashlib
 import re
+import traceback
 import numpy as np
 import pandas as pd
 
@@ -806,49 +807,53 @@ def _parse_excel_to_records(file_source):
     Returns:
         list[dict]: 处理后的记录列表
     """
-    # 判断输入类型并读取Excel（遍历所有工作表并合并）
+    # 读取所有工作表；每个工作表按默认表头(header=0)读取，再单独做双行表头检测
+    # （注意：不要用 header=None + 手动提升首行，脏首行会产生重复列名，
+    #  导致 df['日期'] 变成 DataFrame，apply 时把 Series 传给 parse_date_flex 触发
+    #  “The truth value of a Series is ambiguous” 错误）
     if isinstance(file_source, str):
         if ',' in file_source:
             file_source = file_source.split(',')[1]
         file_bytes = base64.b64decode(file_source)
-        excel_book = pd.ExcelFile(io.BytesIO(file_bytes))
     else:
-        excel_book = pd.ExcelFile(file_source)
+        # Flask FileStorage：先读入内存，确保可重复读取
+        file_bytes = file_source.read()
 
-    dfs = []
+    excel_book = pd.ExcelFile(io.BytesIO(file_bytes))
+
+    all_records = []
     for sheet_name in excel_book.sheet_names:
-        sheet_df = excel_book.parse(sheet_name=sheet_name, header=None)
+        sheet_df = excel_book.parse(sheet_name=sheet_name, header=0)
         # 跳过完全空白的工作表
-        if sheet_df.dropna(how='all').shape[0] == 0:
+        if sheet_df is None or sheet_df.dropna(how='all').shape[0] == 0:
             continue
-        dfs.append(sheet_df)
-    if not dfs:
-        return []
-    df = pd.concat(dfs, ignore_index=True)
-    # 第1行 → 列名
-    if df.shape[0] > 0:
-        df.columns = df.iloc[0].tolist()
-        df = df.iloc[1:].reset_index(drop=True)
+        # 双行表头检测（作用于单表 DataFrame：第1行空标题、第2行真表头）
+        if sheet_df.shape[1] > 0:
+            col0 = str(sheet_df.columns[0])
+            if 'Unnamed' in col0 or col0.strip() == '':
+                if sheet_df.shape[0] >= 2:
+                    row1_vals = [str(v).strip() for v in sheet_df.iloc[1].values if str(v).strip()]
+                    header_keywords = ('日期', '包裹号', '金额', '商品', '异常', '责任方', '处理', '凭证', '路由', '回款')
+                    if sum(1 for kw in header_keywords if any(kw in v for v in row1_vals)) >= 3:
+                        sheet_df.columns = sheet_df.iloc[1].tolist()
+                        sheet_df = sheet_df.iloc[2:].reset_index(drop=True)
+                        print(f"[表头修复] Sheet『{sheet_name}』检测到双行表头，已用第2行作列名")
+        # 逐表标准化 + 日期解析 + 日期补全 + 转 records
+        sheet_records = _process_sheet_to_records(sheet_df)
+        all_records.extend(sheet_records)
+        print(f"[导入] Sheet『{sheet_name}』解析 {len(sheet_records)} 条")
 
-    # ── 修复：双行表头检测 ──
-    # 有些 Excel 第1行是空/合并单元格标题，第2行才是真正列名
-    # 检测到第1行列名含 Unnamed 且第2行含'日期'+'包裹号'等关键词 → 用第2行作列名，删第1行
-    if df.shape[1] > 0:
-        col0 = str(df.columns[0])
-        if 'Unnamed' in col0 or col0.strip() == '':
-            if df.shape[0] >= 2:
-                row1_vals = [str(v).strip() for v in df.iloc[1].values if str(v).strip()]
-                header_keywords = ('日期', '包裹号', '金额', '商品', '异常', '责任方', '处理', '凭证', '路由', '回款')
-                if sum(1 for kw in header_keywords if any(kw in v for v in row1_vals)) >= 3:
-                    df.columns = df.iloc[1].tolist()
-                    df = df.iloc[2:].reset_index(drop=True)
-                    print(f"[表头修复] 检测到双行表头，已用第2行作列名，当前数据: {df.shape[0]} 行")
+    return all_records
 
+
+def _process_sheet_to_records(df):
+    """将单张工作表的 DataFrame 标准化、解析日期/金额并转为记录列表"""
     # 标准化列名
     df = standardize_columns(df)
 
     # ── 日期解析：使用模块级 parse_date_flex ──
-    df['日期'] = df['日期'].apply(parse_date_flex)
+    if '日期' in df.columns:
+        df['日期'] = df['日期'].apply(parse_date_flex)
 
     # ── 全局日期列补全：若'日期'为空/'nan'但'班次'列形如日期，挪过来 ──
     _date_pat = re.compile(r'^\d{4}[-/.年]\d{1,2}[-/.月]\d{1,2}')
@@ -861,7 +866,8 @@ def _parse_excel_to_records(file_source):
                 df.at[idx, '日期'] = _s
                 df.at[idx, '班次'] = ''
     df = df.fillna('')
-    df = df[df['包裹号'].notna() & (df['包裹号'] != '')]
+    if '包裹号' in df.columns:
+        df = df[df['包裹号'].notna() & (df['包裹号'] != '')]
 
     # 智能解析金额列（支持 ¥1,000 / 1000元 / 100 等各种格式）
     if '金额' in df.columns:
@@ -960,7 +966,7 @@ def import_preview():
             'preview': new_data[:5]
         })
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': str(e), 'trace': traceback.format_exc()}), 500
 
 
 @app.route('/api/import-confirm', methods=['POST'])
