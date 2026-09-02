@@ -835,13 +835,19 @@ def _parse_excel_to_records(file_source):
             df[col] = df[col].apply(lambda x: '' if pd.isna(x) or str(x) == 'nan' else str(x))
 
     records = df.to_dict('records')
-    _date_pat = re.compile(r'^\d{4}[-/年]\d{1,2}[-/月]\d{1,2}')
+    # 日期格式：兼容 - / . 年 月 多种分隔符（2026-08-08 / 2026/8/5 / 2026.08.08 / 2026年8月5日）
+    _date_pat = re.compile(r'^\d{4}[-/.年]\d{1,2}[-/.月]\d{1,2}')
+    # 真实班次关键词：含这些视为正常班次，不误移
+    _shift_kw = ('白', '夜', '早', '晚', '中', '休', '班', '跳')
     for _r in records:
         _d = str(_r.get('日期', '') or '').strip()
         _s = str(_r.get('班次', '') or '').strip()
-        if not _d and _date_pat.match(_s):
-            _r['日期'] = _s
-            _r['班次'] = ''
+        # 班次字段像日期且不含班次关键词 → 视为日期误填，挪回日期字段
+        if _s and _date_pat.match(_s) and not any(k in _s for k in _shift_kw):
+            # 日期字段为空，或日期字段本身也不是日期格式 → 用班次里的日期覆盖
+            if (not _d) or (not _date_pat.match(_d)):
+                _r['日期'] = _s
+                _r['班次'] = ''
     return records
 
 
