@@ -817,6 +817,20 @@ def _parse_excel_to_records(file_source):
         # Flask FileStorage对象
         df = pd.read_excel(file_source)
 
+    # ── 修复：双行表头检测 ──
+    # 有些 Excel 第1行是空/合并单元格标题，第2行才是真正列名
+    # 检测到第1行列名含 Unnamed 且第2行含'日期'+'包裹号'等关键词 → 用第2行作列名，删第1行
+    if df.shape[1] > 0:
+        col0 = str(df.columns[0])
+        if 'Unnamed' in col0 or col0.strip() == '':
+            if df.shape[0] >= 2:
+                row1_vals = [str(v).strip() for v in df.iloc[1].values if str(v).strip()]
+                header_keywords = ('日期', '包裹号', '金额', '商品', '异常', '责任方', '处理', '凭证', '路由', '回款')
+                if sum(1 for kw in header_keywords if any(kw in v for v in row1_vals)) >= 3:
+                    df.columns = df.iloc[1].tolist()
+                    df = df.iloc[2:].reset_index(drop=True)
+                    print(f"[表头修复] 检测到双行表头，已用第2行作列名，当前数据: {df.shape[0]} 行")
+
     # 标准化列名
     df = standardize_columns(df)
 
