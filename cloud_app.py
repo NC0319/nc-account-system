@@ -809,6 +809,10 @@ def parse_date_flex(s):
     return s
 
 
+# 排障用：记录最近一次导入解析的各工作表列信息（供 /api/import-preview 返回）
+LAST_PARSE_DEBUG = {}
+
+
 def _parse_excel_to_records(file_source):
     """将Excel文件源(Base64字符串或文件对象)解析为记录列表
 
@@ -831,12 +835,20 @@ def _parse_excel_to_records(file_source):
 
     excel_book = pd.ExcelFile(io.BytesIO(file_bytes))
 
+    global LAST_PARSE_DEBUG
+    LAST_PARSE_DEBUG = {'sheets': []}
     all_records = []
     for sheet_name in excel_book.sheet_names:
         sheet_df = excel_book.parse(sheet_name=sheet_name, header=0)
+        raw_cols = [str(c) for c in sheet_df.columns]
         # 跳过完全空白的工作表
         if sheet_df is None or sheet_df.dropna(how='all').shape[0] == 0:
+            LAST_PARSE_DEBUG['sheets'].append({
+                'sheet': sheet_name, 'raw_cols': raw_cols,
+                'double_header': False, 'std_cols': raw_cols, 'skipped': True
+            })
             continue
+        double_header = False
         # 双行表头检测（作用于单表 DataFrame：第1行空标题、第2行真表头）
         if sheet_df.shape[1] > 0:
             col0 = str(sheet_df.columns[0])
@@ -847,7 +859,17 @@ def _parse_excel_to_records(file_source):
                     if sum(1 for kw in header_keywords if any(kw in v for v in row1_vals)) >= 3:
                         sheet_df.columns = sheet_df.iloc[1].tolist()
                         sheet_df = sheet_df.iloc[2:].reset_index(drop=True)
+                        double_header = True
                         print(f"[表头修复] Sheet『{sheet_name}』检测到双行表头，已用第2行作列名")
+        # 标准化后的列名（用于排障回传）
+        try:
+            std_cols = [str(c) for c in standardize_columns(sheet_df.copy()).columns]
+        except Exception:
+            std_cols = [str(c) for c in sheet_df.columns]
+        LAST_PARSE_DEBUG['sheets'].append({
+            'sheet': sheet_name, 'raw_cols': raw_cols,
+            'double_header': double_header, 'std_cols': std_cols
+        })
         # 逐表标准化 + 日期解析 + 日期补全 + 转 records
         sheet_records = _process_sheet_to_records(sheet_df)
         all_records.extend(sheet_records)
@@ -990,7 +1012,8 @@ def import_preview():
             'total': len(new_data),
             'added': added,
             'replaced': replaced,
-            'preview': new_data[:5]
+            'preview': new_data[:5],
+            'debug': LAST_PARSE_DEBUG
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e), 'trace': traceback.format_exc()}), 500
