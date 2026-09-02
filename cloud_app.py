@@ -806,16 +806,29 @@ def _parse_excel_to_records(file_source):
     Returns:
         list[dict]: 处理后的记录列表
     """
-    # 判断输入类型并读取Excel
+    # 判断输入类型并读取Excel（遍历所有工作表并合并）
     if isinstance(file_source, str):
-        # Base64字符串
         if ',' in file_source:
             file_source = file_source.split(',')[1]
         file_bytes = base64.b64decode(file_source)
-        df = pd.read_excel(io.BytesIO(file_bytes))
+        excel_book = pd.ExcelFile(io.BytesIO(file_bytes))
     else:
-        # Flask FileStorage对象
-        df = pd.read_excel(file_source)
+        excel_book = pd.ExcelFile(file_source)
+
+    dfs = []
+    for sheet_name in excel_book.sheet_names:
+        sheet_df = excel_book.parse(sheet_name=sheet_name, header=None)
+        # 跳过完全空白的工作表
+        if sheet_df.dropna(how='all').shape[0] == 0:
+            continue
+        dfs.append(sheet_df)
+    if not dfs:
+        return []
+    df = pd.concat(dfs, ignore_index=True)
+    # 第1行 → 列名
+    if df.shape[0] > 0:
+        df.columns = df.iloc[0].tolist()
+        df = df.iloc[1:].reset_index(drop=True)
 
     # ── 修复：双行表头检测 ──
     # 有些 Excel 第1行是空/合并单元格标题，第2行才是真正列名
@@ -836,6 +849,17 @@ def _parse_excel_to_records(file_source):
 
     # ── 日期解析：使用模块级 parse_date_flex ──
     df['日期'] = df['日期'].apply(parse_date_flex)
+
+    # ── 全局日期列补全：若'日期'为空/'nan'但'班次'列形如日期，挪过来 ──
+    _date_pat = re.compile(r'^\d{4}[-/.年]\d{1,2}[-/.月]\d{1,2}')
+    _shift_kw = ('白', '夜', '早', '晚', '中', '休', '班', '跳')
+    for idx in df.index:
+        _d = str(df.at[idx, '日期']).strip() if '日期' in df.columns else ''
+        _s = str(df.at[idx, '班次']).strip() if '班次' in df.columns else ''
+        if _s and _date_pat.match(_s) and not any(k in _s for k in _shift_kw):
+            if (not _d) or (_d in ('nan', 'NaN', 'None', '')):
+                df.at[idx, '日期'] = _s
+                df.at[idx, '班次'] = ''
     df = df.fillna('')
     df = df[df['包裹号'].notna() & (df['包裹号'] != '')]
 
